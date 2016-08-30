@@ -1,2 +1,2 @@
-# aleph
-א: The mediachain universe 
+# א
+API prototype: the peer that knows all things
