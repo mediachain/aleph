@@ -1,0 +1,24 @@
+{
+  "name": "aleph",
+  "version": "0.0.1",
+  "description": "API prototype: the peer that knows all things",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mediachain/aleph.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mediachain/aleph/issues"
+  },
+  "homepage": "https://github.com/mediachain/aleph#readme",
+  "dependencies": {
+    "libp2p-swarm": "^0.22.3",
+    "multiaddr": "^2.0.2",
+    "peer-info": "^0.7.0"
+  }
+}
