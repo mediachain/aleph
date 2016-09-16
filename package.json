@@ -4,7 +4,8 @@
   "description": "API prototype: the peer that knows all things",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "babel src -d lib"
   },
   "repository": {
     "type": "git",
@@ -19,6 +20,12 @@
   "dependencies": {
     "libp2p-swarm": "^0.22.3",
     "multiaddr": "^2.0.2",
-    "peer-info": "^0.7.0"
+    "peer-info": "^0.7.0",
+    "rest": "^2.0.0",
+    "yargs": "^5.0.0"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.14.0",
+    "babel-plugin-transform-flow-strip-types": "^6.14.0"
   }
 }
