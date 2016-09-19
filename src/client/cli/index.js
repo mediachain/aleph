@@ -1,8 +1,6 @@
 // @flow
 
-const RestClient = require('../api/RestClient');
-
-const argv = require('yargs')
+require('yargs')
   .usage('Usage: $0 [options] <command> [command-options]')
   .help()
   .example('$0 ping QmF00123', 'send a ping message to peer with id QmF00123')
@@ -14,7 +12,4 @@ const argv = require('yargs')
   })
   .global('peerUrl')
   .commandDir('commands')
-  .argv;
-
-
-// console.log('args: ', argv);
+  .argv
