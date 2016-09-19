@@ -2,6 +2,7 @@
 
 const rest = require('rest');
 const mime = require('rest/interceptor/mime');
+const errorCode = require('rest/interceptor/errorCode');
 
 class RestClient {
     rootUrl: string;
@@ -10,7 +11,8 @@ class RestClient {
     constructor(options: {rootUrl?: string}) {
         let {rootUrl} = options;
         this.rootUrl = rootUrl || '';
-        this.client = rest.wrap(mime);
+        this.client = rest.wrap(mime)
+            .wrap(errorCode);
     }
 
     getRequest(path: string): Promise<Object> {
@@ -26,9 +28,7 @@ class RestClient {
 
     ping(peerId: string): Promise<bool> {
         return this.getRequest(`ping/${peerId}`)
-            .then(response => {
-                return response.status.code == 200;
-            })
+            .then(response => true)
     }
 }
 

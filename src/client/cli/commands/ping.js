@@ -11,9 +11,13 @@ module.exports = {
 
         const client = new RestClient({rootUrl: apiUrl});
         client.ping(peerId)
-            .then(success => {
-                let msg = success ? 'OK' : 'failed';
-                console.log(`ping result: ${msg}`);
-            });
+            .then(
+                success => {
+                    console.log(`ping OK`);
+                },
+                err => {
+                    console.error('error pinging: ', err.status.code);
+                }
+            );
     },
 };
