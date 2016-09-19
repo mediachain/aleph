@@ -2,17 +2,18 @@
 
 const RestClient = require('../../api/RestClient');
 
-const command = 'ping <peerId>';
-const describe = 'ping a remote node';
-const handler = ({peerId}) => {
-    console.log('pinging peer: ', peerId);
-
-    client = new RestClient({rootURL: 'http://localhost:9002'});
-    client.ping(peerId);
-};
-
 module.exports = {
-    command,
-    describe,
-    handler,
+    command: 'ping <peerId>',
+    describe: 'ping a remote node',
+    handler: (opts: {peerId: string, apiUrl: string}) => {
+        const {peerId, apiUrl} = opts;
+        console.log('pinging peer: ', peerId);
+
+        const client = new RestClient({rootUrl: apiUrl});
+        client.ping(peerId)
+            .then(success => {
+                let msg = success ? 'OK' : 'failed';
+                console.log(`ping result: ${msg}`);
+            });
+    },
 };
