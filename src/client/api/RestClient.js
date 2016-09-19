@@ -1,8 +1,13 @@
 // @flow
 
 const rest = require('rest');
-const mime = require('rest/interceptor/mime');
 const errorCode = require('rest/interceptor/errorCode');
+
+type SimpleStatement = {
+    object: string,
+    refs: Array<string>,
+    tags: Array<string>,
+};
 
 class RestClient {
     rootUrl: string;
@@ -11,14 +16,28 @@ class RestClient {
     constructor(options: {rootUrl?: string}) {
         let {rootUrl} = options;
         this.rootUrl = rootUrl || '';
-        this.client = rest.wrap(mime)
+        this.client = rest
             .wrap(errorCode);
     }
 
-    getRequest(path: string): Promise<Object> {
+    _makeUrl(path: string): string {
         const absPath = path.startsWith('/') ? path : '/' + path;
-        const url = this.rootUrl + absPath;
-        return this.client(url);
+        return this.rootUrl + absPath;
+    }
+
+    getRequest(path: string): Promise<Object> {
+        return this.client(this._makeUrl(path));
+    }
+
+    postRequest(path: string, body: Object): Promise<Object> {
+        return this.client({
+            path: this._makeUrl(path),
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            entity: JSON.stringify(body)
+        });
     }
 
     id(): Promise<string> {
@@ -29,6 +48,12 @@ class RestClient {
     ping(peerId: string): Promise<bool> {
         return this.getRequest(`ping/${peerId}`)
             .then(response => true)
+    }
+
+    publish(namespace: string, statement: SimpleStatement): Promise<Object> {
+        console.log(`publishing ${JSON.stringify(statement)} to ${namespace}`);
+        return this.postRequest(`publish/${namespace}`, statement)
+            .then(response => response.entity);
     }
 }
 
