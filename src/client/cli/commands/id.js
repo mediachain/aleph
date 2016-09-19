@@ -8,8 +8,9 @@ module.exports = {
     handler: (opts: {peerUrl: string}) => {
         const {peerUrl} = opts;
         const client = new RestClient({peerUrl});
-        client.id().then(response => {
-            console.log(response);
-        });
+        client.id().then(
+            response => { console.log(response); },
+            err => { console.error(err); }
+        );
     }
 };
