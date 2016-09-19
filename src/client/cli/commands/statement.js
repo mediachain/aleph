@@ -1,6 +1,5 @@
 // @flow
 
-const util = require('util');
 const RestClient = require('../../api/RestClient');
 
 module.exports = {
