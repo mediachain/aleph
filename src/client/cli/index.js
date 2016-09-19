@@ -10,8 +10,8 @@ const argv = require('yargs')
         default: 'http://localhost:9002'
     })
     .global('apiUrl')
-    .command(require('./commands/id'))
-    .command(require('./commands/ping'))
+    .command(idCommand)
+    .command(pingCommand)
     .argv;
 
 
