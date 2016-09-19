@@ -3,11 +3,7 @@
 const rest = require('rest');
 const errorCode = require('rest/interceptor/errorCode');
 
-type SimpleStatement = {
-    object: string,
-    refs: Array<string>,
-    tags: Array<string>,
-};
+import type { Statement, SimpleStatement } from '../../types/statement';
 
 class RestClient {
     rootUrl: string;
