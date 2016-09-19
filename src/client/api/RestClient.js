@@ -6,19 +6,19 @@ const errorCode = require('rest/interceptor/errorCode');
 import type { Statement, SimpleStatement } from '../../types/statement';
 
 class RestClient {
-    rootUrl: string;
+    peerUrl: string;
     client: Function;
 
-    constructor(options: {rootUrl?: string}) {
-        let {rootUrl} = options;
-        this.rootUrl = rootUrl || '';
+    constructor(options: {peerUrl?: string}) {
+        let {peerUrl} = options;
+        this.peerUrl = peerUrl || '';
         this.client = rest
             .wrap(errorCode);
     }
 
     _makeUrl(path: string): string {
         const absPath = path.startsWith('/') ? path : '/' + path;
-        return this.rootUrl + absPath;
+        return this.peerUrl + absPath;
     }
 
     getRequest(path: string): Promise<Object> {

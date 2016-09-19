@@ -9,9 +9,9 @@ module.exports = {
         return yargs.coerce('statement', JSON.parse)
     },
 
-    handler: (opts: {namespace: string, apiUrl: string, statement: Object}) => {
-        const {namespace, apiUrl, statement} = opts;
-        const client = new RestClient({rootUrl: apiUrl});
+    handler: (opts: {namespace: string, peerUrl: string, statement: Object}) => {
+        const {namespace, peerUrl, statement} = opts;
+        const client = new RestClient({peerUrl});
 
         client.publish(namespace, statement)
             .then(
