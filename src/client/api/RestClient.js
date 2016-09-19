@@ -46,10 +46,15 @@ class RestClient {
             .then(response => true)
     }
 
-    publish(namespace: string, statement: SimpleStatement): Promise<Object> {
+    publish(namespace: string, statement: SimpleStatement): Promise<string> {
         console.log(`publishing ${JSON.stringify(statement)} to ${namespace}`);
         return this.postRequest(`publish/${namespace}`, statement)
             .then(response => response.entity);
+    }
+
+    statement(statementId: string): Promise<Statement> {
+        return this.getRequest(`stmt/${statementId}`)
+            .then(response => JSON.parse(response.entity));
     }
 }
 

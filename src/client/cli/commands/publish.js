@@ -5,7 +5,7 @@ const RestClient = require('../../api/RestClient');
 module.exports = {
     command: 'publish <namespace> <statement>',
     description: 'publish a statement',
-    builder: (yargs) => {
+    builder: (yargs: any): any => {
         return yargs.coerce('statement', JSON.parse)
     },
 
