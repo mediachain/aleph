@@ -2,8 +2,8 @@
 
 export type SimpleStatement = {
     object: string,
-    refs: Array<string>,
-    tags: Array<string>,
+    refs?: Array<string>,
+    tags?: Array<string>,
 };
 
 export type CompoundStatement = {
