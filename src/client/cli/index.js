@@ -1,7 +1,6 @@
 // @flow
 
-const idCommand = require('./commands/id');
-const pingCommand = require('./commands/ping');
+const RestClient = require('../api/RestClient');
 
 const argv = require('yargs')
     .option('apiUrl', {
@@ -10,8 +9,7 @@ const argv = require('yargs')
         default: 'http://localhost:9002'
     })
     .global('apiUrl')
-    .command(idCommand)
-    .command(pingCommand)
+    .commandDir('commands')
     .argv;
 
 
