@@ -7,7 +7,11 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "mkdir -p ./lib && babel src -d lib",
     "check": "standard && flow",
-    "cli": "npm run build >/dev/null && node ./lib/client/cli/index.js"
+    "cli": "npm run build >/dev/null && node ./lib/client/cli/index.js",
+    "prepublish": "npm run build"
+  },
+  "bin": {
+    "mediachain-cli": "./bin/mediachain-cli.js"
   },
   "repository": {
     "type": "git",
