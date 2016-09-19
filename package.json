@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "babel src -d lib"
+    "build": "babel src -d lib",
+    "cli": "npm run build >/dev/null && node ./lib/client/cli/index.js"
   },
   "repository": {
     "type": "git",
