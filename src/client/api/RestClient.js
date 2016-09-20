@@ -3,7 +3,7 @@
 const rest = require('rest')
 const errorCode = require('rest/interceptor/errorCode')
 
-import type { Statement, SimpleStatement } from '../../types/statement'
+import type { Statement, SimpleStatement } from '../../protobuf/types'
 
 export type NodeStatus = 'online' | 'offline' | 'public'
 
