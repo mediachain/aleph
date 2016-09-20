@@ -23,10 +23,6 @@ class MediachainNode extends libp2p.Node {
     this.directory = dirInfo
   }
 
-  addDirectoryNode (dirInfo: PeerInfo) {
-    this.directories.push(dirInfo)
-  }
-
   lookup (peerId: string): Promise<PeerInfo> {
     let mhash: Buffer
     try {
