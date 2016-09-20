@@ -24,8 +24,10 @@
   },
   "homepage": "https://github.com/mediachain/aleph#readme",
   "dependencies": {
+    "libp2p-crypto": "^0.6.1",
     "libp2p-swarm": "^0.22.3",
     "multiaddr": "^2.0.2",
+    "peer-id": "^0.7.0",
     "peer-info": "^0.7.0",
     "rest": "^2.0.0",
     "yargs": "^5.0.0"
