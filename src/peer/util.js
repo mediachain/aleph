@@ -3,11 +3,82 @@
 const varint = require('varint')
 const pull = require('pull-stream')
 
-function protobufStream (encodedProto: Buffer): any {
-  const lengthBuffer = new Buffer(varint.encode(encodedProto.length), 'binary')
-  return pull.values([Buffer.concat([lengthBuffer, encodedProto])])
+/**
+ * Encode the objects using the given protobuf encoder, and return them in a pull-stream source
+ * @param encoder a `protocol-buffers` encoder function
+ * @param protos one or more POJOs that will be encoded to protobufs
+ * @returns a pull-stream source function with the encoded protobufs, prefixed with thier varint-encoded size
+ */
+function protoStreamSource (encoder: Function, ...protos: Array<Object>): Function {
+  const sizePrefixed = protos.map((obj) => {
+    const encoded = encoder(obj)
+    const size = new Buffer(varint.encode(encoded.length), 'binary')
+    return Buffer.concat([size, encoded])
+  })
+
+  return pull.values(sizePrefixed)
+}
+
+/**
+ * A through-stream that accepts size-prefixed encoded protbufs, decodes with the given decoder function,
+ * and emits the decoded POJOs.
+ * @param decoder a `protocol-buffers` decoder function
+ * @returns a through-stream function that can be wired into a pull-stream pipeline
+ */
+function protoStreamThrough (decoder: Function): Function {
+  let buffers = []
+
+  return function (read) {
+    return function (end, callback) {
+      const reader = (end, data) => {
+        if (end) {
+          return callback(end, null)
+        }
+
+        buffers.push(data)
+        if (buffers.length < 2) {
+          // recursively call read until we have two buffers (size + proto)
+          return read(end, reader)
+        } else {
+          const decoded = sizePrefixedProtoDecode(decoder, buffers)
+          buffers = []
+          return callback(end, decoded)
+        }
+      }
+
+      return read(end, reader)
+    }
+  }
+}
+
+/**
+ * Given a protobuf decode, and an array of two `Buffer`s, decode the first as a varint-encoded size,
+ * check that the second has the correct size, and decode the second buffer using the `decoder` function.
+ * @param decoder a `protocol-buffers` decoder function
+ * @param buffers a two-element Array of Buffers
+ * @returns the decoded protobuf
+ * @throws if size validation or protobuf decoding fails
+ */
+function sizePrefixedProtoDecode (decoder: Function, buffers: Array<Buffer>): any {
+  if (buffers.length !== 2) {
+    throw new Error(
+      `Expected size-prefixed protobuf, but got ${buffers.length} responses`
+    )
+  }
+
+  const size = varint.decode(buffers[0])
+  const data = buffers[1]
+  if (size !== data.length) {
+    throw new Error(
+      `Size of encoded protobuf (${data.length}) does not match prefix (${size})`
+    )
+  }
+
+  return decoder(data)
 }
 
 module.exports = {
-  protobufStream
+  protoStreamSource,
+  protoStreamThrough,
+  sizePrefixedProtoDecode
 }

@@ -2,11 +2,10 @@ const libp2p = require('libp2p-ipfs')
 const PeerId = require('peer-id')
 const PeerInfo = require('peer-info')
 const Multiaddr = require('multiaddr')
-const b58 = require('bs58')
+const Multihash = require('multihashes')
 const pb = require('../protobuf')
 const pull = require('pull-stream')
-const { protobufStream } = require('./util')
-const binstring = require('binstring')
+const { protoStreamSource, protoStreamThrough } = require('./util')
 
 const DEFAULT_LISTEN_ADDR = Multiaddr('/ip4/127.0.0.1/tcp/9002')
 
@@ -24,39 +23,31 @@ class MediachainNode extends libp2p.Node {
   }
 
   lookup (peerId: string): Promise<PeerInfo> {
-    let mhash: Buffer
     try {
-      mhash = new Buffer(b58.decode(peerId), 'binary')
+      Multihash.fromB58String(peerId)
     } catch (err) {
-      return Promise.reject(err)
+      return Promise.reject(new Error(`Peer id is not a valid multihash: ${err.message}`))
     }
 
-    const req = pb.dir.LookupPeerRequest.encode({
-      id: binstring(mhash, {in: 'buffer', out: 'binary'})
-    })
+    const Request = pb.dir.LookupPeerRequest
+    const Response = pb.dir.LookupPeerResponse
 
     return new Promise((resolve, reject) => {
       this.dialByPeerInfo(this.directory, '/mediachain/dir/lookup', (err: ?Error, conn: any) => { // TODO: type for conn
         if (err) {
+          console.error(err)
           return reject(err)
         }
-        console.log('connected to ', peerId)
         pull(
-          protobufStream(req),
-          conn,
-          pull.through(console.log), // TODO: remove once things are working
-          pull.collect((err: ?Error, data: Buffer) => {
-            if (err) {
-              reject(err)
-              return
-            }
-
-            const resp = pb.dir.LookupPeerResponse.decode(data)
-            const info = lookupResponseToPeerInfo(resp)
-            console.log('got lookup response: ', resp)
-            console.log('returned peer info: ', info)
-            resolve(info)
+          protoStreamSource(Request.encode, {
+            id: peerId
           }),
+          conn,
+          protoStreamThrough(Response.decode),
+          pull.drain((response: Object) => {
+            const info = lookupResponseToPeerInfo(response)
+            resolve(info)
+          })
         )
       })
     })
