@@ -113,9 +113,27 @@ function lookupResponseToPeerInfo (resp: LookupPeerResponse): ?PeerInfo {
   return peerInfo
 }
 
+/**
+ * Like a standard pull-stream `pull`, but returns a Promise that will contain the final value.
+ * Use when you want a single value out of a stream, not for long-lived connections, etc.
+ * @param streams a pull-stream pipeline of source + through streams.  Do not include a sink,
+ *        since we're draining to Promise.resolve
+ * @returns {Promise} a promise that will resolve to the first value that reaches the end of the pipeline.
+ */
+function pullToPromise<T> (...streams: Array<Function>): Promise<T> {
+  return new Promise(resolve => {
+    pull(
+      ...streams,
+      pull.take(1),
+      pull.drain(resolve)
+    )
+  })
+}
+
 module.exports = {
   protoStreamSource,
   protoStreamThrough,
   sizePrefixedProtoDecode,
-  lookupResponseToPeerInfo
+  lookupResponseToPeerInfo,
+  pullToPromise
 }
