@@ -35,7 +35,6 @@ class MediachainNode extends libp2p.Node {
     return new Promise((resolve, reject) => {
       this.dialByPeerInfo(this.directory, '/mediachain/dir/lookup', (err: ?Error, conn: any) => { // TODO: type for conn
         if (err) {
-          console.error(err)
           return reject(err)
         }
         pull(
