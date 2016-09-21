@@ -39,15 +39,25 @@ function protoStreamThrough (decoder: Function): Function {
         if (end) {
           return callback(end, null)
         }
-
         buffers.push(data)
+
+        // zero-length messages (e.g. ping & pong) are sent as just size == 0, with no payload
+        if (buffers.length === 1 && varint.decode(buffers[0]) === 0) {
+          return callback(end, {})
+        }
+
+        // recursively call read until we have two buffers (size + proto)
         if (buffers.length < 2) {
-          // recursively call read until we have two buffers (size + proto)
           return read(end, reader)
-        } else {
+        }
+
+        try {
           const decoded = sizePrefixedProtoDecode(decoder, buffers)
           buffers = []
           return callback(end, decoded)
+        } catch (err) {
+          read(true, null) // abort the source
+          return callback(err, null) // pass error to sink
         }
       }
 
