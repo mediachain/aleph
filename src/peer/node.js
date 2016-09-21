@@ -1,4 +1,4 @@
-const libp2p = require('libp2p-ipfs')
+const libp2p = require('./base_node')
 const PeerId = require('peer-id')
 const PeerInfo = require('peer-info')
 const Multiaddr = require('multiaddr')
@@ -37,21 +37,17 @@ class MediachainNode extends libp2p.Node {
     const Request = pb.dir.LookupPeerRequest
     const Response = pb.dir.LookupPeerResponse
 
-    return new Promise((resolve, reject) => {
-      this.dialByPeerInfo(this.directory, '/mediachain/dir/lookup', (err: ?Error, conn: any) => { // TODO: type for conn
-        if (err) {
-          return reject(err)
-        }
+    return this.dialByPeerInfo(this.directory, '/mediachain/dir/lookup')
+      .then(conn => new Promise(resolve => {
         pull(
-          protoStreamSource(Request.encode, { id: peerId }),
+          protoStreamSource(Request.encode, {id: peerId}),
           conn,
           protoStreamThrough(Response.decode),
           pull.map(lookupResponseToPeerInfo),
           pull.take(1),
           pull.drain(resolve)
         )
-      })
-    })
+      }))
   }
 
   ping (peer: string | PeerInfo | PeerId): Promise<boolean> {
@@ -62,25 +58,27 @@ class MediachainNode extends libp2p.Node {
       peerInfoPromise = this.lookup(peer)
     }
 
-    return peerInfoPromise.then((peerInfo) => new Promise((resolve, reject) => {
-      this.dialByPeerInfo(peerInfo, '/mediachain/node/ping', (err: ?Error, conn: any) => {
-        if (err) {
-          return reject(err)
-        }
-
+    return peerInfoPromise
+      .then(peerInfo => {
+        return this.dialByPeerInfo(peerInfo, '/mediachain/node/ping')
+      })
+      .then((conn: any) => {
         const Request = pb.node.Ping
         const Response = pb.node.Pong
 
         console.log('sending ping')
-        pull(
-          protoStreamSource(Request.encode, {}),
-          conn,
-          protoStreamThrough(Response.decode),
-          pull.take(1),
-          pull.drain(() => { resolve(true) })
-        )
+        return new Promise(resolve => {
+          pull(
+            protoStreamSource(Request.encode, {}),
+            conn,
+            protoStreamThrough(Response.decode),
+            pull.take(1),
+            pull.drain(() => {
+              resolve(true)
+            })
+          )
+        })
       })
-    }))
   }
 }
 
