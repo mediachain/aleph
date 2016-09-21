@@ -67,7 +67,7 @@ function protoStreamThrough (decoder: Function): Function {
 }
 
 /**
- * Given a protobuf decode, and an array of two `Buffer`s, decode the first as a varint-encoded size,
+ * Given a protobuf decoder, and an array of two `Buffer`s, decode the first as a varint-encoded size,
  * check that the second has the correct size, and decode the second buffer using the `decoder` function.
  * @param decoder a `protocol-buffers` decoder function
  * @param buffers a two-element Array of Buffers
@@ -98,13 +98,15 @@ function sizePrefixedProtoDecode (decoder: Function, buffers: Array<Buffer>): an
  * @returns a libp2p PeerInfo object, or null if lookup failed
  */
 function lookupResponseToPeerInfo (resp: LookupPeerResponse): ?PeerInfo {
-  if (!resp.peer) {
-    return null
-  }
+  const peer = resp.peer
+  if (peer == null) return null
 
-  const peerId = PeerId.createFromB58String(resp.peer.id)
+  const peerId = PeerId.createFromB58String(peer.id)
   const peerInfo = new PeerInfo(peerId)
-  resp.peer.addr.forEach((addrBytes: Buffer) => {
+  if (peer.addr == null) {
+    return peerInfo
+  }
+  peer.addr.forEach((addrBytes: Buffer) => {
     const addr = new Multiaddr(addrBytes)
     peerInfo.multiaddr.add(addr)
   })
