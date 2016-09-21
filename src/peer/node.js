@@ -25,12 +25,13 @@ class MediachainNode extends libp2p.Node {
   lookup (peerId: string | PeerId): Promise<PeerInfo> {
     if (peerId instanceof PeerId) {
       peerId = peerId.toB58String()
-    }
-
-    try {
-      Multihash.fromB58String(peerId)
-    } catch (err) {
-      return Promise.reject(new Error(`Peer id is not a valid multihash: ${err.message}`))
+    } else {
+      // validate that string arguments are legit multihashes
+      try {
+        Multihash.fromB58String(peerId)
+      } catch (err) {
+        return Promise.reject(new Error(`Peer id is not a valid multihash: ${err.message}`))
+      }
     }
 
     const Request = pb.dir.LookupPeerRequest
