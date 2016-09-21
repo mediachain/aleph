@@ -5,6 +5,7 @@ const pull = require('pull-stream')
 const Multiaddr = require('multiaddr')
 const PeerId = require('peer-id')
 const PeerInfo = require('peer-info')
+const lp = require('pull-length-prefixed')
 
 import type { PeerInfoMsg, LookupPeerResponseMsg } from '../protobuf/types'
 
@@ -15,13 +16,11 @@ import type { PeerInfoMsg, LookupPeerResponseMsg } from '../protobuf/types'
  * @returns a pull-stream source function with the encoded protobufs, prefixed with thier varint-encoded size
  */
 function protoStreamSource (encoder: Function, ...protos: Array<Object>): Function {
-  const sizePrefixed = protos.map((obj) => {
-    const encoded = encoder(obj)
-    const size = new Buffer(varint.encode(encoded.length), 'binary')
-    return Buffer.concat([size, encoded])
-  })
-
-  return pull.values(sizePrefixed)
+  return pull(
+    pull.values(protos),
+    pull.map(encoder),
+    lp.encode()
+  )
 }
 
 /**
@@ -31,65 +30,10 @@ function protoStreamSource (encoder: Function, ...protos: Array<Object>): Functi
  * @returns a through-stream function that can be wired into a pull-stream pipeline
  */
 function protoStreamThrough (decoder: Function): Function {
-  let buffers = []
-
-  return function (read) {
-    return function (end, callback) {
-      const reader = (end, data) => {
-        if (end) {
-          return callback(end, null)
-        }
-        buffers.push(data)
-
-        // zero-length messages (e.g. ping & pong) are sent as just size == 0, with no payload
-        if (buffers.length === 1 && varint.decode(buffers[0]) === 0) {
-          return callback(end, {})
-        }
-
-        // recursively call read until we have two buffers (size + proto)
-        if (buffers.length < 2) {
-          return read(end, reader)
-        }
-
-        try {
-          const decoded = sizePrefixedProtoDecode(decoder, buffers)
-          buffers = []
-          return callback(end, decoded)
-        } catch (err) {
-          read(true, null) // abort the source
-          return callback(err, null) // pass error to sink
-        }
-      }
-
-      return read(end, reader)
-    }
-  }
-}
-
-/**
- * Given a protobuf decoder, and an array of two `Buffer`s, decode the first as a varint-encoded size,
- * check that the second has the correct size, and decode the second buffer using the `decoder` function.
- * @param decoder a `protocol-buffers` decoder function
- * @param buffers a two-element Array of Buffers
- * @returns the decoded protobuf
- * @throws if size validation or protobuf decoding fails
- */
-function sizePrefixedProtoDecode (decoder: Function, buffers: Array<Buffer>): any {
-  if (buffers.length !== 2) {
-    throw new Error(
-      `Expected size-prefixed protobuf, but got ${buffers.length} responses`
-    )
-  }
-
-  const size = varint.decode(buffers[0])
-  const data = buffers[1]
-  if (size !== data.length) {
-    throw new Error(
-      `Size of encoded protobuf (${data.length}) does not match prefix (${size})`
-    )
-  }
-
-  return decoder(data)
+  return pull(
+    lp.decode(),
+    pull.map(decoder)
+  )
 }
 
 /**
@@ -142,7 +86,6 @@ function pullToPromise<T> (...streams: Array<Function>): Promise<T> {
 module.exports = {
   protoStreamSource,
   protoStreamThrough,
-  sizePrefixedProtoDecode,
   lookupResponseToPeerInfo,
   peerInfoProtoUnmarshal,
   pullToPromise
