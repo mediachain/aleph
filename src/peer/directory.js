@@ -3,6 +3,10 @@ const PeerId = require('peer-id')
 const PeerInfo = require('peer-info')
 const PeerBook = require('peer-book')
 const Multiaddr = require('multiaddr')
+const pull = require('pull-stream')
+const pb = require('../protobuf')
+const lp = require('pull-length-prefixed')
+const { peerInfoProtoUnmarshal } = require('./util')
 
 const DEFAULT_LISTEN_ADDR = Multiaddr('/ip4/127.0.0.1/tcp/9000')
 
@@ -23,7 +27,20 @@ class DirectoryNode extends libp2p.Node {
   }
 
   registerHandler (conn: Function) {
-    // TODO
+    const Request = pb.dir.RegisterPeer
+    pull(
+      conn,
+      lp.decode(),
+      pull.map(Request.decode),
+      pull.map(req => req.info),
+      pull.map(peerInfoProtoUnmarshal),
+      pull.through(peerInfo => {
+        this.registeredPeers.put(peerInfo)
+      }),
+      pull.map(() => new Buffer('')),
+      lp.encode(),
+      conn
+    )
   }
 
   lookupHandler (conn: Function) {

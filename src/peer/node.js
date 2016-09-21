@@ -22,6 +22,17 @@ class MediachainNode extends libp2p.Node {
     this.directory = dirInfo
   }
 
+  register (): Promise<boolean> {
+    const Request = pb.dir.RegisterPeer
+    return this.dialByPeerInfo(this.directory, '/mediachain/dir/register')
+      .then(conn => pullToPromise(
+          protoStreamSource(Request.encode, {
+            info: { id: this.peerInfo.id.toB58String() }
+          }),
+          conn
+        ))
+  }
+
   lookup (peerId: string | PeerId): Promise<PeerInfo> {
     if (peerId instanceof PeerId) {
       peerId = peerId.toB58String()

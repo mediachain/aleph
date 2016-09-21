@@ -4,7 +4,7 @@
   "description": "API prototype: the peer that knows all things",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "mocha --compilers js:babel-register ./test",
     "build": "mkdir -p ./lib && babel src -d lib",
     "check": "standard && flow",
     "cli": "npm run build >/dev/null && node ./lib/client/cli/index.js",
@@ -37,6 +37,7 @@
     "peer-id": "^0.7.0",
     "peer-info": "^0.7.0",
     "protocol-buffers": "^3.1.6",
+    "pull-length-prefixed": "^1.2.0",
     "pull-stream": "^3.4.5",
     "rest": "^2.0.0",
     "varint": "^4.0.1",
@@ -46,7 +47,9 @@
     "babel-cli": "^6.14.0",
     "babel-eslint": "^6.1.2",
     "babel-plugin-transform-flow-strip-types": "^6.14.0",
+    "babel-register": "^6.14.0",
     "eslint-plugin-flowtype": "^2.18.2",
+    "mocha": "^3.0.2",
     "standard": "^8.1.0"
   },
   "standard": {
