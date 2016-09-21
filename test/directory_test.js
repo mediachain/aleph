@@ -8,14 +8,14 @@ const Directory = require('../src/peer/directory')
 const Node = require('../src/peer/node')
 
 describe('Directory Node', () => {
-  it('adds a node to its registry in response to a register message', () => {
-    const dirId = generateIdentity()
-    const dir = new Directory(dirId)
-    const dirInfo = dir.peerInfo
-    const nodeId = generateIdentity()
-    const nodeIdB58 = nodeId.toB58String()
-    const node = new Node(nodeId, dirInfo)
+  const dirId = generateIdentity()
+  const dir = new Directory(dirId)
+  const dirInfo = dir.peerInfo
+  const nodeId = generateIdentity()
+  const nodeIdB58 = nodeId.toB58String()
+  const node = new Node(nodeId, dirInfo)
 
+  it('adds a node to its registry in response to a register message', () => {
     // verify that the peer is not registered before the call
     assert.throws(() => {
       dir.registeredPeers.getByB58String(nodeIdB58)

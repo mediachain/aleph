@@ -5,6 +5,7 @@ const Multiaddr = require('multiaddr')
 const Multihash = require('multihashes')
 const pb = require('../protobuf')
 const pull = require('pull-stream')
+const lp = require('pull-length-prefixed')
 const { protoStreamSource, protoStreamThrough, lookupResponseToPeerInfo, pullToPromise } = require('./util')
 
 const DEFAULT_LISTEN_ADDR = Multiaddr('/ip4/127.0.0.1/tcp/9002')
@@ -20,6 +21,7 @@ class MediachainNode extends libp2p.Node {
 
     super(peerInfo)
     this.directory = dirInfo
+    this.handle('/mediachain/node/ping', this.pingHandler.bind(this))
   }
 
   register (): Promise<boolean> {
@@ -77,6 +79,16 @@ class MediachainNode extends libp2p.Node {
         protoStreamThrough(Response.decode),
         pull.map(_ => { return true })
       ))
+  }
+
+  pingHandler (conn: Function) {
+    pull(
+      conn,
+      protoStreamThrough(pb.node.Ping.decode),
+      pull.map(() => pb.node.Pong.encode({})),
+      lp.encode(),
+      conn
+    )
   }
 }
 
