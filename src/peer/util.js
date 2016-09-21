@@ -1,6 +1,5 @@
 // @flow
 
-const varint = require('varint')
 const pull = require('pull-stream')
 const Multiaddr = require('multiaddr')
 const PeerId = require('peer-id')
