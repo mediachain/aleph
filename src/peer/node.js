@@ -22,7 +22,11 @@ class MediachainNode extends libp2p.Node {
     this.directory = dirInfo
   }
 
-  lookup (peerId: string): Promise<PeerInfo> {
+  lookup (peerId: string | PeerId): Promise<PeerInfo> {
+    if (peerId instanceof PeerId) {
+      peerId = peerId.toB58String()
+    }
+
     try {
       Multihash.fromB58String(peerId)
     } catch (err) {
@@ -49,8 +53,15 @@ class MediachainNode extends libp2p.Node {
     })
   }
 
-  ping (peerId: string): Promise<boolean> {
-    return this.lookup(peerId).then((peerInfo) => new Promise((resolve, reject) => {
+  ping (peer: string | PeerInfo | PeerId): Promise<boolean> {
+    let peerInfoPromise: Promise<PeerInfo>
+    if (peer instanceof PeerInfo) {
+      peerInfoPromise = Promise.resolve(peer)
+    } else {
+      peerInfoPromise = this.lookup(peer)
+    }
+
+    return peerInfoPromise.then((peerInfo) => new Promise((resolve, reject) => {
       this.dialByPeerInfo(peerInfo, '/mediachain/node/ping', (err: ?Error, conn: any) => {
         if (err) {
           return reject(err)
