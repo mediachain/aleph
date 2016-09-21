@@ -59,9 +59,7 @@ class MediachainNode extends libp2p.Node {
     const Response = pb.node.Pong
 
     return peerInfoPromise
-      .then(peerInfo => {
-        return this.dialByPeerInfo(peerInfo, '/mediachain/node/ping')
-      })
+      .then(peerInfo => this.dialByPeerInfo(peerInfo, '/mediachain/node/ping'))
       .then(conn => pullToPromise(
         protoStreamSource(Request.encode, {}),
         conn,
