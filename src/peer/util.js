@@ -2,6 +2,11 @@
 
 const varint = require('varint')
 const pull = require('pull-stream')
+const Multiaddr = require('multiaddr')
+const PeerId = require('peer-id')
+const PeerInfo = require('peer-info')
+
+import type { LookupPeerResponse } from '../protobuf/types'
 
 /**
  * Encode the objects using the given protobuf encoder, and return them in a pull-stream source
@@ -77,8 +82,28 @@ function sizePrefixedProtoDecode (decoder: Function, buffers: Array<Buffer>): an
   return decoder(data)
 }
 
+/**
+ * Convert a decoded LookupPeerResponse object into a libp2p PeerInfo object
+ * @param resp a LookupPeerResponse protobuf, decoded into a POJO
+ * @returns a libp2p PeerInfo object, or null if lookup failed
+ */
+function lookupResponseToPeerInfo (resp: LookupPeerResponse): ?PeerInfo {
+  if (!resp.peer) {
+    return null
+  }
+
+  const peerId = PeerId.createFromB58String(resp.peer.id)
+  const peerInfo = new PeerInfo(peerId)
+  resp.peer.addr.forEach((addrBytes: Buffer) => {
+    const addr = new Multiaddr(addrBytes)
+    peerInfo.multiaddr.add(addr)
+  })
+  return peerInfo
+}
+
 module.exports = {
   protoStreamSource,
   protoStreamThrough,
-  sizePrefixedProtoDecode
+  sizePrefixedProtoDecode,
+  lookupResponseToPeerInfo
 }

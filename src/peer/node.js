@@ -5,7 +5,7 @@ const Multiaddr = require('multiaddr')
 const Multihash = require('multihashes')
 const pb = require('../protobuf')
 const pull = require('pull-stream')
-const { protoStreamSource, protoStreamThrough } = require('./util')
+const { protoStreamSource, protoStreamThrough, lookupResponseToPeerInfo } = require('./util')
 
 const DEFAULT_LISTEN_ADDR = Multiaddr('/ip4/127.0.0.1/tcp/9002')
 
@@ -39,15 +39,12 @@ class MediachainNode extends libp2p.Node {
           return reject(err)
         }
         pull(
-          protoStreamSource(Request.encode, {
-            id: peerId
-          }),
+          protoStreamSource(Request.encode, { id: peerId }),
           conn,
           protoStreamThrough(Response.decode),
-          pull.drain((response: Object) => {
-            const info = lookupResponseToPeerInfo(response)
-            resolve(info)
-          })
+          pull.map(lookupResponseToPeerInfo),
+          pull.take(1),
+          pull.drain(resolve)
         )
       })
     })
@@ -55,19 +52,3 @@ class MediachainNode extends libp2p.Node {
 }
 
 module.exports = MediachainNode
-
-import type { LookupPeerResponse } from '../protobuf/types'
-
-function lookupResponseToPeerInfo (resp: LookupPeerResponse): ?PeerInfo {
-  if (!resp.peer) {
-    return null
-  }
-
-  const peerId = PeerId.createFromB58String(resp.peer.id)
-  const peerInfo = new PeerInfo(peerId)
-  resp.peer.addr.forEach((addrBytes: Buffer) => {
-    const addr = new Multiaddr(addrBytes)
-    peerInfo.multiaddr.add(addr)
-  })
-  return peerInfo
-}
