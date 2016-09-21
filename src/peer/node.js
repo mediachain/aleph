@@ -48,6 +48,28 @@ class MediachainNode extends libp2p.Node {
       })
     })
   }
+
+  ping (peerId: string): Promise<boolean> {
+    return this.lookup(peerId).then((peerInfo) => new Promise((resolve, reject) => {
+      this.dialByPeerInfo(peerInfo, '/mediachain/node/ping', (err: ?Error, conn: any) => {
+        if (err) {
+          return reject(err)
+        }
+
+        const Request = pb.node.Ping
+        const Response = pb.node.Pong
+
+        console.log('sending ping')
+        pull(
+          protoStreamSource(Request.encode, {}),
+          conn,
+          protoStreamThrough(Response.decode),
+          pull.take(1),
+          pull.drain(() => { resolve(true) })
+        )
+      })
+    }))
+  }
 }
 
 module.exports = MediachainNode
