@@ -103,8 +103,8 @@ function pullRepeatedly (value: any, interval: number = 1000): Function {
     }
 
     if (intervalElapsed()) {
-      cb(null, value)
       intervalStart = new Date()
+      cb(null, value)
       return
     }
     if (intervalStart == null) intervalStart = new Date()
