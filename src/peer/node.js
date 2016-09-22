@@ -18,9 +18,9 @@ import type { Connection } from 'interface-connection'
 const DEFAULT_LISTEN_ADDR = Multiaddr('/ip4/127.0.0.1/tcp/0')
 
 class MediachainNode extends BaseNode {
-  directory: PeerInfo
+  directory: ?PeerInfo
 
-  constructor (peerId: PeerId, dirInfo: PeerInfo, listenAddrs: Array<Multiaddr> = [DEFAULT_LISTEN_ADDR]) {
+  constructor (peerId: PeerId, dirInfo: ?PeerInfo, listenAddrs: Array<Multiaddr> = [DEFAULT_LISTEN_ADDR]) {
     const peerInfo = new PeerInfo(peerId)
     listenAddrs.forEach((addr: Multiaddr) => {
       peerInfo.multiaddr.add(addr)
@@ -32,6 +32,10 @@ class MediachainNode extends BaseNode {
   }
 
   register (): Promise<boolean> {
+    if (this.directory == null) {
+      return Promise.reject(new Error('No known directory server, cannot register'))
+    }
+
     const abortable = this.newAbortable()
 
     return this.dialByPeerInfo(this.directory, '/mediachain/dir/register')
@@ -52,6 +56,10 @@ class MediachainNode extends BaseNode {
   }
 
   lookup (peerId: string | PeerId): Promise<?PeerInfo> {
+    if (this.directory == null) {
+      return Promise.reject(new Error('No known directory server, cannot lookup'))
+    }
+
     if (peerId instanceof PeerId) {
       peerId = peerId.toB58String()
     } else {
