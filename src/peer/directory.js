@@ -33,9 +33,7 @@ class DirectoryNode extends libp2p.Node {
 
     const sink = () => (read: Function) => {
       read(null, function next (end: ?(boolean | Error), peerInfo: ?PeerInfo) {
-        console.log('register sink ', end, peerInfo)
         if (end === true) {
-          console.log('unregistering peer')
           if (peerForConn) {
             this.registeredPeers.removeByB58String(peerForConn.id.toB58String())
             return
@@ -45,7 +43,6 @@ class DirectoryNode extends libp2p.Node {
         if (end) throw end
 
         if (peerInfo) {
-          console.log('registering peer')
           peerForConn = peerInfo
           this.registeredPeers.put(peerInfo)
         }
