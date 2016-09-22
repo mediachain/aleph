@@ -39,7 +39,7 @@ class MediachainNode extends BaseNode {
         pull(
           pullRepeatedly({
             info: {id: this.peerInfo.id.toB58String()}
-          }, 5000),
+          }, 5000 * 60),
           abortable,
           protoStreamEncode(pb.dir.RegisterPeer),
           conn,
