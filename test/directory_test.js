@@ -1,20 +1,28 @@
 /* eslint-env mocha */
 
 const assert = require('assert')
-const { describe, it } = require('mocha')
+const { describe, it, before, afterEach } = require('mocha')
 const eventually = require('mocha-eventually')
 
 const { generateIdentity } = require('../src/peer/identity')
 const Directory = require('../src/peer/directory')
 const Node = require('../src/peer/node')
 
-describe('Directory Node', () => {
+describe('Directory Node', function () {
   const dirId = generateIdentity()
-  const dir = new Directory(dirId)
+  let dir = new Directory(dirId)
   const dirInfo = dir.peerInfo
   const nodeId = generateIdentity()
   const nodeIdB58 = nodeId.toB58String()
-  const node = new Node(nodeId, dirInfo)
+  let node = new Node(nodeId, dirInfo)
+
+  before(() => {
+    return Promise.all([dir.start(), node.start()])
+  })
+
+  afterEach(() => {
+    dir.registeredPeers.removeByB58String(nodeIdB58)
+  })
 
   it('adds a node to its registry in response to a register message', function () {
     // verify that the peer is not registered before the call
@@ -22,16 +30,21 @@ describe('Directory Node', () => {
       dir.registeredPeers.getByB58String(nodeIdB58)
     })
 
-    return Promise.all([dir.start(), node.start()])  // start node and directory
-      .then(conn => node.register())  // register the node
+    return node.register()
       .then(eventually(() => {
         const entry = dir.registeredPeers.getByB58String(nodeIdB58)
         assert(entry, 'registered successfully')
+      }))
+  })
 
-        assert(node.registrationAbortable != null, 'node should have an "abortable" to cancel registration messages')
-        return node.stop()
-      })).then(() => {
-        assert(node.registrationAbortable == null, 'registration stream should be aborted when node stops')
+  it('responds to lookup requests for known peers', function () {
+    // just stuff the node's id into the directory manually
+    dir.registeredPeers.put(node.peerInfo)
+
+    return node.lookup(nodeIdB58)
+      .then(peerInfo => {
+        assert(peerInfo != null)
+        assert.equal(peerInfo.id.toB58String(), nodeIdB58)
       })
   })
 })
