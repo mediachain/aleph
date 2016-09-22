@@ -6,7 +6,6 @@ const Multihash = require('multihashes')
 const pb = require('../protobuf')
 const pull = require('pull-stream')
 const Abortable = require('pull-abortable')
-const lp = require('pull-length-prefixed')
 const {
   protoStreamEncode,
   protoStreamDecode,

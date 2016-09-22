@@ -16,7 +16,7 @@ describe('Directory Node', () => {
   const nodeIdB58 = nodeId.toB58String()
   const node = new Node(nodeId, dirInfo)
 
-  it('adds a node to its registry in response to a register message', function() {
+  it('adds a node to its registry in response to a register message', function () {
     // verify that the peer is not registered before the call
     assert.throws(() => {
       dir.registeredPeers.getByB58String(nodeIdB58)

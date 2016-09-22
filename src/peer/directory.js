@@ -5,7 +5,6 @@ const PeerBook = require('peer-book')
 const Multiaddr = require('multiaddr')
 const pull = require('pull-stream')
 const pb = require('../protobuf')
-const lp = require('pull-length-prefixed')
 const { protoStreamDecode, peerInfoProtoUnmarshal } = require('./util')
 import type { Connection } from 'interface-connection'
 
@@ -33,7 +32,7 @@ class DirectoryNode extends libp2p.Node {
     let peerForConn: ?PeerInfo = null
 
     const sink = () => (read: Function) => {
-      read(null, function next(end: ?(boolean | Error), peerInfo: ?PeerInfo) {
+      read(null, function next (end: ?(boolean | Error), peerInfo: ?PeerInfo) {
         console.log('register sink ', end, peerInfo)
         if (end === true) {
           console.log('unregistering peer')
