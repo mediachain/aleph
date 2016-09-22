@@ -1,4 +1,4 @@
-'use strict'
+// @flow
 
 const Swarm = require('libp2p-swarm')
 const TCP = require('libp2p-tcp')
@@ -11,48 +11,55 @@ const PeerInfo = require('peer-info')
 const PeerBook = require('peer-book')
 const multiaddr = require('multiaddr')
 const mafmt = require('mafmt')
-const EE = require('events').EventEmitter
 
-exports = module.exports
+import type { Connection } from 'interface-connection'
 
 const OFFLINE_ERROR_MESSAGE = 'The libp2p node is not started yet'
 const IPFS_CODE = 421
 
-exports.Node = function Node (pInfo, pBook) {
-  if (!(this instanceof Node)) {
-    return new Node(pInfo, pBook)
+class Node {
+  peerInfo: PeerInfo;
+  peerBook: PeerBook;
+  swarm: Swarm;
+  isOnline: boolean;
+
+  constructor (pInfo: ?PeerInfo, pBook: ?PeerBook) {
+    if (!pInfo) {
+      pInfo = new PeerInfo()
+      pInfo.multiaddr.add(multiaddr('/ip4/0.0.0.0/tcp/0'))
+    }
+
+    if (!pBook) {
+      pBook = new PeerBook()
+    }
+
+    this.peerInfo = pInfo
+    this.peerBook = pBook
+
+    this.peerInfo = pInfo
+    this.peerBook = pBook
+
+    // Swarm
+    this.swarm = new Swarm(pInfo)
+    this.swarm.connection.addStreamMuxer(spdy)
+    this.swarm.connection.reuse()
+
+    this.swarm.connection.crypto(secio.tag, secio.encrypt)
+
+    this.swarm.on('peer-mux-established', (peerInfo) => {
+      this.peerBook.put(peerInfo)
+    })
+
+    this.swarm.on('peer-mux-closed', (peerInfo) => {
+      this.peerBook.removeByB58String(peerInfo.id.toB58String())
+    })
+
+    this.isOnline = false
   }
 
-  if (!pInfo) {
-    pInfo = new PeerInfo()
-    pInfo.multiaddr.add(multiaddr('/ip4/0.0.0.0/tcp/0'))
-  }
+  start (): Promise<void> {
+    if (this.isOnline) return Promise.resolve()
 
-  if (!pBook) {
-    pBook = new PeerBook()
-  }
-
-  this.peerInfo = pInfo
-  this.peerBook = pBook
-
-  // Swarm
-  this.swarm = new Swarm(pInfo)
-  this.swarm.connection.addStreamMuxer(spdy)
-  this.swarm.connection.reuse()
-
-  this.swarm.connection.crypto(secio.tag, secio.encrypt)
-
-  this.swarm.on('peer-mux-established', (peerInfo) => {
-    this.peerBook.put(peerInfo)
-  })
-
-  this.swarm.on('peer-mux-closed', (peerInfo) => {
-    this.peerBook.removeByB58String(peerInfo.id.toB58String())
-  })
-
-  let isOnline = false
-
-  this.start = () => {
     const ws = new WS()
     const tcp = new TCP()
 
@@ -70,31 +77,35 @@ exports.Node = function Node (pInfo, pBook) {
           return reject(err)
         }
 
-        isOnline = true
+        this.isOnline = true
         resolve()
       })
     })
   }
 
-  this.stop = () => {
-    isOnline = false
-    return new Promise((resolve) => {
-      this.swarm.close(resolve)
+  stop (): Promise<void> {
+    if (!this.isOnline) return Promise.resolve()
+
+    this.isOnline = false
+    return new Promise(resolve => {
+      this.swarm.close(() => {
+        resolve()
+      })
     })
   }
 
-  this.dialById = (id, protocol) => {
-    if (!isOnline) {
+  dialById (id: PeerId, protocol: string): Promise<Connection> {
+    if (!this.isOnline) {
       return Promise.reject(new Error(OFFLINE_ERROR_MESSAGE))
     }
     // NOTE, these dialById only works if a previous dial
     // was made until we have PeerRouting
     // TODO support PeerRouting when it is Ready
-    Promise.reject(new Error('not implemented yet'))
+    return Promise.reject(new Error('not implemented yet'))
   }
 
-  this.dialByMultiaddr = (maddr, protocol) => {
-    if (!isOnline) {
+  dialByMultiaddr (maddr: multiaddr, protocol: string): Promise<Connection> {
+    if (!this.isOnline) {
       return Promise.reject(new Error(OFFLINE_ERROR_MESSAGE))
     }
 
@@ -123,8 +134,8 @@ exports.Node = function Node (pInfo, pBook) {
     return this.dialByPeerInfo(peer, protocol)
   }
 
-  this.dialByPeerInfo = (peer, protocol) => {
-    if (!isOnline) {
+  dialByPeerInfo (peer: PeerInfo, protocol: string): Promise<Connection> {
+    if (!this.isOnline) {
       return Promise.reject(new Error(OFFLINE_ERROR_MESSAGE))
     }
 
@@ -139,13 +150,13 @@ exports.Node = function Node (pInfo, pBook) {
     })
   }
 
-  this.hangUpById = (id) => {
+  hangUpById (id: PeerId): Promise<void> {
     return Promise.reject(new Error('not implemented yet'))
     // TODO
   }
 
-  this.hangUpByMultiaddr = (maddr) => {
-    if (!isOnline) {
+  hangUpByMultiaddr (maddr: multiaddr): Promise<void> {
+    if (!this.isOnline) {
       return Promise.reject(new Error(OFFLINE_ERROR_MESSAGE))
     }
 
@@ -172,8 +183,8 @@ exports.Node = function Node (pInfo, pBook) {
     }
   }
 
-  this.hangUpByPeerInfo = (peer) => {
-    if (!isOnline) {
+  hangUpByPeerInfo (peer: PeerInfo): Promise<void> {
+    if (!this.isOnline) {
       return Promise.reject(new Error(OFFLINE_ERROR_MESSAGE))
     }
 
@@ -183,15 +194,13 @@ exports.Node = function Node (pInfo, pBook) {
     })
   }
 
-  this.handle = (protocol, handler) => {
+  handle (protocol: string, handler: Function): any {
     return this.swarm.handle(protocol, handler)
   }
 
-  this.unhandle = (protocol) => {
+  unhandle (protocol: string): any {
     return this.swarm.unhandle(protocol)
   }
-
-  this.discovery = new EE()
-  this.routing = null
-  this.records = null
 }
+
+module.exports = Node

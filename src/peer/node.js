@@ -1,4 +1,4 @@
-const libp2p = require('./base_node')
+const BaseNode = require('./base_node')
 const PeerId = require('peer-id')
 const PeerInfo = require('peer-info')
 const Multiaddr = require('multiaddr')
@@ -18,7 +18,7 @@ import type { Connection } from 'interface-connection'
 
 const DEFAULT_LISTEN_ADDR = Multiaddr('/ip4/127.0.0.1/tcp/9002')
 
-class MediachainNode extends libp2p.Node {
+class MediachainNode extends BaseNode {
   directory: PeerInfo
   registrationAbortable: ?Abortable
 
@@ -37,7 +37,7 @@ class MediachainNode extends libp2p.Node {
     if (this.registrationAbortable != null) {
       this.registrationAbortable.abort()
     }
-    super.stop()
+    return super.stop()
   }
 
   register (): Promise<boolean> {

@@ -1,4 +1,4 @@
-const libp2p = require('./base_node')
+const BaseNode = require('./base_node')
 const PeerId = require('peer-id')
 const PeerInfo = require('peer-info')
 const PeerBook = require('peer-book')
@@ -12,7 +12,7 @@ import type { LookupPeerRequestMsg, LookupPeerResponseMsg } from '../protobuf/ty
 
 const DEFAULT_LISTEN_ADDR = Multiaddr('/ip4/127.0.0.1/tcp/9000')
 
-class DirectoryNode extends libp2p.Node {
+class DirectoryNode extends BaseNode {
   registeredPeers: PeerBook
   abortables: Set<Abortable>
 
