@@ -89,12 +89,18 @@ function pullToPromise<T> (...streams: Array<Function>): Promise<T> {
  */
 function pullRepeatedly (value: any, interval: number = 1000): Function {
   let intervalStart: ?Date = null
+  let timeoutId: ?number = null
   function intervalElapsed () {
     return intervalStart == null || (new Date().getTime() - intervalStart >= interval)
   }
 
   return function send (end, cb) {
-    if (end) return cb(end)
+    if (end) {
+      if (timeoutId != null) {
+        clearTimeout(timeoutId)
+      }
+      return cb(end)
+    }
 
     if (intervalElapsed()) {
       cb(null, value)
@@ -103,7 +109,7 @@ function pullRepeatedly (value: any, interval: number = 1000): Function {
     }
     if (intervalStart == null) intervalStart = new Date()
     const elapsedTime = new Date().getTime() - intervalStart
-    setTimeout(send, interval - elapsedTime, end, cb)
+    timeoutId = setTimeout(send, interval - elapsedTime, end, cb)
   }
 }
 
