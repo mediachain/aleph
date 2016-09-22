@@ -11,6 +11,7 @@ const PeerInfo = require('peer-info')
 const PeerBook = require('peer-book')
 const multiaddr = require('multiaddr')
 const mafmt = require('mafmt')
+const Abortable = require('pull-abortable')
 
 import type { Connection } from 'interface-connection'
 
@@ -22,6 +23,7 @@ class Node {
   peerBook: PeerBook
   swarm: Swarm
   isOnline: boolean
+  abortables: Set<Abortable>
 
   constructor (pInfo: ?PeerInfo, pBook: ?PeerBook) {
     if (!pInfo) {
@@ -55,6 +57,13 @@ class Node {
     })
 
     this.isOnline = false
+    this.abortables = new Set()
+  }
+
+  newAbortable (): Abortable {
+    const abortable = Abortable()
+    this.abortables.add(abortable)
+    return abortable
   }
 
   start (): Promise<void> {
@@ -88,6 +97,10 @@ class Node {
 
     this.isOnline = false
     return new Promise(resolve => {
+      // abort any ongoing pull-stream connections
+      this.abortables.forEach(a => { a.abort() })
+      this.abortables.clear()
+
       this.swarm.close(() => {
         resolve()
       })

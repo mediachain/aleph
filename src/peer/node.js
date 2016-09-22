@@ -5,7 +5,6 @@ const Multiaddr = require('multiaddr')
 const Multihash = require('multihashes')
 const pb = require('../protobuf')
 const pull = require('pull-stream')
-const Abortable = require('pull-abortable')
 const {
   protoStreamEncode,
   protoStreamDecode,
@@ -20,7 +19,6 @@ const DEFAULT_LISTEN_ADDR = Multiaddr('/ip4/127.0.0.1/tcp/9002')
 
 class MediachainNode extends BaseNode {
   directory: PeerInfo
-  registrationAbortable: ?Abortable
 
   constructor (peerId: PeerId, dirInfo: PeerInfo, listenAddrs: Array<Multiaddr> = [DEFAULT_LISTEN_ADDR]) {
     const peerInfo = new PeerInfo(peerId)
@@ -33,26 +31,20 @@ class MediachainNode extends BaseNode {
     this.handle('/mediachain/node/ping', this.pingHandler.bind(this))
   }
 
-  stop (): Promise<void> {
-    if (this.registrationAbortable != null) {
-      this.registrationAbortable.abort()
-    }
-    return super.stop()
-  }
-
   register (): Promise<boolean> {
+    const abortable = this.newAbortable()
+
     return this.dialByPeerInfo(this.directory, '/mediachain/dir/register')
       .then((conn: Connection) => {
         pull(
           pullRepeatedly({
             info: {id: this.peerInfo.id.toB58String()}
           }, 5000),
-          this.registrationAbortable,
+          abortable,
           protoStreamEncode(pb.dir.RegisterPeer),
           conn,
           pull.onEnd(() => {
             console.log('registration connection ended')
-            this.registrationAbortable = null
           })
         )
         return true

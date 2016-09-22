@@ -4,7 +4,6 @@ const PeerInfo = require('peer-info')
 const PeerBook = require('peer-book')
 const Multiaddr = require('multiaddr')
 const pull = require('pull-stream')
-const Abortable = require('pull-abortable')
 const pb = require('../protobuf')
 const { protoStreamDecode, protoStreamEncode, peerInfoProtoUnmarshal } = require('./util')
 import type { Connection } from 'interface-connection'
@@ -14,7 +13,6 @@ const DEFAULT_LISTEN_ADDR = Multiaddr('/ip4/127.0.0.1/tcp/9000')
 
 class DirectoryNode extends BaseNode {
   registeredPeers: PeerBook
-  abortables: Set<Abortable>
 
   constructor (peerId: PeerId, listenAddrs: Array<Multiaddr> = [DEFAULT_LISTEN_ADDR]) {
     const peerInfo = new PeerInfo(peerId)
@@ -23,19 +21,10 @@ class DirectoryNode extends BaseNode {
     })
 
     super(peerInfo)
-    this.abortables = new Set()
     this.registeredPeers = new PeerBook()
     this.handle('/mediachain/dir/register', this.registerHandler.bind(this))
     this.handle('/mediachain/dir/lookup', this.lookupHandler.bind(this))
     this.handle('/mediachain/dir/list', this.listHandler.bind(this))
-  }
-
-  stop (): Promise<void> {
-    this.abortables.forEach(abortable => {
-      abortable.abort()
-    })
-    this.abortables.clear()
-    return super.stop()
   }
 
   registerHandler (conn: Connection) {
@@ -62,8 +51,7 @@ class DirectoryNode extends BaseNode {
       })
     }
 
-    const abortable = Abortable()
-    this.abortables.add(abortable)
+    const abortable = this.newAbortable()
 
     pull(
       conn,
@@ -76,8 +64,7 @@ class DirectoryNode extends BaseNode {
   }
 
   lookupHandler (conn: Connection) {
-    const abortable = Abortable()
-    this.abortables.add(abortable)
+    const abortable = this.newAbortable()
 
     pull(
       conn,
