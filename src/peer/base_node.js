@@ -18,10 +18,10 @@ const OFFLINE_ERROR_MESSAGE = 'The libp2p node is not started yet'
 const IPFS_CODE = 421
 
 class Node {
-  peerInfo: PeerInfo;
-  peerBook: PeerBook;
-  swarm: Swarm;
-  isOnline: boolean;
+  peerInfo: PeerInfo
+  peerBook: PeerBook
+  swarm: Swarm
+  isOnline: boolean
 
   constructor (pInfo: ?PeerInfo, pBook: ?PeerBook) {
     if (!pInfo) {
