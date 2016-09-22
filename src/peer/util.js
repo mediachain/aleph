@@ -64,6 +64,18 @@ function peerInfoProtoUnmarshal (pbPeer: PeerInfoMsg): PeerInfo {
 }
 
 /**
+ * Convert a libp2p PeerInfo object into a PeerInfo protobuf message POJO
+ * @param peerInfo a libp2p PeerInfo
+ * @returns a POJO that's encodable to a PeerInfo protobuf message
+ */
+function peerInfoProtoMarshal (peerInfo: PeerInfo): PeerInfoMsg {
+  return {
+    id: peerInfo.id.toB58String(),
+    addr: peerInfo.multiaddrs.map(a => a.buffer)
+  }
+}
+
+/**
  * Like a standard pull-stream `pull`, but returns a Promise that will contain the final value.
  * Use when you want a single value out of a stream, not for long-lived connections, etc.
  * @param streams a pull-stream pipeline of source + through streams.  Do not include a sink,
@@ -118,6 +130,7 @@ module.exports = {
   protoStreamDecode,
   lookupResponseToPeerInfo,
   peerInfoProtoUnmarshal,
+  peerInfoProtoMarshal,
   pullToPromise,
   pullRepeatedly
 }

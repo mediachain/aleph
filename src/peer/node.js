@@ -8,6 +8,7 @@ const pull = require('pull-stream')
 const {
   protoStreamEncode,
   protoStreamDecode,
+  peerInfoProtoMarshal,
   lookupResponseToPeerInfo,
   pullToPromise,
   pullRepeatedly
@@ -38,12 +39,14 @@ class MediachainNode extends BaseNode {
 
     const abortable = this.newAbortable()
 
+    const req = {
+      info: peerInfoProtoMarshal(this.peerInfo)
+    }
+
     return this.dialByPeerInfo(this.directory, '/mediachain/dir/register')
       .then((conn: Connection) => {
         pull(
-          pullRepeatedly({
-            info: {id: this.peerInfo.id.toB58String()}
-          }, 5000 * 60),
+          pullRepeatedly(req, 5000 * 60),
           abortable,
           protoStreamEncode(pb.dir.RegisterPeer),
           conn,
