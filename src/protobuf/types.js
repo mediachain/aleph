@@ -49,3 +49,5 @@ export type StatementMsg = {
   namespace?: string,
   body: SimpleStatementMsg | CompoundStatementMsg,
 };
+
+export type ProtoCodec<T> = { encode: (obj: T) => Buffer, decode: (buf: Buffer) => T }

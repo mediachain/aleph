@@ -6,7 +6,9 @@ const Multihash = require('multihashes')
 const pb = require('../protobuf')
 const pull = require('pull-stream')
 const lp = require('pull-length-prefixed')
-const { protoStreamSource, protoStreamThrough, lookupResponseToPeerInfo, pullToPromise } = require('./util')
+const { protoStreamEncode, protoStreamDecode, lookupResponseToPeerInfo, pullToPromise } = require('./util')
+
+import type { Connection } from 'interface-connection'
 
 const DEFAULT_LISTEN_ADDR = Multiaddr('/ip4/127.0.0.1/tcp/9002')
 
@@ -25,17 +27,17 @@ class MediachainNode extends libp2p.Node {
   }
 
   register (): Promise<boolean> {
-    const Request = pb.dir.RegisterPeer
     return this.dialByPeerInfo(this.directory, '/mediachain/dir/register')
-      .then(conn => pullToPromise(
-          protoStreamSource(Request.encode, {
+      .then((conn: Connection) => pullToPromise(
+          pull.values([{
             info: { id: this.peerInfo.id.toB58String() }
-          }),
+          }]),
+          protoStreamEncode(pb.dir.RegisterPeer),
           conn
         ))
   }
 
-  lookup (peerId: string | PeerId): Promise<PeerInfo> {
+  lookup (peerId: string | PeerId): Promise<?PeerInfo> {
     if (peerId instanceof PeerId) {
       peerId = peerId.toB58String()
     } else {
@@ -47,14 +49,12 @@ class MediachainNode extends libp2p.Node {
       }
     }
 
-    const Request = pb.dir.LookupPeerRequest
-    const Response = pb.dir.LookupPeerResponse
-
     return this.dialByPeerInfo(this.directory, '/mediachain/dir/lookup')
-      .then(conn => pullToPromise(
-        protoStreamSource(Request.encode, {id: peerId}),
+      .then((conn: Connection) => pullToPromise(
+        pull.values([{id: peerId}]),
+        protoStreamEncode(pb.dir.LookupPeerRequest),
         conn,
-        protoStreamThrough(Response.decode),
+        protoStreamDecode(pb.dir.LookupPeerResponse),
         pull.map(lookupResponseToPeerInfo),
         )
       )
@@ -68,25 +68,22 @@ class MediachainNode extends libp2p.Node {
       peerInfoPromise = this.lookup(peer)
     }
 
-    const Request = pb.node.Ping
-    const Response = pb.node.Pong
-
     return peerInfoPromise
       .then(peerInfo => this.dialByPeerInfo(peerInfo, '/mediachain/node/ping'))
-      .then(conn => pullToPromise(
-        protoStreamSource(Request.encode, {}),
+      .then((conn: Connection) => pullToPromise(
+        pull.values([{}]),
+        protoStreamEncode(pb.node.Ping),
         conn,
-        protoStreamThrough(Response.decode),
+        protoStreamDecode(pb.node.Pong),
         pull.map(_ => { return true })
       ))
   }
 
-  pingHandler (conn: Function) {
+  pingHandler (conn: Connection) {
     pull(
       conn,
-      protoStreamThrough(pb.node.Ping.decode),
-      pull.map(() => pb.node.Pong.encode({})),
-      lp.encode(),
+      protoStreamDecode(pb.node.Ping),
+      protoStreamEncode(pb.node.Pong),
       conn
     )
   }

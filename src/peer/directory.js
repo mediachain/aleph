@@ -7,6 +7,7 @@ const pull = require('pull-stream')
 const pb = require('../protobuf')
 const lp = require('pull-length-prefixed')
 const { peerInfoProtoUnmarshal } = require('./util')
+import type { Connection } from 'interface-connection'
 
 const DEFAULT_LISTEN_ADDR = Multiaddr('/ip4/127.0.0.1/tcp/9000')
 
@@ -26,7 +27,7 @@ class DirectoryNode extends libp2p.Node {
     this.handle('/mediachain/dir/list', this.listHandler.bind(this))
   }
 
-  registerHandler (conn: Function) {
+  registerHandler (conn: Connection) {
     const Request = pb.dir.RegisterPeer
     pull(
       conn,
@@ -43,11 +44,11 @@ class DirectoryNode extends libp2p.Node {
     )
   }
 
-  lookupHandler (conn: Function) {
+  lookupHandler (conn: Connection) {
     // TODO
   }
 
-  listHandler (conn: Function) {
+  listHandler (conn: Connection) {
 
   }
 }

@@ -6,18 +6,16 @@ const PeerId = require('peer-id')
 const PeerInfo = require('peer-info')
 const lp = require('pull-length-prefixed')
 
-import type { PeerInfoMsg, LookupPeerResponseMsg } from '../protobuf/types'
+import type { PeerInfoMsg, LookupPeerResponseMsg, ProtoCodec } from '../protobuf/types'
 
 /**
- * Encode the objects using the given protobuf encoder, and return them in a pull-stream source
- * @param encoder a `protocol-buffers` encoder function
- * @param protos one or more POJOs that will be encoded to protobufs
- * @returns a pull-stream source function with the encoded protobufs, prefixed with thier varint-encoded size
+ * A through stream that accepts POJOs and encodes them with the given `protocol-buffers` schema
+ * @param codec a `protocol-buffers` schema, containing an `encode` function
+ * @returns a pull-stream through function that will output encoded protos, prefixed with thier varint-encoded size
  */
-function protoStreamSource (encoder: Function, ...protos: Array<Object>): Function {
+function protoStreamEncode<T> (codec: ProtoCodec<T>): Function {
   return pull(
-    pull.values(protos),
-    pull.map(encoder),
+    pull.map(codec.encode),
     lp.encode()
   )
 }
@@ -25,13 +23,13 @@ function protoStreamSource (encoder: Function, ...protos: Array<Object>): Functi
 /**
  * A through-stream that accepts size-prefixed encoded protbufs, decodes with the given decoder function,
  * and emits the decoded POJOs.
- * @param decoder a `protocol-buffers` decoder function
+ * @param codec a `protocol-buffers` schema, containing a `decode` function
  * @returns a through-stream function that can be wired into a pull-stream pipeline
  */
-function protoStreamThrough (decoder: Function): Function {
+function protoStreamDecode<T> (codec: ProtoCodec<T>): Function {
   return pull(
     lp.decode(),
-    pull.map(decoder)
+    pull.map(codec.decode)
   )
 }
 
@@ -83,8 +81,8 @@ function pullToPromise<T> (...streams: Array<Function>): Promise<T> {
 }
 
 module.exports = {
-  protoStreamSource,
-  protoStreamThrough,
+  protoStreamEncode,
+  protoStreamDecode,
   lookupResponseToPeerInfo,
   peerInfoProtoUnmarshal,
   pullToPromise
