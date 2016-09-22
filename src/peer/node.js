@@ -15,7 +15,7 @@ const {
 
 import type { Connection } from 'interface-connection'
 
-const DEFAULT_LISTEN_ADDR = Multiaddr('/ip4/127.0.0.1/tcp/9002')
+const DEFAULT_LISTEN_ADDR = Multiaddr('/ip4/127.0.0.1/tcp/0')
 
 class MediachainNode extends BaseNode {
   directory: PeerInfo

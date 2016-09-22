@@ -9,7 +9,7 @@ const { protoStreamDecode, protoStreamEncode, peerInfoProtoUnmarshal } = require
 import type { Connection } from 'interface-connection'
 import type { LookupPeerRequestMsg, LookupPeerResponseMsg } from '../protobuf/types'
 
-const DEFAULT_LISTEN_ADDR = Multiaddr('/ip4/127.0.0.1/tcp/9000')
+const DEFAULT_LISTEN_ADDR = Multiaddr('/ip4/127.0.0.1/tcp/0')
 
 class DirectoryNode extends BaseNode {
   registeredPeers: PeerBook
