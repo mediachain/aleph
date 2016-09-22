@@ -80,10 +80,37 @@ function pullToPromise<T> (...streams: Array<Function>): Promise<T> {
   })
 }
 
+/**
+ * A pull-stream source that supplies `value` repeatedly, waiting at least `interval` milliseconds
+ * between pulls.
+ * @param value whatever you want to send
+ * @param interval milliseconds to wait between providing value to consumers
+ * @returns a pull-stream source
+ */
+function pullRepeatedly (value: any, interval: number = 1000): Function {
+  let intervalStart: ?Date = null
+  function intervalElapsed() {
+    return intervalStart == null || (new Date().getTime() - intervalStart >= interval)
+  }
+
+  return function send(end, cb) {
+    if (end) return cb(end)
+
+    if (intervalElapsed()) {
+      cb(null, value)
+      intervalStart = new Date()
+      return
+    }
+    const elapsedTime = new Date().getTime() - intervalStart
+    setTimeout(send, interval - elapsedTime, end, cb)
+  }
+}
+
 module.exports = {
   protoStreamEncode,
   protoStreamDecode,
   lookupResponseToPeerInfo,
   peerInfoProtoUnmarshal,
-  pullToPromise
+  pullToPromise,
+  pullRepeatedly
 }

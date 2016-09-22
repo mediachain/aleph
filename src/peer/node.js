@@ -5,8 +5,15 @@ const Multiaddr = require('multiaddr')
 const Multihash = require('multihashes')
 const pb = require('../protobuf')
 const pull = require('pull-stream')
+const Abortable = require('pull-abortable')
 const lp = require('pull-length-prefixed')
-const { protoStreamEncode, protoStreamDecode, lookupResponseToPeerInfo, pullToPromise } = require('./util')
+const {
+  protoStreamEncode,
+  protoStreamDecode,
+  lookupResponseToPeerInfo,
+  pullToPromise,
+  pullRepeatedly
+} = require('./util')
 
 import type { Connection } from 'interface-connection'
 
@@ -14,6 +21,7 @@ const DEFAULT_LISTEN_ADDR = Multiaddr('/ip4/127.0.0.1/tcp/9002')
 
 class MediachainNode extends libp2p.Node {
   directory: PeerInfo
+  registrationAbortable: ?Abortable
 
   constructor (peerId: PeerId, dirInfo: PeerInfo, listenAddrs: Array<Multiaddr> = [DEFAULT_LISTEN_ADDR]) {
     const peerInfo = new PeerInfo(peerId)
@@ -26,15 +34,30 @@ class MediachainNode extends libp2p.Node {
     this.handle('/mediachain/node/ping', this.pingHandler.bind(this))
   }
 
+  stop (): Promise<void> {
+    if (this.registrationAbortable != null) {
+      this.registrationAbortable.abort()
+    }
+    super.stop()
+  }
+
   register (): Promise<boolean> {
     return this.dialByPeerInfo(this.directory, '/mediachain/dir/register')
-      .then((conn: Connection) => pullToPromise(
-          pull.values([{
-            info: { id: this.peerInfo.id.toB58String() }
-          }]),
+      .then((conn: Connection) => {
+        pull(
+          pullRepeatedly({
+            info: {id: this.peerInfo.id.toB58String()}
+          }, 5000),
+          this.registrationAbortable,
           protoStreamEncode(pb.dir.RegisterPeer),
-          conn
-        ))
+          conn,
+          pull.onEnd(() => {
+            console.log('registration connection ended')
+            this.registrationAbortable = null
+          })
+        )
+        return true
+      })
   }
 
   lookup (peerId: string | PeerId): Promise<?PeerInfo> {

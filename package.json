@@ -37,6 +37,7 @@
     "peer-id": "^0.7.0",
     "peer-info": "^0.7.0",
     "protocol-buffers": "^3.1.6",
+    "pull-abortable": "^4.1.0",
     "pull-length-prefixed": "^1.2.0",
     "pull-stream": "^3.4.5",
     "rest": "^2.0.0",
@@ -51,6 +52,7 @@
     "eslint-plugin-flowtype": "^2.18.2",
     "interface-connection": "^0.2.1",
     "mocha": "^3.0.2",
+    "mocha-eventually": "^1.1.0",
     "standard": "^8.1.0"
   },
   "standard": {

@@ -6,7 +6,7 @@ const Multiaddr = require('multiaddr')
 const pull = require('pull-stream')
 const pb = require('../protobuf')
 const lp = require('pull-length-prefixed')
-const { peerInfoProtoUnmarshal } = require('./util')
+const { protoStreamDecode, peerInfoProtoUnmarshal } = require('./util')
 import type { Connection } from 'interface-connection'
 
 const DEFAULT_LISTEN_ADDR = Multiaddr('/ip4/127.0.0.1/tcp/9000')
@@ -28,19 +28,38 @@ class DirectoryNode extends libp2p.Node {
   }
 
   registerHandler (conn: Connection) {
-    const Request = pb.dir.RegisterPeer
+    // for some reason, conn.peerInfo is always null here,
+    // so we store the peerInfo from the register message
+    let peerForConn: ?PeerInfo = null
+
+    const sink = () => (read: Function) => {
+      read(null, function next(end: ?(boolean | Error), peerInfo: ?PeerInfo) {
+        console.log('register sink ', end, peerInfo)
+        if (end === true) {
+          console.log('unregistering peer')
+          if (peerForConn) {
+            this.registeredPeers.removeByB58String(peerForConn.id.toB58String())
+            return
+          }
+        }
+
+        if (end) throw end
+
+        if (peerInfo) {
+          console.log('registering peer')
+          peerForConn = peerInfo
+          this.registeredPeers.put(peerInfo)
+        }
+        read(null, next)
+      })
+    }
+
     pull(
       conn,
-      lp.decode(),
-      pull.map(Request.decode),
+      protoStreamDecode(pb.dir.RegisterPeer),
       pull.map(req => req.info),
       pull.map(peerInfoProtoUnmarshal),
-      pull.through(peerInfo => {
-        this.registeredPeers.put(peerInfo)
-      }),
-      pull.map(() => new Buffer('')),
-      lp.encode(),
-      conn
+      sink
     )
   }
 
