@@ -25,13 +25,22 @@ class RestClient {
     return this.peerUrl + absPath
   }
 
+  req (path: string, args: Object = {}): Promise<RestResponse> {
+    args.path = this._makeUrl(path)
+    return this.client(args)
+      .catch(errorResponse => {
+        const err = errorResponse.error || new Error(errorResponse.entity || 'unknown error')
+        err.response = errorResponse
+        throw err
+      })
+  }
+
   getRequest (path: string): Promise<RestResponse> {
-    return this.client(this._makeUrl(path))
+    return this.req(path)
   }
 
   postRequest (path: string, body: Object | string, isJSON: boolean = true): Promise<RestResponse> {
-    return this.client({
-      path: this._makeUrl(path),
+    return this.req(path, {
       method: 'POST',
       headers: isJSON ? { 'Content-Type': 'application/json' } : {},
       entity: isJSON ? JSON.stringify(body) : body
@@ -39,58 +48,54 @@ class RestClient {
   }
 
   id (): Promise<string> {
-    return unpack(this.getRequest('id'))
+    return this.getRequest('id')
+      .then(r => r.entity)
   }
 
   ping (peerId: string): Promise<bool> {
-    return unpack(this.getRequest(`ping/${peerId}`))
+    return this.getRequest(`ping/${peerId}`)
       .then(response => true)
   }
 
   publish (namespace: string, statement: SimpleStatement): Promise<string> {
     console.log(`publishing ${JSON.stringify(statement)} to ${namespace}`)
-    return unpack(this.postRequest(`publish/${namespace}`, statement))
+    return this.postRequest(`publish/${namespace}`, statement)
+      .then(r => r.entity)
   }
 
   statement (statementId: string): Promise<Statement> {
-    return unpack(this.getRequest(`stmt/${statementId}`))
+    return this.getRequest(`stmt/${statementId}`)
+      .then(r => r.entity)
       .then(JSON.parse)
   }
 
   query (queryString: string): Promise<Object> {
-    return unpack(this.postRequest('query', queryString, false))
+    return this.postRequest('query', queryString, false)
+      .then(r => r.entity)
       .then(JSON.parse)
   }
 
   getStatus (): Promise<NodeStatus> {
-    return unpack(this.getRequest('status'))
+    return this.getRequest('status')
+      .then(r => r.entity)
       .then(validateStatus)
   }
 
   setStatus (status: NodeStatus): Promise<NodeStatus> {
-    return unpack(this.postRequest(`status/${status}`, '', false))
+    return this.postRequest(`status/${status}`, '', false)
+      .then(r => r.entity)
       .then(validateStatus)
   }
 
   getDirectoryId (): Promise<string> {
-    return unpack(this.getRequest('config/dir'))
+    return this.getRequest('config/dir')
+      .then(r => r.entity)
   }
 
   setDirectoryId (id: string): Promise<boolean> {
-    return unpack(this.postRequest('config/dir', id, false))
+    return this.postRequest('config/dir', id, false)
       .then(() => true)
   }
-}
-
-function unpack (responsePromise: Promise<RestResponse>): Promise<string> {
-  return responsePromise.then(
-    response => response.entity,
-    errorResponse => {
-      const err = errorResponse.error || new Error(errorResponse.entity || 'unknown error')
-      err.response = errorResponse
-      return Promise.reject(err)
-    }
-  )
 }
 
 function validateStatus (status: string): NodeStatus {
