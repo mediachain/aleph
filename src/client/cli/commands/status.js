@@ -28,6 +28,9 @@ module.exports = {
         return
     }
     client.setStatus(status)
-      .then(returnedStatus => console.log(`status set to ${returnedStatus}`))
+      .then(
+        returnedStatus => console.log(`status set to ${returnedStatus}`),
+        err => console.error(err.message)
+      )
   }
 }
