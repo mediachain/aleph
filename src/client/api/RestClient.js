@@ -53,17 +53,18 @@ class RestClient {
   }
 
   statement (statementId: string): Promise<Statement> {
-    return unpack(this.getRequest(`stmt/${statementId}`), true)
+    return unpack(this.getRequest(`stmt/${statementId}`))
+      .then(JSON.parse)
   }
 
   getStatus (): Promise<NodeStatus> {
     return unpack(this.getRequest('/status'))
+      .then(validateStatus)
   }
 
   setStatus (status: NodeStatus): Promise<NodeStatus> {
-    return unpack(
-      this.postRequest(`/status/${status}`, '', false)
-    )
+    return unpack(this.postRequest(`/status/${status}`, '', false))
+      .then(validateStatus)
   }
 
   getDirectoryId (): Promise<string> {
@@ -76,15 +77,25 @@ class RestClient {
   }
 }
 
-function unpack(responsePromise: Promise<RestResponse>, isJSON: boolean = false): Promise<string | Object> {
+function unpack (responsePromise: Promise<RestResponse>): Promise<string> {
   return responsePromise.then(
-    response => isJSON ? JSON.parse(response.entity) : response.entity,
+    response => response.entity,
     errorResponse => {
       const err = errorResponse.error || new Error(errorResponse.entity || 'unknown error')
       err.response = errorResponse
       return Promise.reject(err)
     }
   )
+}
+
+function validateStatus (status: string): NodeStatus {
+  switch (status) {
+    case 'online':
+    case 'offline':
+    case 'public':
+      return status
+  }
+  throw new Error(`Unknown status: ${status}`)
 }
 
 module.exports = RestClient
