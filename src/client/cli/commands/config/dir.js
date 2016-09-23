@@ -15,7 +15,10 @@ module.exports = {
         })
     } else {
       return client.getDirectoryId()
-        .then(console.log)
+        .then(
+          console.log,
+          err => console.error(err.message)
+        )
     }
   }
 }

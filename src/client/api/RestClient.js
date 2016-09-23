@@ -79,7 +79,11 @@ class RestClient {
 function unpack(responsePromise: Promise<RestResponse>, isJSON: boolean = false): Promise<string | Object> {
   return responsePromise.then(
     response => isJSON ? JSON.parse(response.entity) : response.entity,
-    errorResponse => Promise.reject(new Error(errorResponse.entity))
+    errorResponse => {
+      const err = errorResponse.error || new Error(errorResponse.entity || 'unknown error')
+      err.response = errorResponse
+      return Promise.reject(err)
+    }
   )
 }
 
