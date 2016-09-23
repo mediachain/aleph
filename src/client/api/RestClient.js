@@ -57,22 +57,27 @@ class RestClient {
       .then(JSON.parse)
   }
 
+  query (queryString: string): Promise<Object> {
+    return unpack(this.postRequest('query', queryString, false))
+      .then(JSON.parse)
+  }
+
   getStatus (): Promise<NodeStatus> {
-    return unpack(this.getRequest('/status'))
+    return unpack(this.getRequest('status'))
       .then(validateStatus)
   }
 
   setStatus (status: NodeStatus): Promise<NodeStatus> {
-    return unpack(this.postRequest(`/status/${status}`, '', false))
+    return unpack(this.postRequest(`status/${status}`, '', false))
       .then(validateStatus)
   }
 
   getDirectoryId (): Promise<string> {
-    return unpack(this.getRequest('/config/dir'))
+    return unpack(this.getRequest('config/dir'))
   }
 
   setDirectoryId (id: string): Promise<boolean> {
-    return unpack(this.postRequest('/config/dir', id, false))
+    return unpack(this.postRequest('config/dir', id, false))
       .then(() => true)
   }
 }
