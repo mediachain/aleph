@@ -5,6 +5,8 @@ const errorCode = require('rest/interceptor/errorCode')
 
 import type { Statement, SimpleStatement } from '../../types/statement'
 
+export type NodeStatus = 'online' | 'offline' | 'public'
+
 class RestClient {
   peerUrl: string;
   client: Function;
@@ -25,14 +27,12 @@ class RestClient {
     return this.client(this._makeUrl(path))
   }
 
-  postRequest (path: string, body: Object): Promise<Object> {
+  postRequest (path: string, body: Object | string, isJSON: boolean = true): Promise<Object> {
     return this.client({
       path: this._makeUrl(path),
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      entity: JSON.stringify(body)
+      headers: isJSON ? { 'Content-Type': 'application/json' } : {},
+      entity: isJSON ? JSON.stringify(body) : body
     })
   }
 
@@ -55,6 +55,26 @@ class RestClient {
   statement (statementId: string): Promise<Statement> {
     return this.getRequest(`stmt/${statementId}`)
       .then(response => JSON.parse(response.entity))
+  }
+
+  getStatus (): Promise<NodeStatus> {
+    return this.getRequest('/status')
+      .then(response => response.entity)
+  }
+
+  setStatus (status: NodeStatus): Promise<NodeStatus> {
+    return this.postRequest(`/status/${status}`, '', false)
+      .then(response => response.entity)
+  }
+
+  getDirectoryId (): Promise<string> {
+    return this.getRequest('/config/dir')
+      .then(response => response.entity)
+  }
+
+  setDirectoryId (id: string): Promise<boolean> {
+    return this.postRequest('/config/dir', id, false)
+      .then(() => true)
   }
 }
 
