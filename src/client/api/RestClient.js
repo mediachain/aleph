@@ -89,13 +89,14 @@ function unpack (responsePromise: Promise<RestResponse>): Promise<string> {
 }
 
 function validateStatus (status: string): NodeStatus {
+  status = status.trim()
   switch (status) {
     case 'online':
     case 'offline':
     case 'public':
       return status
   }
-  throw new Error(`Unknown status: ${status}`)
+  throw new Error(`Unknown status: "${status}"`)
 }
 
 module.exports = RestClient
