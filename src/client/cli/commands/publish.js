@@ -12,8 +12,8 @@ module.exports = {
 
     client.publish(namespace, {object: statement})
       .then(
-        response => { console.log(response) },
-        err => { console.error(err) }
+        console.log,
+        err => console.error(err.message)
       )
   }
 }

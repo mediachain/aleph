@@ -10,7 +10,7 @@ module.exports = {
     const client = new RestClient({peerUrl})
     client.id().then(
       response => { console.log(response) },
-      err => { console.error(err) }
+      err => { console.error(err.message) }
     )
   }
 }
