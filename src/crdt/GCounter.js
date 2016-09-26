@@ -7,16 +7,16 @@ class GCounter {
   _values: Map<ReplicaID, number>
   id: ReplicaID
 
-  constructor(id: ReplicaID) {
+  constructor (id: ReplicaID) {
     this.id = id
     this._values = new Map()
   }
 
-  inc (amount: Number = 1): GCounterDelta {
+  inc (amount: number = 1): GCounterDelta {
     const res = new GCounterDelta()
     const val = this.localValue() + amount
     this._values.set(this.id, val)
-    res._values.set(this.id,  val)
+    res._values.set(this.id, val)
     return res
   }
 
@@ -32,7 +32,7 @@ class GCounter {
     return this._values.get(this.id) || 0
   }
 
-  equals(other: GCounter | GCounterDelta): boolean {
+  equals (other: GCounter | GCounterDelta): boolean {
     return mapEquals(this._values, other._values)
   }
 

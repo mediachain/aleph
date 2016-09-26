@@ -7,7 +7,7 @@ class PNCounter {
   _p: GCounter
   _n: GCounter
 
-  constructor(id: ReplicaID) {
+  constructor (id: ReplicaID) {
     this._p = new GCounter(id)
     this._n = new GCounter(id)
   }

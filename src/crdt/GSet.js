@@ -17,14 +17,14 @@ class GSet<T> {
     return this._values.has(val)
   }
 
-  add (val: T): GSet {
+  add (val: T): GSet<T> {
     const res = new GSet()
     this._values.add(val)
     res._values.add(val)
     return res
   }
 
-  join (other: GSet) {
+  join (other: GSet<T>) {
     this._values = mergeSets(this._values, other._values)
   }
 }
