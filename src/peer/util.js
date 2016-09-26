@@ -6,7 +6,7 @@ const Multiaddr = require('multiaddr')
 const PeerId = require('peer-id')
 const PeerInfo = require('peer-info')
 
-import type { LookupPeerResponse } from '../protobuf/types'
+import type { LookupPeerResponseMsg } from '../protobuf/types'
 
 /**
  * Encode the objects using the given protobuf encoder, and return them in a pull-stream source
@@ -97,7 +97,7 @@ function sizePrefixedProtoDecode (decoder: Function, buffers: Array<Buffer>): an
  * @param resp a LookupPeerResponse protobuf, decoded into a POJO
  * @returns a libp2p PeerInfo object, or null if lookup failed
  */
-function lookupResponseToPeerInfo (resp: LookupPeerResponse): ?PeerInfo {
+function lookupResponseToPeerInfo (resp: LookupPeerResponseMsg): ?PeerInfo {
   const peer = resp.peer
   if (peer == null) return null
 

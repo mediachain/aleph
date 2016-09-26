@@ -3,7 +3,7 @@
 const rest = require('rest')
 const errorCode = require('rest/interceptor/errorCode')
 
-import type { Statement, SimpleStatement } from '../../protobuf/types'
+import type { StatementMsg, SimpleStatementMsg } from '../../protobuf/types'
 
 export type NodeStatus = 'online' | 'offline' | 'public'
 
@@ -57,13 +57,13 @@ class RestClient {
       .then(response => true)
   }
 
-  publish (namespace: string, statement: SimpleStatement): Promise<string> {
+  publish (namespace: string, statement: SimpleStatementMsg): Promise<string> {
     console.log(`publishing ${JSON.stringify(statement)} to ${namespace}`)
     return this.postRequest(`publish/${namespace}`, statement)
       .then(r => r.entity)
   }
 
-  statement (statementId: string): Promise<Statement> {
+  statement (statementId: string): Promise<StatementMsg> {
     return this.getRequest(`stmt/${statementId}`)
       .then(r => r.entity)
       .then(JSON.parse)

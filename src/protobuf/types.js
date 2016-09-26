@@ -2,50 +2,50 @@
 // flow types for protobuf messages.  resisting urge to write automatic flow code generator for these
 
 // dir.proto
-export type PeerInfo = {
+export type PeerInfoMsg = {
   id: string,
   addr: Array<Buffer>
 }
 
-export type RegisterPeer = {
-  info: PeerInfo
+export type RegisterPeerMsg = {
+  info: PeerInfoMsg
 }
 
-export type LookupPeerRequest = {
+export type LookupPeerRequestMsg = {
   id: string
 }
 
-export type LookupPeerResponse = {
-  peer: ?PeerInfo
+export type LookupPeerResponseMsg = {
+  peer: ?PeerInfoMsg
 }
 
-export type ListPeersRequest = {
+export type ListPeersRequestMsg = {
 }
 
-export type ListPeersResponse = {
-  peers: Array<PeerInfo>
+export type ListPeersResponseMsg = {
+  peers: Array<PeerInfoMsg>
 }
 
 // node.proto
 
-export type Ping = { }
-export type Pong = { }
+export type PingMsg = { }
+export type PongMsg = { }
 
 // stmt.proto
 
-export type SimpleStatement = {
+export type SimpleStatementMsg = {
   object: string,
   refs?: Array<string>,
   tags?: Array<string>,
 };
 
-export type CompoundStatement = {
-  body: Array<SimpleStatement>
+export type CompoundStatementMsg = {
+  body: Array<SimpleStatementMsg>
 };
 
-export type Statement = {
+export type StatementMsg = {
   id?: string,
   publisher?: string,
   namespace?: string,
-  body: SimpleStatement | CompoundStatement,
+  body: SimpleStatementMsg | CompoundStatementMsg,
 };
