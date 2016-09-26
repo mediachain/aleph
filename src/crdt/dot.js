@@ -1,6 +1,7 @@
 // @flow
 
-const { mergeSets } = require('./util')
+const { mergeSets, mapEquals, setEquals } = require('./util')
+import type { CRDT } from './index'
 
 // really a positive integer, but no way to encode that as a type
 type DotClock = number
@@ -42,6 +43,13 @@ class DotContext<K> {
   constructor () {
     this.causalContext = new Map()
     this.dotCloud = new Set()
+  }
+
+  equals (other: DotContext<K>): boolean {
+    if (!other instanceof DotContext) return false
+    if (!mapEquals(this.causalContext, other.causalContext)) return false
+    if (!setEquals(this.dotCloud, other.dotCloud)) return false
+    return true
   }
 
   hasDot (dot: Dot<K> | string): boolean {
@@ -123,6 +131,118 @@ class DotContext<K> {
 
     this.dotCloud = mergeSets(this.dotCloud, other.dotCloud)
     this.compact()
+  }
+}
+
+class DotKernel<K, V: CRDT> {
+  dots: Map<string, V> // map of (stringified) dots to values
+  context: DotContext<K>  // a (possibly shared) context for dot generation
+
+  constructor (context: ?DotContext<K>) {
+    if (!context) {
+      context = new DotContext()
+    }
+    this.context = context
+    this.dots = new Map()
+  }
+
+  equals (other: DotKernel<K, V>): boolean {
+    if (!other instanceof DotKernel) return false
+    if (!mapEquals(this.dots, other.dots)) return false
+    return this.context.equals(other.context)
+  }
+
+  join (other: DotKernel<K, V>) {
+    if (this === other) return
+
+    const allDots = mergeSets(this.dots.keys(), other.dots.keys())
+
+    for (const dotString of allDots) {
+      const ourVal = this.dots.get(dotString)
+      const theirVal = this.dots.get(dotString)
+      if (ourVal && !theirVal) {
+        // dot is only in this kernel, not other
+        if (other.context.hasDot(dotString)) {
+          // if the other kernel knows this dot (has seen a different version)
+          // but doesn't have it now, we delete it from our dots
+          this.dots.delete(dotString)
+        }
+      } else if (theirVal && !ourVal) {
+        // dot is only in other kernel
+        if (!this.context.hasDot(dotString)) {
+          // if dot is not in my context, import it
+          this.dots.set(dotString, theirVal)
+        }
+      } else if (ourVal && theirVal) { // redundant, but makes flow happy
+        // dot is in both kernels
+        // If the payload is different, join the two CRDTs
+
+        if (!ourVal.equals(theirVal)) {
+          ourVal.join(theirVal)
+        }
+      }
+    }
+
+    // join our dot context with theirs
+    this.context.join(other.context)
+  }
+
+  /// add the key/value pair, returning a DotKernel delta
+  add (key: K, val: V): DotKernel<K, V> {
+    const delta = new DotKernel()
+    const dot = this.context.makeDot(key)
+    const dotString = dot.toString()
+    this.dots.set(dotString, val)
+    delta.dots.set(dotString, val)
+    delta.context.insertDot(dot)
+    return delta
+  }
+
+  /// add the key/value pair, but return the added dot instead of a kernel delta
+  dotAdd (key: K, val: V): Dot<K> {
+    const dot = this.context.makeDot(key)
+    this.dots.set(dot.toString(), val)
+    return dot
+  }
+
+  // remove all dots matching value, returning a DotKernel delta
+  removeValue (val: V) {
+    const delta = new DotKernel()
+    for (const [dotString, value] of this.dots) {
+      if (value.equals(val)) {
+        this.dots.delete(dotString)
+        // delta knows about removed dots
+        delta.context.insertDot(dotString)
+      }
+    }
+
+    delta.context.compact()
+    return delta
+  }
+
+  /// remove a dot
+  removeDot (dot: Dot<K>): DotKernel<K, V> {
+    const delta = new DotKernel()
+    const dotString = dot.toString()
+    const entry = this.dots.get(dotString)
+    if (entry) {
+      this.dots.delete(dotString)
+      // delta knows about removed dots
+      delta.context.insertDot(dot)
+    }
+    delta.context.compact()
+    return delta
+  }
+
+  /// remove all dots
+  clear (): DotKernel<K, V> {
+    const delta = new DotKernel()
+    for (const dotString of this.dots.keys()) {
+      delta.insertDot(dotString)
+    }
+    delta.context.compact()
+    this.dots.clear() // clear the payload, but remember context
+    return delta
   }
 }
 
