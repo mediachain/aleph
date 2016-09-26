@@ -9,9 +9,13 @@ if [ -e "$HOME/.nvm/nvm.sh" ]; then
 fi
 
 # stash un-staged changes
-NUM_STASHES_BEFORE=$(git stash list | wc -l)
+STASH_REF_BEFORE=$(git rev-parse --verify -q refs/stash 2>/dev/null)
+if [ $? -ne 0 ]; then
+    STASH_REF_BEFORE="No stashes"
+fi
+
 git stash -q --keep-index
-NUM_STASHES_AFTER=$(git stash list | wc -l)
+STASH_REF_AFTER=$(git rev-parse --verify -q refs/stash 2>/dev/null)
 
 # run standard (code style enforcer), flow, and tests
 npm run check && npm run test
@@ -19,7 +23,7 @@ npm run check && npm run test
 RESULT=$?
 
 # un-stash, if the previous stash command actually created a stash
-if [ "$NUM_STASHES_AFTER" -gt "$NUM_STASHES_BEFORE" ]; then
+if [ "$STASH_REF_BEFORE" != "$STASH_REF_AFTER" ]; then
     git stash pop -q
 fi
 
