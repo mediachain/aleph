@@ -11,5 +11,11 @@ module.exports = {
       }
     }
     return true
+  },
+
+  mergeSets: function mergeSets<T> (a: Set<T>, b: Set<T>): Set<T> {
+    // this awkward generator function expression avoids copying the contents of a and b
+    // to an intermediate array
+    return new Set(function* () { yield* a; yield* b }())
   }
 }

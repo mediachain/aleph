@@ -52,4 +52,7 @@ class GCounterDelta {
   }
 }
 
-module.exports = GCounter
+module.exports = {
+  GCounter,
+  GCounterDelta
+}
