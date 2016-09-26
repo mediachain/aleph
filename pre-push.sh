@@ -10,10 +10,6 @@ fi
 
 # stash un-staged changes
 STASH_REF_BEFORE=$(git rev-parse --verify -q refs/stash 2>/dev/null)
-if [ $? -ne 0 ]; then
-    STASH_REF_BEFORE="No stashes"
-fi
-
 git stash -q --keep-index
 STASH_REF_AFTER=$(git rev-parse --verify -q refs/stash 2>/dev/null)
 
