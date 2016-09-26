@@ -25,18 +25,13 @@ class P2PNode {
   isOnline: boolean
   abortables: Set<Abortable>
 
-  constructor (pInfo: ?PeerInfo, pBook: ?PeerBook) {
+  constructor (pInfo: ?PeerInfo, pBook: PeerBook = new PeerBook()) {
+    this.isOnline = false
+
     if (!pInfo) {
       pInfo = new PeerInfo()
       pInfo.multiaddr.add(multiaddr('/ip4/0.0.0.0/tcp/0'))
     }
-
-    if (!pBook) {
-      pBook = new PeerBook()
-    }
-
-    this.peerInfo = pInfo
-    this.peerBook = pBook
 
     this.peerInfo = pInfo
     this.peerBook = pBook
@@ -56,7 +51,6 @@ class P2PNode {
       this.peerBook.removeByB58String(peerInfo.id.toB58String())
     })
 
-    this.isOnline = false
     this.abortables = new Set()
   }
 
@@ -101,9 +95,7 @@ class P2PNode {
       this.abortables.forEach(a => { a.abort() })
       this.abortables.clear()
 
-      this.swarm.close(() => {
-        resolve()
-      })
+      this.swarm.close(resolve)
     })
   }
 
@@ -188,8 +180,8 @@ class P2PNode {
     })[0][1]
 
     try {
-      const pi = this.peerBook.getByB58String(ipfsIdB58String)
-      return this.hangUpByPeerInfo(pi)
+      const peerInfo = this.peerBook.getByB58String(ipfsIdB58String)
+      return this.hangUpByPeerInfo(peerInfo)
     } catch (err) {
       // already disconnected
       return Promise.resolve()
