@@ -18,7 +18,7 @@ import type { Connection } from 'interface-connection'
 const OFFLINE_ERROR_MESSAGE = 'The libp2p node is not started yet'
 const IPFS_CODE = 421
 
-class Node {
+class P2PNode {
   peerInfo: PeerInfo
   peerBook: PeerBook
   swarm: Swarm
@@ -216,4 +216,4 @@ class Node {
   }
 }
 
-module.exports = Node
+module.exports = P2PNode

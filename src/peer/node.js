@@ -1,4 +1,4 @@
-const BaseNode = require('./base_node')
+const P2PNode = require('./libp2p_node')
 const PeerId = require('peer-id')
 const PeerInfo = require('peer-info')
 const Multiaddr = require('multiaddr')
@@ -19,7 +19,7 @@ import type { Connection } from 'interface-connection'
 const DEFAULT_LISTEN_ADDR = Multiaddr('/ip4/127.0.0.1/tcp/0')
 
 class MediachainNode {
-  p2p: BaseNode
+  p2p: P2PNode
   directory: ?PeerInfo
 
   constructor (peerId: PeerId, dirInfo: ?PeerInfo, listenAddrs: Array<Multiaddr> = [DEFAULT_LISTEN_ADDR]) {
@@ -28,7 +28,7 @@ class MediachainNode {
       peerInfo.multiaddr.add(addr)
     })
 
-    this.p2p = new BaseNode(peerInfo)
+    this.p2p = new P2PNode(peerInfo)
     this.directory = dirInfo
     this.p2p.handle('/mediachain/node/ping', this.pingHandler.bind(this))
   }

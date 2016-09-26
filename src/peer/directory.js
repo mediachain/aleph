@@ -1,4 +1,4 @@
-const BaseNode = require('./base_node')
+const P2PNode = require('./libp2p_node')
 const PeerId = require('peer-id')
 const PeerInfo = require('peer-info')
 const PeerBook = require('peer-book')
@@ -12,7 +12,7 @@ import type { LookupPeerRequestMsg, LookupPeerResponseMsg } from '../protobuf/ty
 const DEFAULT_LISTEN_ADDR = Multiaddr('/ip4/127.0.0.1/tcp/0')
 
 class DirectoryNode {
-  p2p: BaseNode
+  p2p: P2PNode
   registeredPeers: PeerBook
 
   constructor (peerId: PeerId, listenAddrs: Array<Multiaddr> = [DEFAULT_LISTEN_ADDR]) {
@@ -21,7 +21,7 @@ class DirectoryNode {
       peerInfo.multiaddr.add(addr)
     })
 
-    this.p2p = new BaseNode(peerInfo)
+    this.p2p = new P2PNode(peerInfo)
     this.registeredPeers = new PeerBook()
     this.p2p.handle('/mediachain/dir/register', this.registerHandler.bind(this))
     this.p2p.handle('/mediachain/dir/lookup', this.lookupHandler.bind(this))
