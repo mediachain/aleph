@@ -18,7 +18,8 @@ import type { Connection } from 'interface-connection'
 
 const DEFAULT_LISTEN_ADDR = Multiaddr('/ip4/127.0.0.1/tcp/0')
 
-class MediachainNode extends BaseNode {
+class MediachainNode {
+  p2p: BaseNode
   directory: ?PeerInfo
 
   constructor (peerId: PeerId, dirInfo: ?PeerInfo, listenAddrs: Array<Multiaddr> = [DEFAULT_LISTEN_ADDR]) {
@@ -27,9 +28,21 @@ class MediachainNode extends BaseNode {
       peerInfo.multiaddr.add(addr)
     })
 
-    super(peerInfo)
+    this.p2p = new BaseNode(peerInfo)
     this.directory = dirInfo
-    this.handle('/mediachain/node/ping', this.pingHandler.bind(this))
+    this.p2p.handle('/mediachain/node/ping', this.pingHandler.bind(this))
+  }
+
+  start (): Promise<void> {
+    return this.p2p.start()
+  }
+
+  stop (): Promise<void> {
+    return this.p2p.stop()
+  }
+
+  get peerInfo (): PeerInfo {
+    return this.p2p.peerInfo
   }
 
   register (): Promise<boolean> {
@@ -37,13 +50,13 @@ class MediachainNode extends BaseNode {
       return Promise.reject(new Error('No known directory server, cannot register'))
     }
 
-    const abortable = this.newAbortable()
+    const abortable = this.p2p.newAbortable()
 
     const req = {
-      info: peerInfoProtoMarshal(this.peerInfo)
+      info: peerInfoProtoMarshal(this.p2p.peerInfo)
     }
 
-    return this.dialByPeerInfo(this.directory, '/mediachain/dir/register')
+    return this.p2p.dialByPeerInfo(this.directory, '/mediachain/dir/register')
       .then((conn: Connection) => {
         pull(
           pullRepeatedly(req, 5000 * 60),
@@ -74,7 +87,7 @@ class MediachainNode extends BaseNode {
       }
     }
 
-    return this.dialByPeerInfo(this.directory, '/mediachain/dir/lookup')
+    return this.p2p.dialByPeerInfo(this.directory, '/mediachain/dir/lookup')
       .then((conn: Connection) => pullToPromise(
         pull.values([{id: peerId}]),
         protoStreamEncode(pb.dir.LookupPeerRequest),
@@ -94,7 +107,7 @@ class MediachainNode extends BaseNode {
     }
 
     return peerInfoPromise
-      .then(peerInfo => this.dialByPeerInfo(peerInfo, '/mediachain/node/ping'))
+      .then(peerInfo => this.p2p.dialByPeerInfo(peerInfo, '/mediachain/node/ping'))
       .then((conn: Connection) => pullToPromise(
         pull.values([{}]),
         protoStreamEncode(pb.node.Ping),

@@ -11,7 +11,8 @@ import type { LookupPeerRequestMsg, LookupPeerResponseMsg } from '../protobuf/ty
 
 const DEFAULT_LISTEN_ADDR = Multiaddr('/ip4/127.0.0.1/tcp/0')
 
-class DirectoryNode extends BaseNode {
+class DirectoryNode {
+  p2p: BaseNode
   registeredPeers: PeerBook
 
   constructor (peerId: PeerId, listenAddrs: Array<Multiaddr> = [DEFAULT_LISTEN_ADDR]) {
@@ -20,11 +21,23 @@ class DirectoryNode extends BaseNode {
       peerInfo.multiaddr.add(addr)
     })
 
-    super(peerInfo)
+    this.p2p = new BaseNode(peerInfo)
     this.registeredPeers = new PeerBook()
-    this.handle('/mediachain/dir/register', this.registerHandler.bind(this))
-    this.handle('/mediachain/dir/lookup', this.lookupHandler.bind(this))
-    this.handle('/mediachain/dir/list', this.listHandler.bind(this))
+    this.p2p.handle('/mediachain/dir/register', this.registerHandler.bind(this))
+    this.p2p.handle('/mediachain/dir/lookup', this.lookupHandler.bind(this))
+    this.p2p.handle('/mediachain/dir/list', this.listHandler.bind(this))
+  }
+
+  start (): Promise<void> {
+    return this.p2p.start()
+  }
+
+  stop (): Promise<void> {
+    return this.p2p.stop()
+  }
+
+  get peerInfo (): PeerInfo {
+    return this.p2p.peerInfo
   }
 
   registerHandler (conn: Connection) {
@@ -51,7 +64,7 @@ class DirectoryNode extends BaseNode {
       })
     }
 
-    const abortable = this.newAbortable()
+    const abortable = this.p2p.newAbortable()
 
     pull(
       conn,
@@ -64,7 +77,7 @@ class DirectoryNode extends BaseNode {
   }
 
   lookupHandler (conn: Connection) {
-    const abortable = this.newAbortable()
+    const abortable = this.p2p.newAbortable()
 
     pull(
       conn,
