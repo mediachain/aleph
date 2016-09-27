@@ -2,7 +2,7 @@
 
 import type { ReplicaID } from './index'
 
-const { Map: IMap, Record } = require('immutable')
+const { Record } = require('immutable')
 const { GCounter, GCounterDelta } = require('./GCounter')
 
 class PNCounter extends Record({p: new GCounter(), n: new GCounter()}) {
@@ -13,10 +13,10 @@ class PNCounter extends Record({p: new GCounter(), n: new GCounter()}) {
     })
   }
 
-  get p(): GCounter { return this.get('p') }
-  get n(): GCounter { return this.get('n') }
+  get p (): GCounter { return this.get('p') }
+  get n (): GCounter { return this.get('n') }
 
-  join(other: PNCounter | PNCounterDelta): PNCounter {
+  join (other: PNCounter | PNCounterDelta): PNCounter {
     return this
       .set('p', this.p.join(other.p))
       .set('n', this.n.join(other.n))
@@ -52,6 +52,11 @@ class PNCounter extends Record({p: new GCounter(), n: new GCounter()}) {
 }
 
 class PNCounterDelta extends Record({p: new GCounterDelta(), n: new GCounterDelta()}) {
-  get p(): GCounterDelta { return this.get('p') }
-  get n(): GCounterDelta { return this.get('n') }
+  get p (): GCounterDelta { return this.get('p') }
+  get n (): GCounterDelta { return this.get('n') }
+}
+
+module.exports = {
+  PNCounter,
+  PNCounterDelta
 }

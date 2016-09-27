@@ -2,8 +2,11 @@
 
 export type ReplicaID = string
 
-export interface CRDT {
-  join(other: CRDT): void,
+export type KeyType = string | number
 
-  equals(other: CRDT): boolean
+// eslint chokes on this interface declaration
+/* eslint-disable no-undef */
+export interface CRDT<T> {
+  join(other: T): T
 }
+/* eslint-enable no-undef */

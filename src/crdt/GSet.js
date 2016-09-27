@@ -1,31 +1,20 @@
 // @flow
 
-const { mergeSets } = require('./util')
+const { Record, Set: ISet } = require('immutable')
 
-class GSet<T> {
-  _values: Set<T>
-
-  constructor () {
-    this._values = new Set()
-  }
-
-  value (): Set<T> {
-    return this._values
-  }
+class GSet<T> extends Record({value: new ISet()}) {
+  get value (): ISet<T> { return this.get('value') }
 
   has (val: T): boolean {
-    return this._values.has(val)
+    return this.value.has(val)
   }
 
   add (val: T): GSet<T> {
-    const res = new GSet()
-    this._values.add(val)
-    res._values.add(val)
-    return res
+    return new GSet({value: this.value.add(val)})
   }
 
-  join (other: GSet<T>) {
-    this._values = mergeSets(this._values, other._values)
+  join (other: GSet<T>): GSet<T> {
+    return new GSet({value: this.value.merge(other.value)})
   }
 }
 

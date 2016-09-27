@@ -51,7 +51,6 @@ class GCounterDelta extends Record({values: new IMap()}, 'GCounterDelta') {
   get values (): IMap<ReplicaID, number> { return this.get('values') }
 }
 
-
 module.exports = {
   GCounter,
   GCounterDelta
