@@ -238,7 +238,7 @@ class DotKernel<K, V: CRDT> {
   clear (): DotKernel<K, V> {
     const delta = new DotKernel()
     for (const dotString of this.dots.keys()) {
-      delta.insertDot(dotString)
+      delta.context.insertDot(dotString)
     }
     delta.context.compact()
     this.dots.clear() // clear the payload, but remember context
