@@ -1,56 +1,56 @@
 // @flow
 
+const { Map: IMap, Record } = require('immutable')
 import type { ReplicaID } from './index'
-const { mapEquals } = require('./util')
 
-class GCounter {
-  _values: Map<ReplicaID, number>
-  id: ReplicaID
+class GCounter extends Record({id: '', values: new IMap()}, 'GCounter') {
+  get id (): ReplicaID { return this.get('id') }
+  get values (): IMap<ReplicaID, number> { return this.get('values') }
 
-  constructor (id: ReplicaID) {
-    this.id = id
-    this._values = new Map()
+  get localValue (): number {
+    return this.values.get(this.id) || 0
   }
 
-  inc (amount: number = 1): GCounterDelta {
-    const res = new GCounterDelta()
-    const val = this.localValue() + amount
-    this._values.set(this.id, val)
-    res._values.set(this.id, val)
-    return res
-  }
-
-  value () {
+  get value (): number {
     let res = 0
-    for (const v of this._values.values()) {
+    for (const v of this.values.values()) {
       res += v
     }
     return res
   }
 
-  localValue () {
-    return this._values.get(this.id) || 0
+  inc (amount: number = 1): GCounter {
+    return this.join(
+      this.incDelta(amount)
+    )
   }
 
-  equals (other: GCounter | GCounterDelta): boolean {
-    return mapEquals(this._values, other._values)
+  incDelta (amount: number = 1): GCounterDelta {
+    const val = this.localValue + amount
+    return new GCounterDelta({
+      values: new IMap([[this.id, val]])
+    })
   }
 
-  join (other: GCounter | GCounterDelta) {
-    for (const [k, v] of other._values.entries()) {
-      const local = this._values.get(k) || 0
-      this._values.set(k, Math.max(local, v))
-    }
+  join (other: GCounter | GCounterDelta): GCounter {
+    // $FlowIgnore the flow definition for mergeWith is broken :(
+    const mergedVals: IMap<ReplicaID, number> =
+      this.values.mergeWith(
+        // $FlowIgnore
+        (aVal, bVal) => Math.max(aVal, bVal),
+        other.values)
+
+    return new GCounter({
+      id: this.id,
+      values: mergedVals
+    })
   }
 }
 
-class GCounterDelta {
-  _values: Map<ReplicaID, number>
-
-  constructor () {
-    this._values = new Map()
-  }
+class GCounterDelta extends Record({values: new IMap()}, 'GCounterDelta') {
+  get values (): IMap<ReplicaID, number> { return this.get('values') }
 }
+
 
 module.exports = {
   GCounter,

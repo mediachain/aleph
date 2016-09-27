@@ -1,54 +1,57 @@
 // @flow
 
 import type { ReplicaID } from './index'
+
+const { Map: IMap, Record } = require('immutable')
 const { GCounter, GCounterDelta } = require('./GCounter')
 
-class PNCounter {
-  _p: GCounter
-  _n: GCounter
-
+class PNCounter extends Record({p: new GCounter(), n: new GCounter()}) {
   constructor (id: ReplicaID) {
-    this._p = new GCounter(id)
-    this._n = new GCounter(id)
+    super({
+      p: new GCounter({id}),
+      n: new GCounter({id})
+    })
   }
 
-  inc (amount: number = 1): PNCounterDelta {
-    const res = new PNCounterDelta()
-    res._p = this._p.inc(amount)
-    return res
+  get p(): GCounter { return this.get('p') }
+  get n(): GCounter { return this.get('n') }
+
+  join(other: PNCounter | PNCounterDelta): PNCounter {
+    return this
+      .set('p', this.p.join(other.p))
+      .set('n', this.n.join(other.n))
   }
 
-  dec (amount: number = 1): PNCounterDelta {
-    const res = new PNCounterDelta()
-    res._n = this._n.inc(amount)
-    return res
+  get localValue (): number {
+    return this.p.localValue - this.n.localValue
   }
 
-  localValue (): number {
-    return this._p.localValue() - this._n.localValue()
+  get value (): number {
+    return this.p.value - this.n.value
   }
 
-  value (): number {
-    return this._p.value() - this._n.value()
+  inc (amount: number = 1): PNCounter {
+    return this.join(this.incDelta(amount))
   }
 
-  join (other: PNCounter | PNCounterDelta) {
-    this._p.join(other._p)
-    this._n.join(other._n)
+  incDelta (amount: number = 1): PNCounterDelta {
+    return new PNCounterDelta({
+      p: this.p.incDelta(amount)
+    })
+  }
+
+  dec (amount: number = 1): PNCounter {
+    return this.join(this.decDelta(amount))
+  }
+
+  decDelta (amount: number = 1): PNCounterDelta {
+    return new PNCounterDelta({
+      n: this.n.incDelta(amount)
+    })
   }
 }
 
-class PNCounterDelta {
-  _p: GCounterDelta
-  _n: GCounterDelta
-
-  constructor () {
-    this._p = new GCounterDelta()
-    this._n = new GCounterDelta()
-  }
-}
-
-module.exports = {
-  PNCounter,
-  PNCounterDelta
+class PNCounterDelta extends Record({p: new GCounterDelta(), n: new GCounterDelta()}) {
+  get p(): GCounterDelta { return this.get('p') }
+  get n(): GCounterDelta { return this.get('n') }
 }

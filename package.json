@@ -24,6 +24,7 @@
   },
   "homepage": "https://github.com/mediachain/aleph#readme",
   "dependencies": {
+    "immutable": "^3.8.1",
     "libp2p-swarm": "^0.22.3",
     "multiaddr": "^2.0.2",
     "peer-info": "^0.7.0",
