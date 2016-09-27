@@ -3,7 +3,7 @@
 const { Record, is: isEqual, Map: IMap, Set: ISet } = require('immutable')
 const { Dot } = require('./Dot')
 const { DotContext } = require('./DotContext')
-import type { CRDT, KeyType } from './index' // eslint-disable-line
+import type { CRDT, KeyType } from './types' // eslint-disable-line
 
 class DotKernel<V: CRDT<*>> extends Record({
   dots: new IMap(),          // IMap<Dot, V> - map of dots to values

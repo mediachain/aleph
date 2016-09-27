@@ -1,6 +1,6 @@
 // @flow
 
-import type { ReplicaID } from './index'
+import type { ReplicaID } from './types'
 
 const { Record } = require('immutable')
 const { GCounter, GCounterDelta } = require('./GCounter')

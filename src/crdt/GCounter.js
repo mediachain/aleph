@@ -1,7 +1,7 @@
 // @flow
 
 const { Map: IMap, Record } = require('immutable')
-import type { ReplicaID } from './index'
+import type { ReplicaID } from './types'
 
 class GCounter extends Record({id: '', values: new IMap()}, 'GCounter') {
   get id (): ReplicaID { return this.get('id') }

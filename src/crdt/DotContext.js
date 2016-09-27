@@ -2,7 +2,7 @@
 
 const { Map: IMap, Set: ISet, Record, is: isEqual } = require('immutable')
 const { Dot } = require('./Dot')
-import type { KeyType } from './index'
+import type { KeyType } from './types'
 import type { DotClock } from './Dot'
 
 class DotContext extends Record({

@@ -1,7 +1,7 @@
 // @flow
 
 const { Record } = require('immutable')
-import type { KeyType } from './index'
+import type { KeyType } from './types'
 
 // really a positive integer, but no way to encode that as a type
 export type DotClock = number
