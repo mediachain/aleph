@@ -31,9 +31,9 @@ class DotContext extends Record({
       doneCompacting = true
 
       for (const dot of this.dotCloud) {
-        const ccDotClock = this.causalContext.get(dot.id)
+        const ccDotClock = cc.get(dot.id)
 
-        if (!ccDotClock) { // dot id not present in causalContext
+        if (ccDotClock === undefined) { // dot id not present in causalContext
           if (dot.clock === 1) { // at first clock version, can compact
             cc = cc.set(dot.id, dot.clock)
             dc = dc.delete(dot)
@@ -46,6 +46,7 @@ class DotContext extends Record({
             cc = cc.set(dot.id, dot.clock)
             dc = dc.delete(dot)
             doneCompacting = false
+            console.log()
           } else {
             if (dot.clock <= ccDotClock) {
               // the clock in dotCloud is dominated by the value in causalContext, prune from dotCloud
