@@ -3,9 +3,9 @@
 const { Record, is: isEqual, Map: IMap, Set: ISet } = require('immutable')
 const { Dot } = require('./Dot')
 const { DotContext } = require('./DotContext')
-import type { CRDT, KeyType } from './types' // eslint-disable-line
+import type { KeyType } from './types' // eslint-disable-line
 
-class DotKernel<V: CRDT> extends Record({
+class DotKernel<V> extends Record({
   dots: new IMap(),          // IMap<Dot, V> - map of dots to values
   context: new DotContext()  // a (possibly shared) context for dot generation
 }, 'DotKernel') {
@@ -45,8 +45,10 @@ class DotKernel<V: CRDT> extends Record({
         // dot is in both kernels
         // If the payload is different, join the two CRDTs
         if (!isEqual(ourVal, theirVal)) {
-          const newVal = ourVal.join(theirVal)
-          ourDots = ourDots.set(dot, newVal)
+          if (typeof ourVal.join === 'function') {
+            const newVal = ourVal.join(theirVal)
+            ourDots = ourDots.set(dot, newVal)
+          }
         }
       }
     }

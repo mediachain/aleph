@@ -3,12 +3,12 @@
 const { Record, Set: ISet, is: isEqual } = require('immutable')
 const { DotContext } = require('./DotContext')
 const { DotKernel, DotKernelDelta } = require('./DotKernel')
-import type { CRDT, ReplicaID } from './types'
+import type { ReplicaID } from './types'
 
 /**
  * An add-wins observed-remove set
  */
-class AWORSet<V: CRDT> extends Record({
+class AWORSet<V> extends Record({
   id: '',
   kernel: new DotKernel()
 }) {
