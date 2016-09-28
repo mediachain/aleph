@@ -5,7 +5,9 @@ const { Record, Set: ISet } = require('immutable')
 class GSet<T> extends Record({value: new ISet()}) {
   get value (): ISet<T> { return this.get('value') }
 
-  has (val: T): boolean {
+  // sadly, naming this `has` doesn't correctly override the `has`
+  // method in the base class, so it ends up blowing the stack
+  contains (val: T): boolean {
     return this.value.has(val)
   }
 
