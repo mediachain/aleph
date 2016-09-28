@@ -23,10 +23,8 @@ class DotKernel<V> extends Record({
       .merge(ISet.fromKeys(theirDots))
 
     for (const dot of allDots) {
-      console.log(dot)
       const ourVal = ourDots.get(dot)
       const theirVal = theirDots.get(dot)
-      this.context.hasDot(dot)
 
       if (ourVal && !theirVal) {
         // dot is only in this kernel, not other
@@ -55,7 +53,7 @@ class DotKernel<V> extends Record({
 
     // join our dot context with theirs
     const context = this.context.join(other.context)
-    return new DotKernel({ourDots, context})
+    return new DotKernel({dots: ourDots, context})
   }
 
   /**
@@ -90,11 +88,10 @@ class DotKernel<V> extends Record({
    * Return a DotKernelDelta that removes all dots matching `val`
    */
   removeValueDelta (val: V): DotKernelDelta<V> {
-    let dots = this.dots
+    let dots: IMap<Dot, V> = new IMap()
     let context: DotContext = new DotContext()
     for (const [dot, value] of this.dots) {
       if (isEqual(val, value)) {
-        dots = dots.delete(dot)
         // delta knows about removed dots
         context = context.insertDot(dot, false)
       }
@@ -111,10 +108,9 @@ class DotKernel<V> extends Record({
    */
   removeDotDelta (dot: Dot): DotKernelDelta<V> {
     const entry = this.dots.get(dot)
-    let dots = this.dots
+    let dots: IMap<Dot, V> = new IMap()
     let context: DotContext = new DotContext()
     if (entry) {
-      dots = dots.delete(dot)
       // delta knows about removed dots
       context = context.insertDot(dot, false)
     }
@@ -143,7 +139,7 @@ class DotKernelDelta<V> extends Record({
   dots: new IMap(),
   context: new DotContext()
 }) {
-  get dots (): IMap<KeyType, V> { return this.get('dots') }
+  get dots (): IMap<Dot, V> { return this.get('dots') }
   get context (): DotContext { return this.get('context') }
 }
 
