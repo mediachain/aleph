@@ -6,7 +6,7 @@ export type KeyType = string | number
 
 // eslint chokes on this interface declaration
 /* eslint-disable no-undef */
-export interface CRDT<T> {
-  join(other: T): T
+export interface CRDT {
+  join(other: CRDT): CRDT
 }
 /* eslint-enable no-undef */

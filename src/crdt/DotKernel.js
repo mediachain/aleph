@@ -5,7 +5,7 @@ const { Dot } = require('./Dot')
 const { DotContext } = require('./DotContext')
 import type { CRDT, KeyType } from './types' // eslint-disable-line
 
-class DotKernel<V: CRDT<*>> extends Record({
+class DotKernel<V: CRDT> extends Record({
   dots: new IMap(),          // IMap<Dot, V> - map of dots to values
   context: new DotContext()  // a (possibly shared) context for dot generation
 }, 'DotKernel') {
