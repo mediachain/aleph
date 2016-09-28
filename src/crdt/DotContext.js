@@ -15,7 +15,7 @@ class DotContext extends Record({
 
   hasDot (dot: Dot): boolean {
     const ccDotClock = this.causalContext.get(dot.id)
-    if (ccDotClock && ccDotClock <= dot.clock) return true
+    if (ccDotClock !== undefined && dot.clock <= ccDotClock) return true
 
     return this.dotCloud.has(dot)
   }
