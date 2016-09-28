@@ -25,7 +25,7 @@ class AWORSet<V> extends Record({
     super({id, kernel})
   }
 
-  get id (): ReplicaID { return this.id }
+  get id (): ReplicaID { return this.get('id') }
   get kernel (): DotKernel<V> { return this.get('kernel') }
   get context (): DotContext { return this.kernel.context }
 
