@@ -5,11 +5,11 @@ import type { ReplicaID } from './types'
 const { Record } = require('immutable')
 const { GCounter, GCounterDelta } = require('./GCounter')
 
-class PNCounter extends Record({p: new GCounter(), n: new GCounter()}) {
+class PNCounter extends Record({p: new GCounter(''), n: new GCounter('')}) {
   constructor (id: ReplicaID) {
     super({
-      p: new GCounter({id}),
-      n: new GCounter({id})
+      p: new GCounter(id),
+      n: new GCounter(id)
     })
   }
 

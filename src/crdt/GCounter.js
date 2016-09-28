@@ -4,6 +4,10 @@ const { Map: IMap, Record } = require('immutable')
 import type { ReplicaID } from './types'
 
 class GCounter extends Record({id: '', values: new IMap()}, 'GCounter') {
+  constructor (id: ReplicaID, values?: IMap<ReplicaID, number>) {
+    super({id, values: values || new IMap()})
+  }
+
   get id (): ReplicaID { return this.get('id') }
   get values (): IMap<ReplicaID, number> { return this.get('values') }
 
@@ -40,10 +44,10 @@ class GCounter extends Record({id: '', values: new IMap()}, 'GCounter') {
         (aVal, bVal) => Math.max(aVal, bVal),
         other.values)
 
-    return new GCounter({
-      id: this.id,
-      values: mergedVals
-    })
+    return new GCounter(
+      this.id,
+      mergedVals
+    )
   }
 }
 
