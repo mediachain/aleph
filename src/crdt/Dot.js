@@ -8,10 +8,10 @@ export type DotClock = number
 
 class Dot extends Record({id: '', clock: 1}) {
   constructor (id: KeyType, clock?: DotClock) {
-    super({
-      id,
-      clock: (clock != null) ? clock : 1
-    })
+    if (clock == null) clock = 1
+    if (clock < 1) throw new Error('Dot clock must be a positive number')
+
+    super({id, clock})
   }
 
   get id (): KeyType { return this.get('id') }
