@@ -25,9 +25,9 @@ class AWORSet<V> extends Record({
     super({id, kernel})
   }
 
-  get id(): ReplicaID { return this.id }
-  get kernel(): DotKernel<V> { return this.get('kernel') }
-  get context(): DotContext { return this.kernel.context }
+  get id (): ReplicaID { return this.id }
+  get kernel (): DotKernel<V> { return this.get('kernel') }
+  get context (): DotContext { return this.kernel.context }
 
   read (): ISet<V> {
     return new ISet(this.kernel.dots.values())
@@ -68,7 +68,7 @@ class AWORSet<V> extends Record({
 class AWORSetDelta<V> extends Record({
   kernel: new DotKernelDelta()
 }) {
-  get kernel(): DotKernelDelta<V> { return this.get('kernel') }
+  get kernel (): DotKernelDelta<V> { return this.get('kernel') }
 }
 
 module.exports = {

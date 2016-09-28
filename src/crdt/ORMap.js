@@ -1,6 +1,6 @@
 // @flow
 
-const { Record, Map: IMap, Set: ISet } = require('immutable')
+const { Record, Map: IMap } = require('immutable')
 const { AWORSet, AWORSetDelta } = require('./AWORSet')
 const { DotContext } = require('./DotContext')
 import type { KeyType, ReplicaID } from './types'
@@ -8,20 +8,20 @@ import type { KeyType, ReplicaID } from './types'
 class ORMap<V> extends Record({
   id: '',
   keys: new AWORSet(''),
-  values: new IMap(),
+  values: new IMap()
 }) {
   constructor (id: ReplicaID, context?: DotContext) {
     if (context == null) {
       context = new DotContext()
     }
-    return super({
+    super({
       id,
       keys: new AWORSet(id, context),
-      values: new IMap(),
+      values: new IMap()
     })
   }
 
-  static make(keySet: AWORSet<KeyType>, values: IMap<KeyType, V>): ORMap<V> {
+  static make (keySet: AWORSet<KeyType>, values: IMap<KeyType, V>): ORMap<V> {
     return new ORMap(keySet.id, keySet.context)
       .set('keys', keySet)
       .set('values', values)
@@ -80,7 +80,7 @@ class ORMapDelta<V> extends Record({
   keys: new AWORSetDelta(),
   values: new IMap()
 }) {
-  get keys (): AWORSet<KeyType> { return this.get('keys') }
+  get keys (): AWORSetDelta<KeyType> { return this.get('keys') }
   get values (): IMap<KeyType, V> { return this.get('values') }
 }
 
