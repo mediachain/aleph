@@ -27,6 +27,8 @@ class DotContext extends Record({
     let cc: IMap<KeyType, DotClock> = this.causalContext
     let dc: ISet<Dot> = this.dotCloud
 
+    // TODO: use .asMutable / .asImmutable to avoid churning through immutable collections
+
     while (!doneCompacting) {
       doneCompacting = true
 
@@ -85,7 +87,7 @@ class DotContext extends Record({
 
     let cc = this.causalContext
     for (const [id, otherClock] of other.causalContext.entries()) {
-      const ourClock = this.causalContext.get(id)
+      const ourClock = cc.get(id)
       if (!ourClock) {
         // we don't have an entry for that ID, use theirs
         cc = cc.set(id, otherClock)

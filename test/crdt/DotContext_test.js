@@ -33,4 +33,19 @@ describe('DotContext', () => {
     assert(context.dotCloud.get(new Dot('some-id', 10)),
       'non-contiguous dots are stored in the dotCloud set until they can be compacted')
   })
+
+  it('merges to the max clock value from each replica', () => {
+    const c1 = new DotContext()
+      .insertDot(new Dot('some-id', 1))
+        .insertDot(new Dot('other-id', 1))
+
+    const c2 = new DotContext()
+      .insertDot(new Dot('some-id', 2))
+
+    const merged = c1.join(c2)
+    assert.equal(merged.causalContext.get('some-id'), 2,
+      'merged contexts should have the max clock for each dot')
+    assert.equal(merged.causalContext.get('other-id'), 1,
+      'merged contexts should have dots from all replicas')
+  })
 })
