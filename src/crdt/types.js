@@ -8,12 +8,11 @@ import type { DotContext } from './DotContext'
 // eslint doesn't like flow interface declarations
 /* eslint-disable no-undef */
 /**
- * A CRDT type that can be used as a value in an ORMap, and which shares a
- * causal context with other members of the map.
+ * A CRDT type that can be used as a value in an ORMap
  */
 export interface ContainableCRDT {
-  constructor (id: ReplicaID, context?: DotContext): ContainableCRDT;
-
+  reset (): ContainableCRDT;
+  join (other: ContainableCRDT): ContainableCRDT;
   context: DotContext;
 }
 /* eslint-enable no-undef */

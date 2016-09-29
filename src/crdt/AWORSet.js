@@ -60,6 +60,10 @@ class AWORSet<V> extends Record({
     return new AWORSet(this.id)
       .set('kernel', this.kernel.join(other.kernel))
   }
+
+  reset (): AWORSet<V> {
+    return this.set('kernel', this.kernel.clear())
+  }
 }
 
 class AWORSetDelta<V> extends Record({

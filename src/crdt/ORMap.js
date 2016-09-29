@@ -4,8 +4,9 @@ const { Record, Map: IMap } = require('immutable')
 const { AWORSet, AWORSetDelta } = require('./AWORSet')
 const { DotContext } = require('./DotContext')
 import type { KeyType, ReplicaID } from './types'
+import type { ContainableCRDT } from './types' // eslint-disable-line
 
-class ORMap<V> extends Record({
+class ORMap<V: ContainableCRDT> extends Record({
   id: '',
   keys: new AWORSet(''),
   values: new IMap()
@@ -14,16 +15,13 @@ class ORMap<V> extends Record({
     if (context == null) {
       context = new DotContext()
     }
-    super({
-      id,
-      keys: new AWORSet(id, context),
-      values: new IMap()
-    })
+    const keys = new AWORSet(id, context)
+    super({ id, keys })
   }
 
-  static make (keySet: AWORSet<KeyType>, values: IMap<KeyType, V>): ORMap<V> {
-    return new ORMap(keySet.id, keySet.context)
-      .set('keys', keySet)
+  static make (keys: AWORSet<KeyType>, values: IMap<KeyType, V>): ORMap<V> {
+    return new ORMap(keys.id, keys.context)
+      .set('keys', keys)
       .set('values', values)
   }
 
@@ -64,14 +62,36 @@ class ORMap<V> extends Record({
     })
   }
 
+  reset (): ORMap<V> {
+    return this.join(this.resetDelta())
+  }
+
+  resetDelta (): ORMapDelta<V> {
+    return new ORMapDelta({
+      keys: this.keys.reset(),
+      values: new IMap()
+    })
+  }
+
   join (other: ORMap<V> | ORMapDelta<V>): ORMap<V> {
     const keys = this.keys.join(other.keys)
-    const values = this.values.merge(other.values)
-      .filter((v, k) => keys.contains(k)) // only keep entries whose keys are in the merged keyset
+
+    let mergedValues: Map<KeyType, V> = new Map()
+    for (const key of keys.read()) {
+      const ourVal = this.values.get(key)
+      const theirVal = other.values.get(key)
+      if (ourVal !== undefined && theirVal === undefined) {
+        mergedValues.set(key, ourVal)
+      } else if (theirVal !== undefined && ourVal === undefined) {
+        mergedValues.set(key, theirVal)
+      } else if (ourVal !== undefined && theirVal !== undefined) {
+        mergedValues.set(key, ourVal.join(theirVal))
+      }
+    }
 
     return ORMap.make(
-      this.keys.join(other.keys),
-      values
+      keys,
+      new IMap(mergedValues)
     )
   }
 }
