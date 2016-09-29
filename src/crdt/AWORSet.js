@@ -12,15 +12,11 @@ class AWORSet<V> extends Record({
   id: '',
   kernel: new DotKernel()
 }) {
-  constructor (id: ReplicaID, contextOrKernel?: DotContext | DotKernel<V>) {
-    let kernel: DotKernel<V>
-    if (contextOrKernel == null) {
-      kernel = new DotKernel(new DotContext())
-    } else if (contextOrKernel instanceof DotContext) {
-      kernel = new DotKernel(contextOrKernel)
-    } else {
-      kernel = contextOrKernel
+  constructor (id: ReplicaID, context?: DotContext) {
+    if (context == null) {
+      context = new DotContext()
     }
+    const kernel = new DotKernel({context})
 
     super({id, kernel})
   }
@@ -61,7 +57,8 @@ class AWORSet<V> extends Record({
   }
 
   join (other: AWORSet<V> | AWORSetDelta<V>): AWORSet<V> {
-    return new AWORSet(this.id, this.kernel.join(other.kernel))
+    return new AWORSet(this.id)
+      .set('kernel', this.kernel.join(other.kernel))
   }
 }
 
