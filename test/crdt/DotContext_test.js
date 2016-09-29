@@ -31,7 +31,7 @@ describe('DotContext', () => {
     assert.equal(context.causalContext.get('some-id'), 3,
       'compact causalContext map only contains the highest contiguous dot seen')
     assert(context.dotCloud.get(new Dot('some-id', 10)),
-      'non-contiguous dots are stored in the dotCloud set until they can be compacted')
+      'non-contiguous dataStore are stored in the dotCloud set until they can be compacted')
   })
 
   it('merges to the max clock value from each replica', () => {
@@ -46,6 +46,6 @@ describe('DotContext', () => {
     assert.equal(merged.causalContext.get('some-id'), 2,
       'merged contexts should have the max clock for each dot')
     assert.equal(merged.causalContext.get('other-id'), 1,
-      'merged contexts should have dots from all replicas')
+      'merged contexts should have dataStore from all replicas')
   })
 })

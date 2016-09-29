@@ -30,11 +30,11 @@ class AWORSet<V> extends Record({
   get context (): DotContext { return this.kernel.context }
 
   read (): ISet<V> {
-    return new ISet(this.kernel.dots.values())
+    return new ISet(this.kernel.dataStore.values())
   }
 
   contains (val: V): boolean {
-    for (const v of this.kernel.dots.values()) {
+    for (const v of this.kernel.dataStore.values()) {
       if (isEqual(v, val)) {
         return true
       }

@@ -17,23 +17,23 @@ describe('DotKernel', () => {
     const fooDot = new Dot('foo', 1) // the dot that was implicitly created by the add operation
 
     const expectedDots = new I.Map([[fooDot, 'bar']])
-    assert(I.is(addDelta.dots, expectedDots),
+    assert(I.is(addDelta.dataStore, expectedDots),
       'DotKernelDelta should contain added dot / value pair')
 
     const kernelWithDot = new DotKernel().join(addDelta)
-    assert(I.is(kernelWithDot.dots, expectedDots),
-      'DotKernel should contain dots from delta')
+    assert(I.is(kernelWithDot.dataStore, expectedDots),
+      'DotKernel should contain dataStore from delta')
 
     const removeDelta = kernelWithDot.removeValueDelta('bar')
-    assert(removeDelta.dots.isEmpty(),
-      'DotKernelDelta should have not dots after remove operation'
+    assert(removeDelta.dataStore.isEmpty(),
+      'DotKernelDelta should have not dataStore after remove operation'
     )
     assert(removeDelta.context.hasDot(fooDot),
       'DotKernelDelta should "remember" the dot for the removed value'
     )
 
     const kernelWithDotRemoved = kernelWithDot.join(removeDelta)
-    assert(kernelWithDotRemoved.dots.isEmpty(),
+    assert(kernelWithDotRemoved.dataStore.isEmpty(),
       'DotKernel should not have removed dot after applying delta'
     )
     assert(kernelWithDotRemoved.context.hasDot(fooDot),

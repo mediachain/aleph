@@ -6,38 +6,38 @@ const { DotContext } = require('./DotContext')
 import type { KeyType } from './types' // eslint-disable-line
 
 class DotKernel<V> extends Record({
-  dots: new IMap(),          // IMap<Dot, V> - map of dots to values
+  dataStore: new IMap(),     // IMap<Dot, V> - map of dataStore to values
   context: new DotContext()  // a (possibly shared) context for dot generation
 }, 'DotKernel') {
 
-  get dots (): IMap<Dot, V> { return this.get('dots') }
+  get dataStore (): IMap<Dot, V> { return this.get('dataStore') }
   get context (): DotContext { return this.get('context') }
 
   join<T: V> (other: DotKernel<T> | DotKernelDelta<T>): DotKernel<T> {
     if (isEqual(this, other)) return other
 
-    let ourDots = this.dots
-    let theirDots: IMap<Dot, V> = new IMap(other.dots)
+    let ourStore = this.dataStore
+    let theirStore: IMap<Dot, V> = new IMap(other.dataStore)
 
-    const allDots = ISet.fromKeys(ourDots)
-      .merge(ISet.fromKeys(theirDots))
+    const allDots = ISet.fromKeys(ourStore)
+      .merge(ISet.fromKeys(theirStore))
 
     for (const dot of allDots) {
-      const ourVal = ourDots.get(dot)
-      const theirVal = theirDots.get(dot)
+      const ourVal = ourStore.get(dot)
+      const theirVal = theirStore.get(dot)
 
       if (ourVal && !theirVal) {
         // dot is only in this kernel, not other
         if (other.context.hasDot(dot)) {
           // if the other kernel knows this dot (has seen a different version)
-          // but doesn't have it now, we delete it from our dots
-          ourDots = ourDots.delete(dot)
+          // but doesn't have it now, we delete it from our dataStore
+          ourStore = ourStore.delete(dot)
         }
       } else if (theirVal && !ourVal) {
         // dot is only in other kernel
         if (!this.context.hasDot(dot)) {
           // if dot is not in my context, import it
-          ourDots = ourDots.set(dot, theirVal)
+          ourStore = ourStore.set(dot, theirVal)
         }
       } else if (ourVal && theirVal) { // redundant, but makes flow happy
         // dot is in both kernels
@@ -45,7 +45,7 @@ class DotKernel<V> extends Record({
         if (!isEqual(ourVal, theirVal)) {
           if (typeof ourVal.join === 'function') {
             const newVal = ourVal.join(theirVal)
-            ourDots = ourDots.set(dot, newVal)
+            ourStore = ourStore.set(dot, newVal)
           }
         }
       }
@@ -53,7 +53,7 @@ class DotKernel<V> extends Record({
 
     // join our dot context with theirs
     const context = this.context.join(other.context)
-    return new DotKernel({dots: ourDots, context})
+    return new DotKernel({dataStore: ourStore, context})
   }
 
   /**
@@ -70,13 +70,13 @@ class DotKernel<V> extends Record({
    */
   addDelta (key: KeyType, val: V): DotKernelDelta<V> {
     const {dot, context} = this.context.makeDot(key)
-    const dots = this.dots.set(dot, val)
+    const dataStore = this.dataStore.set(dot, val)
 
-    return new DotKernelDelta({dots, context})
+    return new DotKernelDelta({dataStore, context})
   }
 
   /**
-   * Return a new DotKernel with all dots matching `val` removed
+   * Return a new DotKernel with all dataStore matching `val` removed
    */
   removeValue (val: V): DotKernel<V> {
     return this.join(
@@ -85,20 +85,20 @@ class DotKernel<V> extends Record({
   }
 
   /**
-   * Return a DotKernelDelta that removes all dots matching `val`
+   * Return a DotKernelDelta that removes all dataStore matching `val`
    */
   removeValueDelta (val: V): DotKernelDelta<V> {
-    let dots: IMap<Dot, V> = new IMap()
+    let dataStore: IMap<Dot, V> = new IMap()
     let context: DotContext = new DotContext()
-    for (const [dot, value] of this.dots) {
+    for (const [dot, value] of this.dataStore) {
       if (isEqual(val, value)) {
-        // delta knows about removed dots
+        // delta knows about removed dataStore
         context = context.insertDot(dot, false)
       }
     }
 
     return new DotKernelDelta({
-      dots,
+      dataStore,
       context: context.compact()
     })
   }
@@ -107,39 +107,39 @@ class DotKernel<V> extends Record({
    * Return a DotKernelDelta that removes a single dot and its value
    */
   removeDotDelta (dot: Dot): DotKernelDelta<V> {
-    const entry = this.dots.get(dot)
-    let dots: IMap<Dot, V> = new IMap()
+    const entry = this.dataStore.get(dot)
+    let dataStore: IMap<Dot, V> = new IMap()
     let context: DotContext = new DotContext()
     if (entry) {
-      // delta knows about removed dots
+      // delta knows about removed dataStore
       context = context.insertDot(dot, false)
     }
     return new DotKernelDelta({
-      dots,
+      dataStore,
       context: context.compact()
     })
   }
 
   /**
-   * Return a new DotKernel with all dots removed, but which preserves its context
+   * Return a new DotKernel with all dataStore removed, but which preserves its context
    */
   clear (): DotKernel<V> {
     let context: DotContext = new DotContext()
-    for (const dot of this.dots.keys()) {
+    for (const dot of this.dataStore.keys()) {
       context = context.insertDot(dot, false)
     }
     return new DotKernel({
-      dots: new IMap(),
+      dataStore: new IMap(),
       context
     })
   }
 }
 
 class DotKernelDelta<V> extends Record({
-  dots: new IMap(),
+  dataStore: new IMap(),
   context: new DotContext()
 }) {
-  get dots (): IMap<Dot, V> { return this.get('dots') }
+  get dataStore (): IMap<Dot, V> { return this.get('dataStore') }
   get context (): DotContext { return this.get('context') }
 }
 
