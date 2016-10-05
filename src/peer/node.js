@@ -18,6 +18,7 @@ import type { Connection } from 'interface-connection'
 
 const DEFAULT_LISTEN_ADDR = Multiaddr('/ip4/127.0.0.1/tcp/0')
 
+
 class MediachainNode {
   p2p: P2PNode
   directory: ?PeerInfo
@@ -98,16 +99,24 @@ class MediachainNode {
       )
   }
 
-  ping (peer: string | PeerInfo | PeerId): Promise<boolean> {
-    let peerInfoPromise: Promise<PeerInfo>
+  _lookupIfNeeded (peer: PeerInfo | PeerId | string): Promise<?PeerInfo> {
     if (peer instanceof PeerInfo) {
-      peerInfoPromise = Promise.resolve(peer)
-    } else {
-      peerInfoPromise = this.lookup(peer)
+      return Promise.resolve(peer)
     }
+    return this.lookup(peer)
+  }
 
-    return peerInfoPromise
-      .then(peerInfo => this.p2p.dialByPeerInfo(peerInfo, '/mediachain/node/ping'))
+  openConnection (peer: PeerInfo | PeerId | string, protocol: string): Promise<Connection> {
+    return this._lookupIfNeeded(peer)
+      .then(maybePeer => {
+        if (!maybePeer) throw new Error(`Unable to locate peer ${peer}`)
+        return maybePeer
+      })
+      .then(peerInfo => this.p2p.dialByPeerInfo(peerInfo, protocol))
+  }
+
+  ping (peer: PeerInfo | PeerId | string): Promise<boolean> {
+    return this.openConnection(peer, '/mediachain/node/ping')
       .then((conn: Connection) => pullToPromise(
         pull.values([{}]),
         protoStreamEncode(pb.node.Ping),
@@ -124,6 +133,15 @@ class MediachainNode {
       protoStreamEncode(pb.node.Pong),
       conn
     )
+  }
+
+  remoteQuery (peer: PeerInfo | PeerId | string, queryString: string): Promise<void> {
+    return this.openConnection(peer, '/mediachain/node/query')
+      .then(conn => pullToPromise(
+        pull.values([{query: queryString}]),
+        protoStreamEncode(pb.node.QueryRequest),
+
+      ))
   }
 }
 
