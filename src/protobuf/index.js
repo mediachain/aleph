@@ -18,9 +18,20 @@ import type {
   ListPeersResponseMsg,
   PingMsg,
   PongMsg,
+  QueryRequestMsg,
+  QueryResultMsg,
+  QueryResultValueMsg,
+  SimpleValueMsg,
+  CompoundValueMsg,
+  KeyValuePairMsg,
+  QueryResultErrorMsg,
+  QueryResultEndMsg,
   SimpleStatementMsg,
   CompoundStatementMsg,
-  StatementMsg
+  EnvelopeStatementMsg,
+  ArchiveStatementMsg,
+  StatementBodyMsg,
+  StatementMsg,
 } from './types'
 
 type DirProtos = {
@@ -34,12 +45,23 @@ type DirProtos = {
 
 type NodeProtos = {
   Ping: ProtoCodec<PingMsg>,
-  Pong: ProtoCodec<PongMsg>
+  Pong: ProtoCodec<PongMsg>,
+  QueryRequest: ProtoCodec<QueryRequestMsg>,
+  QueryResult: ProtoCodec<QueryResultMsg>,
+  QueryResultValue: ProtoCodec<QueryResultValueMsg>,
+  SimpleValue: ProtoCodec<SimpleValueMsg>,
+  CompoundValue: ProtoCodec<CompoundValueMsg>,
+  KeyValuePair: ProtoCodec<KeyValuePairMsg>,
+  QueryResultError: ProtoCodec<QueryResultErrorMsg>,
+  QueryResultEnd: ProtoCodec<QueryResultEndMsg>
 }
 
 type StmtProtos = {
   SimpleStatement: ProtoCodec<SimpleStatementMsg>,
   CompoundStatement: ProtoCodec<CompoundStatementMsg>,
+  EnvelopeStatement: ProtoCodec<EnvelopeStatementMsg>,
+  ArchiveStatement: ProtoCodec<ArchiveStatementMsg>,
+  StatementBody: ProtoCodec<StatementBodyMsg>,
   Statement: ProtoCodec<StatementMsg>
 }
 
