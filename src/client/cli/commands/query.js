@@ -18,5 +18,5 @@ module.exports = {
 }
 
 function printValue (obj: Object) {
-  console.dir(obj, {colors: true})
+  console.dir(obj, {colors: true, depth: 100})
 }
