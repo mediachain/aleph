@@ -9,10 +9,14 @@ module.exports = {
     const {peerUrl, queryString} = opts
 
     const client = new RestClient({peerUrl})
-    client.query(queryString)
-      .then(
-        response => console.dir(response, {colors: true}),
-        err => console.error(err.message)
-      )
+    client.queryStream(queryString)
+      .then(response => {
+          response.body.on('data', printValue)
+      })
+      .catch(err => console.error(err.message))
   }
+}
+
+function printValue (obj: Object) {
+  console.dir(obj, {colors: true})
 }

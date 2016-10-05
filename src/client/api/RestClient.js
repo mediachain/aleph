@@ -1,6 +1,7 @@
 // @flow
 
 const fetch: (url: string, opts?: Object) => Promise<FetchResponse> = require('node-fetch')
+const ndjson = require('ndjson')
 
 import type { Transform as TransformStream } from 'stream'
 import type { StatementMsg, SimpleStatementMsg } from '../../protobuf/types'
@@ -14,6 +15,26 @@ type FetchResponse = {
   statusText: string,
   status: number,
   ok: boolean
+}
+
+class NDJsonResponse {
+  fetchResponse: FetchResponse
+  constructor (fetchResponse: FetchResponse) {
+    this.fetchResponse = fetchResponse
+  }
+
+  get body(): TransformStream {
+    return this.fetchResponse.body.pipe(ndjson.parse())
+  }
+
+  values (): Promise<Array<Object>> {
+    return new Promise((resolve, reject) => {
+      const vals = []
+      this.body.on('data', val => { vals.push(val) })
+      this.body.on('error', reject)
+      this.body.on('finish', () => { resolve(vals) })
+    })
+  }
 }
 
 class RestError extends Error {
@@ -83,9 +104,14 @@ class RestClient {
       .then(r => r.json())
   }
 
-  query (queryString: string): Promise<Object> {
+  query (queryString: string): Promise<Array<Object>> {
+    return this.queryStream(queryString)
+      .then(r => r.values())
+  }
+
+  queryStream (queryString: string): Promise<NDJsonResponse> {
     return this.postRequest('query', queryString, false)
-      .then(r => r.json())
+      .then(r => new NDJsonResponse(r))
   }
 
   getStatus (): Promise<NodeStatus> {
