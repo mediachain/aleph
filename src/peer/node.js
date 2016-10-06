@@ -12,7 +12,8 @@ const {
   peerInfoProtoMarshal,
   lookupResponseToPeerInfo,
   pullToPromise,
-  pullRepeatedly
+  pullRepeatedly,
+  queryResultThrough
 } = require('./util')
 
 import type { Connection } from 'interface-connection'
@@ -137,11 +138,12 @@ class MediachainNode {
   remoteQuery (peer: PeerInfo | PeerId | string, queryString: string): Promise<PullStreamSource> {
     return this.openConnection(peer, PROTOCOLS.node.query)
       .then(conn => pull(
-        pull.values([{query: queryString}]),
-        protoStreamEncode(pb.node.QueryRequest),
-        conn,
-        protoStreamDecode(pb.node.QueryResult)
-      ))
+          pull.values([{query: queryString}]),
+          protoStreamEncode(pb.node.QueryRequest),
+          conn,
+          protoStreamDecode(pb.node.QueryResult),
+          queryResultThrough,
+        ))
   }
 }
 

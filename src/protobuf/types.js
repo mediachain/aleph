@@ -35,23 +35,16 @@ export type QueryRequestMsg = {
   query: string
 }
 
-export type QueryResultMsg = {
-  Result: { Value: QueryResultValueMsg } |
-    { End: QueryResultEndMsg } |
-    { Error: QueryResultErrorMsg }
-}
+export type QueryResultMsg = { value: QueryResultValueMsg } |
+  { end: QueryResultEndMsg } |
+  { error: QueryResultErrorMsg }
 
-export type QueryResultValueMsg = {
-  Value: { Simple: SimpleValueMsg } |
-    { Compound: CompoundValueMsg }
-}
+export type QueryResultValueMsg = { simple: SimpleValueMsg } | { compound: CompoundValueMsg }
 
-export type SimpleValueMsg = {
-  Value: { IntValue: number } |
-    { StringValue: string } |
-    { Stmt: StatementMsg } |
-    { StmtBody: StatementBodyMsg }
-}
+export type SimpleValueMsg = { intValue: number } |
+    { stringValue: string } |
+    { stmt: StatementMsg } |
+    { stmtBody: StatementBodyMsg }
 
 export type CompoundValueMsg = {
   body: Array<KeyValuePairMsg>
@@ -90,12 +83,10 @@ export type ArchiveStatementMsg = {
 
 }
 
-export type StatementBodyMsg = {
-  Body: { Simple: SimpleStatementMsg } |
-    { Compound: CompoundStatementMsg } |
-    { Envelope: EnvelopeStatementMsg } |
-    { Archive: ArchiveStatementMsg }
-}
+export type StatementBodyMsg = { simple: SimpleStatementMsg } |
+    { compound: CompoundStatementMsg } |
+    { envelope: EnvelopeStatementMsg } |
+    { archive: ArchiveStatementMsg }
 
 export type StatementMsg = {
   id?: string,
