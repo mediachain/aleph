@@ -14,7 +14,6 @@ export type PullStreamSource = (end: ?mixed, cb: PullStreamCallback) => void
 export type PullStreamSink = (source: PullStreamSource) => void
 export type PullStreamThrough = (source: PullStreamSource) => PullStreamSource
 
-
 /**
  * A through stream that accepts POJOs and encodes them with the given `protocol-buffers` schema
  * @param codec a `protocol-buffers` schema, containing an `encode` function

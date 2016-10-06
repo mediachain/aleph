@@ -15,6 +15,7 @@ const {
 } = require('./util')
 
 import type { Connection } from 'interface-connection'
+import type { PullStreamSource } from './util'
 
 const DEFAULT_LISTEN_ADDR = Multiaddr('/ip4/127.0.0.1/tcp/0')
 
@@ -134,12 +135,13 @@ class MediachainNode {
     )
   }
 
-  remoteQuery (peer: PeerInfo | PeerId | string, queryString: string): Promise<void> {
+  remoteQuery (peer: PeerInfo | PeerId | string, queryString: string): Promise<PullStreamSource> {
     return this.openConnection(peer, '/mediachain/node/query')
-      .then(conn => pullToPromise(
+      .then(conn => pull(
         pull.values([{query: queryString}]),
         protoStreamEncode(pb.node.QueryRequest),
-
+        conn,
+        protoStreamDecode(pb.node.QueryResult)
       ))
   }
 }
