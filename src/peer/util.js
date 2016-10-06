@@ -8,12 +8,19 @@ const lp = require('pull-length-prefixed')
 
 import type { PeerInfoMsg, LookupPeerResponseMsg, ProtoCodec } from '../protobuf/types'
 
+// Flow signatures for pull-streams
+export type PullStreamCallback = (end: ?mixed, value?: ?mixed) => void
+export type PullStreamSource = (end: ?mixed, cb: PullStreamCallback) => void
+export type PullStreamSink = (source: PullStreamSource) => void
+export type PullStreamThrough = (source: PullStreamSource) => PullStreamSource
+
+
 /**
  * A through stream that accepts POJOs and encodes them with the given `protocol-buffers` schema
  * @param codec a `protocol-buffers` schema, containing an `encode` function
  * @returns a pull-stream through function that will output encoded protos, prefixed with thier varint-encoded size
  */
-function protoStreamEncode<T> (codec: ProtoCodec<T>): Function {
+function protoStreamEncode<T> (codec: ProtoCodec<T>): PullStreamThrough {
   return pull(
     pull.map(codec.encode),
     lp.encode()
@@ -26,7 +33,7 @@ function protoStreamEncode<T> (codec: ProtoCodec<T>): Function {
  * @param codec a `protocol-buffers` schema, containing a `decode` function
  * @returns a through-stream function that can be wired into a pull-stream pipeline
  */
-function protoStreamDecode<T> (codec: ProtoCodec<T>): Function {
+function protoStreamDecode<T> (codec: ProtoCodec<T>): PullStreamThrough {
   return pull(
     lp.decode(),
     pull.map(codec.decode)
@@ -99,7 +106,7 @@ function pullToPromise<T> (...streams: Array<Function>): Promise<T> {
  * @param interval milliseconds to wait between providing value to consumers
  * @returns a pull-stream source
  */
-function pullRepeatedly (value: any, interval: number = 1000): Function {
+function pullRepeatedly (value: any, interval: number = 1000): PullStreamSource {
   let intervalStart: ?Date = null
   let timeoutId: ?number = null
   function intervalElapsed () {
