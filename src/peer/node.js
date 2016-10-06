@@ -5,6 +5,7 @@ const Multiaddr = require('multiaddr')
 const Multihash = require('multihashes')
 const pb = require('../protobuf')
 const pull = require('pull-stream')
+const { DEFAULT_LISTEN_ADDR, PROTOCOLS } = require('./constants')
 const {
   protoStreamEncode,
   protoStreamDecode,
@@ -16,8 +17,6 @@ const {
 
 import type { Connection } from 'interface-connection'
 import type { PullStreamSource } from './util'
-
-const DEFAULT_LISTEN_ADDR = Multiaddr('/ip4/127.0.0.1/tcp/0')
 
 class MediachainNode {
   p2p: P2PNode
@@ -31,7 +30,7 @@ class MediachainNode {
 
     this.p2p = new P2PNode(peerInfo)
     this.directory = dirInfo
-    this.p2p.handle('/mediachain/node/ping', this.pingHandler.bind(this))
+    this.p2p.handle(PROTOCOLS.node.ping, this.pingHandler.bind(this))
   }
 
   start (): Promise<void> {
@@ -57,8 +56,8 @@ class MediachainNode {
       info: peerInfoProtoMarshal(this.p2p.peerInfo)
     }
 
-    return this.p2p.dialByPeerInfo(this.directory, '/mediachain/dir/register')
-      .then((conn: Connection) => {
+    return this.p2p.dialByPeerInfo(this.directory, PROTOCOLS.dir.register)
+      .then(conn => {
         pull(
           pullRepeatedly(req, 5000 * 60),
           abortable,
@@ -88,8 +87,8 @@ class MediachainNode {
       }
     }
 
-    return this.p2p.dialByPeerInfo(this.directory, '/mediachain/dir/lookup')
-      .then((conn: Connection) => pullToPromise(
+    return this.p2p.dialByPeerInfo(this.directory, PROTOCOLS.dir.lookup)
+      .then(conn => pullToPromise(
         pull.values([{id: peerId}]),
         protoStreamEncode(pb.dir.LookupPeerRequest),
         conn,
@@ -116,7 +115,7 @@ class MediachainNode {
   }
 
   ping (peer: PeerInfo | PeerId | string): Promise<boolean> {
-    return this.openConnection(peer, '/mediachain/node/ping')
+    return this.openConnection(peer, PROTOCOLS.node.ping)
       .then((conn: Connection) => pullToPromise(
         pull.values([{}]),
         protoStreamEncode(pb.node.Ping),
@@ -136,7 +135,7 @@ class MediachainNode {
   }
 
   remoteQuery (peer: PeerInfo | PeerId | string, queryString: string): Promise<PullStreamSource> {
-    return this.openConnection(peer, '/mediachain/node/query')
+    return this.openConnection(peer, PROTOCOLS.node.query)
       .then(conn => pull(
         pull.values([{query: queryString}]),
         protoStreamEncode(pb.node.QueryRequest),

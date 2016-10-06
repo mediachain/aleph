@@ -6,10 +6,10 @@ const Multiaddr = require('multiaddr')
 const pull = require('pull-stream')
 const pb = require('../protobuf')
 const { protoStreamDecode, protoStreamEncode, peerInfoProtoUnmarshal } = require('./util')
+const { DEFAULT_LISTEN_ADDR, PROTOCOLS } = require('./constants')
+
 import type { Connection } from 'interface-connection'
 import type { LookupPeerRequestMsg, LookupPeerResponseMsg } from '../protobuf/types'
-
-const DEFAULT_LISTEN_ADDR = Multiaddr('/ip4/127.0.0.1/tcp/0')
 
 class DirectoryNode {
   p2p: P2PNode
@@ -23,9 +23,9 @@ class DirectoryNode {
 
     this.p2p = new P2PNode(peerInfo)
     this.registeredPeers = new PeerBook()
-    this.p2p.handle('/mediachain/dir/register', this.registerHandler.bind(this))
-    this.p2p.handle('/mediachain/dir/lookup', this.lookupHandler.bind(this))
-    this.p2p.handle('/mediachain/dir/list', this.listHandler.bind(this))
+    this.p2p.handle(PROTOCOLS.dir.register, this.registerHandler.bind(this))
+    this.p2p.handle(PROTOCOLS.dir.lookup, this.lookupHandler.bind(this))
+    this.p2p.handle(PROTOCOLS.dir.list, this.listHandler.bind(this))
   }
 
   start (): Promise<void> {
