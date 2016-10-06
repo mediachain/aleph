@@ -3,7 +3,7 @@
 const fetch: (url: string, opts?: Object) => Promise<FetchResponse> = require('node-fetch')
 const ndjson = require('ndjson')
 
-import type { Transform as TransformStream } from 'stream'
+import type { Transform as TransformStream, Duplex as DuplexStream } from 'stream'
 import type { StatementMsg, SimpleStatementMsg } from '../../protobuf/types'
 export type NodeStatus = 'online' | 'offline' | 'public'
 
@@ -23,16 +23,17 @@ class NDJsonResponse {
     this.fetchResponse = fetchResponse
   }
 
-  get body(): TransformStream {
+  stream (): DuplexStream {
     return this.fetchResponse.body.pipe(ndjson.parse())
   }
 
   values (): Promise<Array<Object>> {
     return new Promise((resolve, reject) => {
       const vals = []
-      this.body.on('data', val => { vals.push(val) })
-      this.body.on('error', reject)
-      this.body.on('finish', () => { resolve(vals) })
+      const stream = this.stream()
+      stream.on('data', val => { vals.push(val) })
+      stream.on('error', reject)
+      stream.on('finish', () => { resolve(vals) })
     })
   }
 }

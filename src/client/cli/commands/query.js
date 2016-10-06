@@ -11,7 +11,7 @@ module.exports = {
     const client = new RestClient({peerUrl})
     client.queryStream(queryString)
       .then(response => {
-          response.body.on('data', printValue)
+        response.stream().on('data', printValue)
       })
       .catch(err => console.error(err.message))
   }
