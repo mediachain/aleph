@@ -11,17 +11,25 @@ const { DEFAULT_LISTEN_ADDR, PROTOCOLS } = require('./constants')
 import type { Connection } from 'interface-connection'
 import type { LookupPeerRequestMsg, LookupPeerResponseMsg } from '../protobuf/types'
 
+export type DirectoryNodeOptions = {
+  peerId: PeerId,
+  listenAddresses: Array<Multiaddr | string>
+}
+
 class DirectoryNode {
   p2p: P2PNode
   registeredPeers: PeerBook
 
-  constructor (peerId: PeerId, listenAddrs: Array<Multiaddr> = [DEFAULT_LISTEN_ADDR]) {
+  constructor (options: DirectoryNodeOptions) {
+    let { peerId, listenAddresses } = options
+    if (listenAddresses == null) listenAddresses = [DEFAULT_LISTEN_ADDR]
+
     const peerInfo = new PeerInfo(peerId)
-    listenAddrs.forEach((addr: Multiaddr) => {
-      peerInfo.multiaddr.add(addr)
+    listenAddresses.forEach((addr: Multiaddr | string) => {
+      peerInfo.multiaddr.add(Multiaddr(addr))
     })
 
-    this.p2p = new P2PNode(peerInfo)
+    this.p2p = new P2PNode({peerInfo})
     this.registeredPeers = new PeerBook()
     this.p2p.handle(PROTOCOLS.dir.register, this.registerHandler.bind(this))
     this.p2p.handle(PROTOCOLS.dir.lookup, this.lookupHandler.bind(this))

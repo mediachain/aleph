@@ -19,17 +19,26 @@ const {
 import type { Connection } from 'interface-connection'
 import type { PullStreamSource } from './util'
 
+export type MediachainNodeOptions = {
+  peerId: PeerId,
+  dirInfo?: PeerInfo,
+  listenAddresses?: Array<Multiaddr | string>
+}
+
 class MediachainNode {
   p2p: P2PNode
   directory: ?PeerInfo
 
-  constructor (peerId: PeerId, dirInfo: ?PeerInfo, listenAddrs: Array<Multiaddr> = [DEFAULT_LISTEN_ADDR]) {
+  constructor (options: MediachainNodeOptions) {
+    let {peerId, dirInfo, listenAddresses} = options
+    if (listenAddresses == null) listenAddresses = [DEFAULT_LISTEN_ADDR]
+
     const peerInfo = new PeerInfo(peerId)
-    listenAddrs.forEach((addr: Multiaddr) => {
-      peerInfo.multiaddr.add(addr)
+    listenAddresses.forEach((addr: Multiaddr | string) => {
+      peerInfo.multiaddr.add(Multiaddr(addr))
     })
 
-    this.p2p = new P2PNode(peerInfo)
+    this.p2p = new P2PNode({peerInfo})
     this.directory = dirInfo
     this.p2p.handle(PROTOCOLS.node.ping, this.pingHandler.bind(this))
   }
