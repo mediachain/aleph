@@ -4,4 +4,8 @@ node_js:
 cache:
   directories:
       - node_modules
+notifications:
+  slack:
+    on_change: always
+    email: false
 
