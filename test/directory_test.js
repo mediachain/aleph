@@ -4,15 +4,16 @@ const assert = require('assert')
 const { describe, it, before, afterEach } = require('mocha')
 const eventually = require('mocha-eventually')
 
-const { generateIdentity } = require('../src/peer/identity')
 const Directory = require('../src/peer/directory')
 const Node = require('../src/peer/node')
+const { loadTestNodeIds } = require('./util')
+const nodeIds = loadTestNodeIds()
 
 describe('Directory Node', function () {
-  const dirId = generateIdentity()
+  const dirId = nodeIds.pop()
   let dir = new Directory(dirId)
   const dirInfo = dir.peerInfo
-  const nodeId = generateIdentity()
+  const nodeId = nodeIds.pop()
   const nodeIdB58 = nodeId.toB58String()
   let node = new Node(nodeId, dirInfo)
 
