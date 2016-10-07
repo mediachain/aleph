@@ -131,7 +131,12 @@ function pullRepeatedly<T> (value: T, interval: number = 1000): PullStreamSource
   }
 }
 
-function queryResultThrough (read: PullStreamSource<QueryResultMsg>): PullStreamSource<QueryResultMsg> {
+/**
+ * A pull-stream through stream that will end the stream when it receives a QueryResultEnd message,
+ * and end the stream with an Error object if it receives a QueryResultError message.  Without this,
+ * you need to explicitly `pull.take(n)` from the result stream, or it will never terminate.
+ */
+const queryResultThrough: PullStreamThrough<QueryResultMsg, QueryResultMsg> = (read) => {
   return (end, callback) => {
     if (end) return callback(end, null)
 
@@ -143,7 +148,8 @@ function queryResultThrough (read: PullStreamSource<QueryResultMsg>): PullStream
       }
 
       if (data.error !== undefined) {
-        return callback(new Error(data.error), data)
+        const message = data.error.error || 'Unknown error'
+        return callback(new Error(message), data)
       }
 
       return callback(end, data)
