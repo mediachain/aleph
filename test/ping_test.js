@@ -3,13 +3,12 @@
 const assert = require('assert')
 const { describe, it } = require('mocha')
 
-const Node = require('../src/peer/node')
-const { loadTestNodeIds } = require('./util')
+const { loadTestNodeIds, makeNode } = require('./util')
 const nodeIds = loadTestNodeIds()
 
 describe('Ping', () => {
-  const p1 = new Node(nodeIds.pop())
-  const p2 = new Node(nodeIds.pop())
+  const p1 = makeNode({peerId: nodeIds.pop()})
+  const p2 = makeNode({peerId: nodeIds.pop()})
 
   it('pings another node directly by PeerInfo', () => {
     return Promise.all([p1.start(), p2.start()])  // start both peers

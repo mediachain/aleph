@@ -4,16 +4,16 @@ const assert = require('assert')
 const { describe, it } = require('mocha')
 
 const { PROTOCOLS } = require('../src/peer/constants')
-const Node = require('../src/peer/node')
 const pull = require('pull-stream')
 const pb = require('../src/protobuf')
 const {
   protoStreamDecode,
   protoStreamEncode
 } = require('../src/peer/util')
-const { loadTestNodeIds } = require('./util')
+const { loadTestNodeIds, makeNode } = require('./util')
 const nodeIds = loadTestNodeIds()
 
+import type Node from '../src/peer/node'
 import type { QueryResultMsg } from '../src/protobuf/types'
 import type { Connection } from 'interface-connection'
 
@@ -28,7 +28,7 @@ const queryHandler = (results: Array<QueryResultMsg>) => (conn: Connection) => p
 )
 
 function mockRemote (results: Array<QueryResultMsg>): Node {
-  const node = new Node(nodeIds.pop())
+  const node = makeNode({peerId: nodeIds.pop()})
   node.p2p.handle(PROTOCOLS.node.query, queryHandler(results))
   return node
 }
@@ -38,7 +38,7 @@ function startNodes (...nodes: Array<Node>): Promise<*> {
 }
 
 describe('Remote Query', () => {
-  const local = new Node(nodeIds.pop())
+  const local = makeNode({peerId: nodeIds.pop()})
 
   it('decodes all query result types correctly', function () {
     this.timeout(3000)
