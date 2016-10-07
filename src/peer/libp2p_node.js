@@ -99,6 +99,14 @@ class P2PNode {
     })
   }
 
+  setSecureIOEnabled (use: boolean = true) {
+    if (use) {
+      this.swarm.connection.crypto(secio.tag, secio.encrypt)
+    } else {
+      this.swarm.connection.crypto()
+    }
+  }
+
   dialById (id: PeerId, protocol: string): Promise<Connection> {
     if (!this.isOnline) {
       return Promise.reject(new Error(OFFLINE_ERROR_MESSAGE))
