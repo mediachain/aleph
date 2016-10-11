@@ -6,14 +6,20 @@ const PeerId = require('peer-id')
 const PeerInfo = require('peer-info')
 const lp = require('pull-length-prefixed')
 
-import type { PeerInfoMsg, LookupPeerResponseMsg, ProtoCodec } from '../protobuf/types'
+import type { PeerInfoMsg, LookupPeerResponseMsg, QueryResultMsg, ProtoCodec } from '../protobuf/types'
+
+// Flow signatures for pull-streams
+export type PullStreamCallback<T> = (end: ?mixed, value?: ?T) => void
+export type PullStreamSource<T> = (end: ?mixed, cb: PullStreamCallback<T>) => void
+export type PullStreamSink<T> = (source: PullStreamSource<T>) => void
+export type PullStreamThrough<T, U> = (source: PullStreamSource<T>) => PullStreamSource<U>
 
 /**
  * A through stream that accepts POJOs and encodes them with the given `protocol-buffers` schema
  * @param codec a `protocol-buffers` schema, containing an `encode` function
  * @returns a pull-stream through function that will output encoded protos, prefixed with thier varint-encoded size
  */
-function protoStreamEncode<T> (codec: ProtoCodec<T>): Function {
+function protoStreamEncode<T> (codec: ProtoCodec<T>): PullStreamThrough<T, Buffer> {
   return pull(
     pull.map(codec.encode),
     lp.encode()
@@ -26,7 +32,7 @@ function protoStreamEncode<T> (codec: ProtoCodec<T>): Function {
  * @param codec a `protocol-buffers` schema, containing a `decode` function
  * @returns a through-stream function that can be wired into a pull-stream pipeline
  */
-function protoStreamDecode<T> (codec: ProtoCodec<T>): Function {
+function protoStreamDecode<T> (codec: ProtoCodec<T>): PullStreamThrough<Buffer, T> {
   return pull(
     lp.decode(),
     pull.map(codec.decode)
@@ -99,7 +105,7 @@ function pullToPromise<T> (...streams: Array<Function>): Promise<T> {
  * @param interval milliseconds to wait between providing value to consumers
  * @returns a pull-stream source
  */
-function pullRepeatedly (value: any, interval: number = 1000): Function {
+function pullRepeatedly<T> (value: T, interval: number = 1000): PullStreamSource<T> {
   let intervalStart: ?Date = null
   let timeoutId: ?number = null
   function intervalElapsed () {
@@ -125,6 +131,32 @@ function pullRepeatedly (value: any, interval: number = 1000): Function {
   }
 }
 
+/**
+ * A pull-stream through stream that will end the stream when it receives a QueryResultEnd message,
+ * and end the stream with an Error object if it receives a QueryResultError message.  Without this,
+ * you need to explicitly `pull.take(n)` from the result stream, or it will never terminate.
+ */
+const queryResultThrough: PullStreamThrough<QueryResultMsg, QueryResultMsg> = (read) => {
+  return (end, callback) => {
+    if (end) return callback(end, null)
+
+    return read(end, (end, data) => {
+      if (data == null) return callback(end, null)
+
+      if (data.end !== undefined) {
+        return callback(true, data)
+      }
+
+      if (data.error !== undefined) {
+        const message = data.error.error || 'Unknown error'
+        return callback(new Error(message), data)
+      }
+
+      return callback(end, data)
+    })
+  }
+}
+
 module.exports = {
   protoStreamEncode,
   protoStreamDecode,
@@ -132,5 +164,6 @@ module.exports = {
   peerInfoProtoUnmarshal,
   peerInfoProtoMarshal,
   pullToPromise,
-  pullRepeatedly
+  pullRepeatedly,
+  queryResultThrough
 }

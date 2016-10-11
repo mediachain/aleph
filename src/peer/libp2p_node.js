@@ -18,6 +18,12 @@ import type { Connection } from 'interface-connection'
 const OFFLINE_ERROR_MESSAGE = 'The libp2p node is not started yet'
 const IPFS_CODE = 421
 
+type P2PNodeOptions = {
+  peerInfo?: PeerInfo,
+  peerBook?: PeerBook,
+  disableSecureIO?: boolean
+}
+
 class P2PNode {
   peerInfo: PeerInfo
   peerBook: PeerBook
@@ -25,23 +31,28 @@ class P2PNode {
   isOnline: boolean
   abortables: Set<Abortable>
 
-  constructor (pInfo: ?PeerInfo, pBook: PeerBook = new PeerBook()) {
+  constructor (options: P2PNodeOptions) {
+    let {peerInfo, peerBook, disableSecureIO} = options
     this.isOnline = false
 
-    if (!pInfo) {
-      pInfo = new PeerInfo()
-      pInfo.multiaddr.add(multiaddr('/ip4/0.0.0.0/tcp/0'))
+    if (!peerInfo) {
+      peerInfo = new PeerInfo()
+      peerInfo.multiaddr.add(multiaddr('/ip4/0.0.0.0/tcp/0'))
     }
 
-    this.peerInfo = pInfo
-    this.peerBook = pBook
+    if (!peerBook) peerBook = new PeerBook()
+
+    if (!disableSecureIO) disableSecureIO = false
+
+    this.peerInfo = peerInfo
+    this.peerBook = peerBook
 
     // Swarm
-    this.swarm = new Swarm(pInfo)
+    this.swarm = new Swarm(peerInfo)
     this.swarm.connection.addStreamMuxer(spdy)
     this.swarm.connection.reuse()
 
-    this.swarm.connection.crypto(secio.tag, secio.encrypt)
+    this.setSecureIOEnabled(!disableSecureIO)
 
     this.swarm.on('peer-mux-established', (peerInfo) => {
       this.peerBook.put(peerInfo)
@@ -97,6 +108,14 @@ class P2PNode {
 
       this.swarm.close(resolve)
     })
+  }
+
+  setSecureIOEnabled (use: boolean = true) {
+    if (use) {
+      this.swarm.connection.crypto(secio.tag, secio.encrypt)
+    } else {
+      this.swarm.connection.crypto()
+    }
   }
 
   dialById (id: PeerId, protocol: string): Promise<Connection> {
