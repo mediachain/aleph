@@ -1,0 +1,26 @@
+version: '2'
+services:
+  integration-tester:
+    build: .
+    links:
+      - mcdir
+      - mcnode
+
+  mcdir:
+    build:
+      context: ./integration-test/concat
+      args:
+        concat_ref: ${concat_ref}
+    entrypoint: mcdir
+    ports:
+    - "9000:9000"
+
+  mcnode:
+    build:
+      context: ./integration-test/concat
+      args:
+        concat_ref: ${concat_ref}
+    entrypoint: ["mcnode", "-b", "0.0.0.0"]
+    ports:
+    - "9001:9001"
+    - "9002:9002"
