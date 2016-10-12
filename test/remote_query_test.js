@@ -59,7 +59,7 @@ describe('Remote Query', () => {
     const remote = mockRemote(responses)
 
     return startNodes(local, remote) // start both peers
-      .then(() => local.remoteQuery(remote.p2p.peerInfo, 'SELECT * FROM foo.bar'))
+      .then(() => local.remoteQueryStream(remote.p2p.peerInfo, 'SELECT * FROM foo.bar'))
       .then(resultStream =>
         new Promise(resolve => {
           pull(
@@ -87,7 +87,7 @@ describe('Remote Query', () => {
     const expected = responses.slice(0, responses.length - 1)
 
     return startNodes(local, remote)
-      .then(() => local.remoteQuery(remote.p2p.peerInfo, 'SELECT * FROM foo.bar'))
+      .then(() => local.remoteQueryStream(remote.p2p.peerInfo, 'SELECT * FROM foo.bar'))
       .then(resultStream => new Promise(resolve => {
         pull(
           resultStream,
