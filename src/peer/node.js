@@ -55,6 +55,10 @@ class MediachainNode {
     return this.p2p.peerInfo
   }
 
+  setDirectory (dirInfo: PeerInfo) {
+    this.directory = dirInfo
+  }
+
   register (): Promise<boolean> {
     if (this.directory == null) {
       return Promise.reject(new Error('No known directory server, cannot register'))
