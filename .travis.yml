@@ -1,3 +1,10 @@
+sudo: required
+services:
+  - docker
+env:
+  DOCKER_COMPOSE_VERSION: 1.8.0
+  concat_ref: master
+
 language: node_js
 node_js:
   - "6"
@@ -9,3 +16,14 @@ notifications:
     on_change: always
     email: false
 
+before_install:
+  - sudo rm /usr/local/bin/docker-compose
+  - curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > docker-compose
+  - chmod +x docker-compose
+  - sudo mv docker-compose /usr/local/bin
+  - docker pull mediachain/concat-dependencies
+  - docker pull mhart/alpine-node:6.7
+
+script:
+  - npm run test
+  - ./integration-test/run-in-docker.sh
