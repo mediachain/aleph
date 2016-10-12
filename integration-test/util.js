@@ -1,10 +1,12 @@
 // @flow
 
 const dns = require('dns')
+const path = require('path')
 const Multiaddr = require('multiaddr')
 const PeerId = require('peer-id')
 const PeerInfo = require('peer-info')
 const RestClient = require('../src/client/api/RestClient')
+const { loadIdentity } = require('../src/peer/identity')
 import type { NodeStatus } from '../src/client/api/RestClient'
 
 function dnsLookup (hostname: string): Promise<string> {
@@ -30,8 +32,25 @@ function directoryMultiaddr (): Promise<Multiaddr> {
   return lookupMultiaddr(DIRECTORY_HOSTNAME, DIRECTORY_PORT)
 }
 
+function directoryPeerId (): PeerId {
+  return loadIdentity(path.join(__dirname, 'concat', 'test-identities', 'mcdir', 'identity.node'))
+}
+
+function directoryPeerInfo (): Promise<PeerInfo> {
+  return directoryMultiaddr()
+    .then(maddr => {
+      const peerInfo = new PeerInfo(directoryPeerId())
+      peerInfo.multiaddr.add(maddr)
+      return peerInfo
+    })
+}
+
 function concatNodeMultiaddr (): Promise<Multiaddr> {
   return lookupMultiaddr(NODE_HOSTNAME, NODE_P2P_PORT)
+}
+
+function concatNodePeerId (): PeerId {
+  return loadIdentity(path.join(__dirname, 'concat', 'test-identities', 'mcnode', 'identity.node'))
 }
 
 function concatNodeClient (): Promise<RestClient> {
@@ -39,27 +58,29 @@ function concatNodeClient (): Promise<RestClient> {
     .then(ipAddr => new RestClient({peerUrl: `http://${ipAddr}:${NODE_API_PORT}`}))
 }
 
+function setConcatNodeDirectoryInfo (): Promise<*> {
+  return Promise.all([concatNodeClient(), directoryMultiaddr()])
+    .then(([client, dirAddr]) => {
+      const dirId = directoryPeerId()
+      return client.setDirectoryId(dirAddr.toString() + '/' + dirId.toB58String())
+    })
+}
+
 function setConcatNodeStatus (status: NodeStatus): Promise<NodeStatus> {
+  let setupPromise = Promise.resolve()
   if (status === 'public') {
-    // TODO: configure node with directory server address
-    // needs persistent node id for directory, which probably needs docker volume mounting
+    setupPromise = setConcatNodeDirectoryInfo()
   }
 
-  return concatNodeClient()
+  return setupPromise
+    .then(() => concatNodeClient())
     .then(client => client.setStatus(status))
 }
 
-function concatNodePeerId () {
-  return concatNodeClient()
-    .then(client => client.id())
-    .then(ids => ids.peer)
-    .then(PeerId.createFromB58String)
-}
-
 function concatNodePeerInfo (): Promise<PeerInfo> {
-  return Promise.all([concatNodeMultiaddr(), concatNodePeerId()])
-    .then(([maddr, peerId]) => {
-      const peerInfo = new PeerInfo(peerId)
+  return concatNodeMultiaddr()
+    .then(maddr => {
+      const peerInfo = new PeerInfo(concatNodePeerId())
       peerInfo.multiaddr.add(maddr)
       return peerInfo
     })
@@ -69,6 +90,8 @@ module.exports = {
   dnsLookup,
   lookupMultiaddr,
   directoryMultiaddr,
+  directoryPeerId,
+  directoryPeerInfo,
   concatNodeMultiaddr,
   concatNodeClient,
   setConcatNodeStatus,

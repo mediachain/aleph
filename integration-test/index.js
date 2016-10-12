@@ -10,7 +10,6 @@ describe('crazy docker integration setup', () => {
     const client = new RestClient({peerUrl: 'http://mcnode:9002'})
     return client.id().then(id => {
       assert(id != null, 'should be able to get node id')
-      console.log('mcnode running on docker has id: ', id)
     })
   })
 })
