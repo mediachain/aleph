@@ -19,7 +19,11 @@ fi
 
 full_tag="mediachain/concat-dependencies:${image_tag}"
 
-docker build -t ${full_tag} .
+if [ "${concat_ref}" == "" ]; then
+    concat_ref="master"
+fi
+
+docker build --build-arg concat_ref=${concat_ref} -t ${full_tag} .
 status=$?
 if [ ${status} -ne 0 ]; then
     echo "Error building image, not uploading to docker hub"
@@ -27,7 +31,7 @@ if [ ${status} -ne 0 ]; then
 fi
 
 echo "image \"${full_tag}\" built successfully, pushing to docker hub"
-docker push ${full_tag}
+#docker push ${full_tag}
 
 status=$?
 if [ ${status} -ne 0 ]; then
