@@ -1,6 +1,7 @@
 version: '2'
 services:
   integration-tester:
+    tty: true
     build: .
     links:
       - mcdir
