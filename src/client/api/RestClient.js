@@ -84,9 +84,9 @@ class RestClient {
     })
   }
 
-  id (): Promise<string> {
+  id (): Promise<Object> {
     return this.getRequest('id')
-      .then(r => r.text())
+      .then(r => r.json())
   }
 
   ping (peerId: string): Promise<boolean> {
