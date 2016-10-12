@@ -15,6 +15,7 @@ before_install:
   - chmod +x docker-compose
   - sudo mv docker-compose /usr/local/bin
   - docker pull mediachain/concat-dependencies
+  - docker pull mhart/alpine-node:6.7
 
 script:
   - npm run test
