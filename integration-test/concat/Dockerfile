@@ -8,9 +8,6 @@ WORKDIR /go/src/github.com/mediachain/concat
 ARG concat_ref=master
 RUN git checkout ${concat_ref}
 
-# install gx dependencies
-RUN gx install --global
-
 # Build the project
 RUN /go/src/github.com/mediachain/concat/install.sh
 
