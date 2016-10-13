@@ -84,9 +84,9 @@ class RestClient {
     })
   }
 
-  id (): Promise<string> {
+  id (): Promise<Object> {
     return this.getRequest('id')
-      .then(r => r.text())
+      .then(r => r.json())
   }
 
   ping (peerId: string): Promise<boolean> {
@@ -94,9 +94,9 @@ class RestClient {
       .then(response => true)
   }
 
-  publish (namespace: string, statement: SimpleStatementMsg): Promise<string> {
-    console.log(`publishing ${JSON.stringify(statement)} to ${namespace}`)
-    return this.postRequest(`publish/${namespace}`, statement)
+  publish (namespace: string, ...statements: Array<SimpleStatementMsg>): Promise<string> {
+    const statementNDJSON = statements.map(s => JSON.stringify(s)).join('\n')
+    return this.postRequest(`publish/${namespace}`, statementNDJSON, false)
       .then(r => r.text())
   }
 
@@ -113,6 +113,12 @@ class RestClient {
   queryStream (queryString: string): Promise<NDJsonResponse> {
     return this.postRequest('query', queryString, false)
       .then(r => new NDJsonResponse(r))
+  }
+
+  delete (queryString: string): Promise<number> {
+    return this.postRequest('delete', queryString, false)
+      .then(r => r.text())
+      .then(Number.parseInt)
   }
 
   getStatus (): Promise<NodeStatus> {

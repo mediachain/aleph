@@ -16,6 +16,7 @@ const {
   queryResultThrough
 } = require('./util')
 
+import type { QueryResultMsg } from '../protobuf/types'
 import type { Connection } from 'interface-connection'
 import type { PullStreamSource } from './util'
 
@@ -53,6 +54,10 @@ class MediachainNode {
 
   get peerInfo (): PeerInfo {
     return this.p2p.peerInfo
+  }
+
+  setDirectory (dirInfo: PeerInfo) {
+    this.directory = dirInfo
   }
 
   register (): Promise<boolean> {
@@ -144,7 +149,7 @@ class MediachainNode {
     )
   }
 
-  remoteQuery (peer: PeerInfo | PeerId | string, queryString: string): Promise<PullStreamSource> {
+  remoteQueryStream (peer: PeerInfo | PeerId | string, queryString: string): Promise<PullStreamSource> {
     return this.openConnection(peer, PROTOCOLS.node.query)
       .then(conn => pull(
           pull.values([{query: queryString}]),
@@ -153,6 +158,19 @@ class MediachainNode {
           protoStreamDecode(pb.node.QueryResult),
           queryResultThrough,
         ))
+  }
+
+  remoteQuery (peer: PeerInfo | PeerId | string, queryString: string): Promise<Array<QueryResultMsg>> {
+    return this.remoteQueryStream(peer, queryString)
+      .then(stream => new Promise((resolve, reject) => {
+        pull(
+          stream,
+          pull.collect((err, results) => {
+            if (err) return reject(err)
+            resolve(results)
+          })
+        )
+      }))
   }
 }
 
