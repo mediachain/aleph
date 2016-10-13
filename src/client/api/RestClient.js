@@ -2,6 +2,7 @@
 
 const fetch: (url: string, opts?: Object) => Promise<FetchResponse> = require('node-fetch')
 const ndjson = require('ndjson')
+const ipld = require('ipld')
 
 import type { Transform as TransformStream, Duplex as DuplexStream } from 'stream'
 import type { StatementMsg, SimpleStatementMsg } from '../../protobuf/types'
@@ -119,6 +120,36 @@ class RestClient {
     return this.postRequest('delete', queryString, false)
       .then(r => r.text())
       .then(Number.parseInt)
+  }
+
+  putData (...objects: Array<Object | Buffer>): Promise<Array<string>> {
+    const body: string =
+      objects.map(o => {
+        if (o instanceof Buffer) return o
+        return ipld.marshal(o)
+      }).map(buf => ({data: buf.toString('base64')}))
+        .map(obj => JSON.stringify(obj))
+        .join('\n')
+
+    return this.postRequest('data/put', body, false)
+      .then(r => r.text())
+      .then(response => response
+        .split('\n')
+        .filter(str => str.length > 0)
+      )
+  }
+
+  getData (objectId: string): Promise<Object | Buffer> {
+    return this.getRequest(`data/get/${objectId}`)
+      .then(r => r.json())
+      .then(o => Buffer.from(o.data, 'base64'))
+      .then(bytes => {
+        try {
+          return ipld.unmarshal(bytes)
+        } catch (err) {
+          return bytes
+        }
+      })
   }
 
   getStatus (): Promise<NodeStatus> {
