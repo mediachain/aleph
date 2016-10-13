@@ -18,7 +18,9 @@ module.exports = {
       .on('end', () => {
         client.putData(...items)
           .then(
-            console.log,
+            hashes => {
+              hashes.forEach(h => console.log(h))
+            },
             err => console.error(err.message)
           )
       })
