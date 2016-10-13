@@ -2,7 +2,7 @@
 
 const fetch: (url: string, opts?: Object) => Promise<FetchResponse> = require('node-fetch')
 const ndjson = require('ndjson')
-const ipld = require('ipld')
+const cbor = require('cbor')
 
 import type { Transform as TransformStream, Duplex as DuplexStream } from 'stream'
 import type { StatementMsg, SimpleStatementMsg } from '../../protobuf/types'
@@ -124,10 +124,18 @@ class RestClient {
 
   putData (...objects: Array<Object | Buffer>): Promise<Array<string>> {
     const body: string =
-      objects.map(o => {
-        if (o instanceof Buffer) return o
-        return ipld.marshal(o)
-      }).map(buf => ({data: buf.toString('base64')}))
+      objects.filter(o => o != null)
+        .map(o => {
+          if (o instanceof Buffer) return o
+          try {
+            return cbor.encode(o)
+          } catch (err) {
+            console.error('Error converting to cbor: ', err)
+            return new Buffer('')
+          }
+        })
+        .filter(buf => buf.length > 0)
+        .map(buf => ({data: buf.toString('base64')}))
         .map(obj => JSON.stringify(obj))
         .join('\n')
 
@@ -145,7 +153,7 @@ class RestClient {
       .then(o => Buffer.from(o.data, 'base64'))
       .then(bytes => {
         try {
-          return ipld.unmarshal(bytes)
+          return cbor.decode(bytes)
         } catch (err) {
           return bytes
         }
