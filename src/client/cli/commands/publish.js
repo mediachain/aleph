@@ -4,8 +4,6 @@ const fs = require('fs')
 const ndjson = require('ndjson')
 const getIn = require('lodash.get')
 const RestClient = require('../../api/RestClient')
-const cbor = require('cbor')
-const mh = require('multihashing')
 import type { Readable } from 'stream'
 import type { SimpleStatementMsg } from '../../../protobuf/types'
 
@@ -37,58 +35,63 @@ module.exports = {
 
     let statementBodies: Array<Object> = []
     let statements: Array<SimpleStatementMsg> = []
+    const publishPromises: Array<Promise<*>> = []
 
     inputStream.pipe(ndjson.parse())
       .on('data', obj => {
         const ref = getIn(obj, idSelector)
         const refs = []
         if (ref) refs.push(ref)
-
         const tags = [] // TODO: support extracting tags
+        const stmt = {object: obj, refs, tags}
 
-        const {encoded, multihash} = encode(obj)
-        const stmt = {object: multihash, refs, tags}
-
-        statementBodies.push(encoded)
+        statementBodies.push(obj)
         statements.push(stmt)
 
         if (statementBodies.length >= batchSize) {
-          // put the data blobs and statement envelopes in parallel
-
-          // save the refs for printing to the console on completion:
-          const statementRefs = statements.map(s => s.refs)
-
-          // first the bodies:
-          const bodyPromise = client.putData(...statementBodies)
+          publishPromises.push(
+            publishBatch(client, namespace, statementBodies, statements)
+          )
           statementBodies = []
-
-          // now the statements:
-          const statementPromise = client.publish(namespace, ...statements)
           statements = []
-
-          // when both are complete, print some info to the console
-          Promise.all([bodyPromise, statementPromise]).then(([bodyHashes, statementIds]) => {
-            if (bodyHashes.length !== statementIds.length) {
-              console.error(`Number of statement bodies written (${bodyHashes.length}) does not match ` +
-                `number of statements published (${statementIds.length})`)
-              return
-            }
-
-            for (let i = 0; i < bodyHashes.length; i++) {
-              const refsString = JSON.stringify(statementRefs[i])
-              console.log(`statement id: ${statementIds[i]} -- body: ${bodyHashes[i]} -- refs: ${refsString}`)
-            }
-          })
         }
       })
       .on('error', err => console.error(`Error reading from ${streamName}: `, err))
+      .on('end', () => {
+        console.log('input stream ended')
+      })
   }
 }
 
-function encode (body: Object): {encoded: Buffer, multihash: string} {
-  const encoded = cbor.encode(body)
-  const multihash = mh.multihash.toB58String(mh(encoded, 'sha2-256'))
-  return {encoded, multihash}
+function publishBatch (client: RestClient, namespace: string, statementBodies: Array<Object>, statements: Array<Object>): Promise<*> {
+  // save the refs for printing to the console on completion:
+  const statementRefs = statements.map(s => s.refs)
+
+  return client.putData(...statementBodies)
+    .then(bodyHashes => {
+      if (bodyHashes.length !== statements.length) {
+        throw new Error(`Expected ${statements.length} results from putting data blobs, received ${bodyHashes.length}`)
+      }
+      statements = statements.map((s, i) => {
+        s.object = bodyHashes[i]
+        return s
+      })
+
+      return client.publish(namespace, ...statements)
+        .then(statementIds => [bodyHashes, statementIds])
+    })
+    .then(([bodyHashes, statementIds]) => {
+      if (bodyHashes.length !== statementIds.length) {
+        console.error(`Number of statement bodies written (${bodyHashes.length}) does not match ` +
+          `number of statements published (${statementIds.length})`)
+        return
+      }
+
+      for (let i = 0; i < bodyHashes.length; i++) {
+        const refsString = JSON.stringify(statementRefs[i])
+        console.log(`statement id: ${statementIds[i]} -- body: ${bodyHashes[i]} -- refs: ${refsString}`)
+      }
+    })
 }
 
 function parseIdSelector (selector: string): Array<string> {
