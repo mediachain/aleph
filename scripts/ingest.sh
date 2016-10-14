@@ -1,3 +1,4 @@
 #!/bin/bash
 
-mcclient putData $1
+mcclient putData $1 > /dev/null
+
