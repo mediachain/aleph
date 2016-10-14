@@ -4,7 +4,7 @@ const RestClient = require('../../api/RestClient')
 
 module.exports = {
   command: 'getData <objectId>',
-  description: 'request the object with objectId from the remote node and print to the console',
+  description: 'request the object with objectId from the remote node and print to the console\n',
 
   handler: (opts: {peerUrl: string, objectId: string}) => {
     const {peerUrl, objectId} = opts

@@ -4,7 +4,7 @@ const path = require('path')
 
 module.exports = {
   command: 'config <subcommand>',
-  describe: 'show and set node configuration. use "config --help" to see subcommands',
+  describe: 'show and set node configuration. use "config --help" to see subcommands\n',
   builder: (yargs: Function) => {
     return yargs
       .commandDir(path.join(__dirname, './config'))

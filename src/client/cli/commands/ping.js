@@ -4,7 +4,7 @@ const RestClient = require('../../api/RestClient')
 
 module.exports = {
   command: 'ping <peerId>',
-  describe: 'ping a remote node',
+  describe: 'ping a remote node\n',
   handler: (opts: {peerId: string, peerUrl: string}) => {
     const {peerId, peerUrl} = opts
     console.log('pinging peer: ', peerId)

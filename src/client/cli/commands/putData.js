@@ -9,7 +9,7 @@ const BATCH_SIZE = 1000
 
 module.exports = {
   command: 'putData [filename]',
-  description: 'read newline-delimited JSON data from `filename` or stdin and store in the remote node as IPLD',
+  description: 'read newline-delimited JSON data from `filename` or stdin and store in the remote node as IPLD\n',
   builder: {
     batchSize: { default: BATCH_SIZE }
   },
