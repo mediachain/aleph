@@ -18,22 +18,24 @@ type HandlerOptions = {
   batchSize: number}
 
 module.exports = {
-  command: 'publish <namespace> <idSelector> [filename]',
+  command: 'publish <namespace> [filename]',
   description: 'publish a batch of statements from a batch of newline-delimited json. ' +
-    'statements will be read from `filename` or stdin. ' +
-    '`idSelector` is a dot-separated path to a field containing a well-known identifier, ' +
-    'or, a string containing a JSON array of keys.  Use the latter if your keys contain "."\n',
+    'statements will be read from `filename` or stdin.\n',
   builder: {
     batchSize: { default: BATCH_SIZE },
     contentSelector: {
       description: 'If present, use as a keypath to select a subset of the data to publish. ' +
         'If contentSelector is used, idSelector should be relative to it, not to the content root.'
+    },
+    idSelector: {
+      description: '`a dot-separated path to a field containing a well-known identifier, ' +
+      'or, a string containing a JSON array of keys.  Use the latter if your keys contain "."\n'
     }
   },
 
   handler: (opts: HandlerOptions) => {
     const {namespace, peerUrl, batchSize, filename} = opts
-    const idSelector = parseSelector(opts.idSelector)
+    const idSelector = (opts.idSelector != null) ? parseSelector(opts.idSelector) : null
     const contentSelector = (opts.contentSelector != null) ? parseSelector(opts.contentSelector) : null
     const streamName = 'standard input'
 
@@ -56,9 +58,11 @@ module.exports = {
           obj = getIn(obj, contentSelector)
         }
 
-        const ref = getIn(obj, idSelector)
         const refs = []
-        if (ref) refs.push(ref)
+        if (idSelector != null) {
+          const ref = getIn(obj, idSelector)
+          if (ref !== undefined) refs.push(ref)
+        }
         const tags = [] // TODO: support extracting tags
         const stmt = {object: obj, refs, tags}
 
