@@ -16,6 +16,7 @@ module.exports = {
 
   handler: (opts: {peerUrl: string, batchSize: number, filename: ?string}) => {
     const {peerUrl, batchSize, filename} = opts
+    const streamName = filename || 'standard input'
     const client = new RestClient({peerUrl})
 
     let items: Array<Object> = []
@@ -40,6 +41,6 @@ module.exports = {
           items = []
         }
       })
-      .on('error', err => console.error('Error reading from stdin: ', err))
+      .on('error', err => console.error(`Error reading from ${streamName}: `, err))
   }
 }
