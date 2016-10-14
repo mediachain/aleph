@@ -13,15 +13,17 @@ const BATCH_SIZE = 1000
 
 module.exports = {
   command: 'publish <namespace> <idSelector> [filename]',
-  description: 'publish a batch of statements from a batch of newline-delimited json.\n' +
-    'statements will be read from `filename` or stdin.\n' +
-    '`idSelector` is a dot-separated path to a field containing a well-known identifier.',
+  description: 'publish a batch of statements from a batch of newline-delimited json. ' +
+    'statements will be read from `filename` or stdin. ' +
+    '`idSelector` is a dot-separated path to a field containing a well-known identifier, ' +
+    'or, a string containing a JSON array of keys.  Use the latter if your keys contain "."\n',
   builder: {
     batchSize: { default: BATCH_SIZE }
   },
 
   handler: (opts: {namespace: string, peerUrl: string, idSelector: string, filename: ?string, batchSize: number}) => {
-    const {namespace, peerUrl, idSelector, batchSize, filename} = opts
+    const {namespace, peerUrl, batchSize, filename} = opts
+    const idSelector = parseIdSelector(opts.idSelector)
     const streamName = 'standard input'
 
     const client = new RestClient({peerUrl})
@@ -38,7 +40,7 @@ module.exports = {
 
     inputStream.pipe(ndjson.parse())
       .on('data', obj => {
-        const ref = extractId(obj, idSelector)
+        const ref = getIn(obj, idSelector)
         const refs = []
         if (ref) refs.push(ref)
 
@@ -89,7 +91,10 @@ function encode (body: Object): {encoded: Buffer, multihash: string} {
   return {encoded, multihash}
 }
 
-function extractId (body: Object, idSelector: string): ?string {
-  // TODO: allow keys with dots?  would require escaping, or accepting json array of keys
-  return getIn(body, idSelector)
+function parseIdSelector (selector: string): Array<string> {
+  selector = selector.trim()
+  if (selector.startsWith('[')) {
+    return JSON.parse(selector).map(k => k.toString())
+  }
+  return selector.split('.')
 }
