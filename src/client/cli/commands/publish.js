@@ -9,6 +9,14 @@ import type { SimpleStatementMsg } from '../../../protobuf/types'
 
 const BATCH_SIZE = 1000
 
+type HandlerOptions = {
+  namespace: string,
+  peerUrl: string,
+  idSelector: string,
+  contentSelector: ?string,
+  filename: ?string,
+  batchSize: number}
+
 module.exports = {
   command: 'publish <namespace> <idSelector> [filename]',
   description: 'publish a batch of statements from a batch of newline-delimited json. ' +
@@ -16,12 +24,17 @@ module.exports = {
     '`idSelector` is a dot-separated path to a field containing a well-known identifier, ' +
     'or, a string containing a JSON array of keys.  Use the latter if your keys contain "."\n',
   builder: {
-    batchSize: { default: BATCH_SIZE }
+    batchSize: { default: BATCH_SIZE },
+    contentSelector: {
+      description: 'If present, use as a keypath to select a subset of the data to publish. ' +
+        'If contentSelector is used, idSelector should be relative to it, not to the content root.'
+    }
   },
 
-  handler: (opts: {namespace: string, peerUrl: string, idSelector: string, filename: ?string, batchSize: number}) => {
+  handler: (opts: HandlerOptions) => {
     const {namespace, peerUrl, batchSize, filename} = opts
-    const idSelector = parseIdSelector(opts.idSelector)
+    const idSelector = parseSelector(opts.idSelector)
+    const contentSelector = (opts.contentSelector != null) ? parseSelector(opts.contentSelector) : null
     const streamName = 'standard input'
 
     const client = new RestClient({peerUrl})
@@ -39,6 +52,10 @@ module.exports = {
 
     inputStream.pipe(ndjson.parse())
       .on('data', obj => {
+        if (contentSelector != null) {
+          obj = getIn(obj, contentSelector)
+        }
+
         const ref = getIn(obj, idSelector)
         const refs = []
         if (ref) refs.push(ref)
@@ -94,7 +111,7 @@ function publishBatch (client: RestClient, namespace: string, statementBodies: A
     })
 }
 
-function parseIdSelector (selector: string): Array<string> {
+function parseSelector (selector: string): Array<string> {
   selector = selector.trim()
   if (selector.startsWith('[')) {
     return JSON.parse(selector).map(k => k.toString())

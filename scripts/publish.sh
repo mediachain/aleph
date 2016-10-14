@@ -1,7 +1,8 @@
 #!/bin/bash
 
 NAMESPACE='foo.bar'
-ID_SELECTOR='_source.native_id'
+CONTENT_SELECTOR='_source'
+ID_SELECTOR='native_id'
 
-mcclient publish $NAMESPACE $ID_SELECTOR $1 > /dev/null
+mcclient publish --contentSelector $CONTENT_SELECTOR $NAMESPACE $ID_SELECTOR $1 > /dev/null
 
