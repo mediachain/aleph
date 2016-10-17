@@ -106,9 +106,8 @@ function publishBatch (client: RestClient, namespace: string, statementBodies: A
     })
     .then(([bodyHashes, statementIds]) => {
       if (bodyHashes.length !== statementIds.length) {
-        console.error(`Number of statement bodies written (${bodyHashes.length}) does not match ` +
+        throw new Error(`Number of statement bodies written (${bodyHashes.length}) does not match ` +
           `number of statements published (${statementIds.length})`)
-        return
       }
 
       for (let i = 0; i < bodyHashes.length; i++) {
