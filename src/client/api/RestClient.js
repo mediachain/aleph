@@ -2,6 +2,7 @@
 
 const fetch: (url: string, opts?: Object) => Promise<FetchResponse> = require('node-fetch')
 const ndjson = require('ndjson')
+const cbor = require('cbor')
 
 import type { Transform as TransformStream, Duplex as DuplexStream } from 'stream'
 import type { StatementMsg, SimpleStatementMsg } from '../../protobuf/types'
@@ -94,10 +95,11 @@ class RestClient {
       .then(response => true)
   }
 
-  publish (namespace: string, ...statements: Array<SimpleStatementMsg>): Promise<string> {
+  publish (namespace: string, ...statements: Array<SimpleStatementMsg>): Promise<Array<string>> {
     const statementNDJSON = statements.map(s => JSON.stringify(s)).join('\n')
     return this.postRequest(`publish/${namespace}`, statementNDJSON, false)
       .then(r => r.text())
+      .then(text => text.split('\n').filter(text => text.length > 0))
   }
 
   statement (statementId: string): Promise<StatementMsg> {
@@ -119,6 +121,44 @@ class RestClient {
     return this.postRequest('delete', queryString, false)
       .then(r => r.text())
       .then(Number.parseInt)
+  }
+
+  putData (...objects: Array<Object | Buffer>): Promise<Array<string>> {
+    const body: string =
+      objects.filter(o => o != null)
+        .map(o => {
+          if (o instanceof Buffer) return o
+          try {
+            return cbor.encode(o)
+          } catch (err) {
+            console.error('Error converting to cbor: ', err)
+            return new Buffer('')
+          }
+        })
+        .filter(buf => buf.length > 0)
+        .map(buf => ({data: buf.toString('base64')}))
+        .map(obj => JSON.stringify(obj))
+        .join('\n')
+
+    return this.postRequest('data/put', body, false)
+      .then(r => r.text())
+      .then(response => response
+        .split('\n')
+        .filter(str => str.length > 0)
+      )
+  }
+
+  getData (objectId: string): Promise<Object | Buffer> {
+    return this.getRequest(`data/get/${objectId}`)
+      .then(r => r.json())
+      .then(o => Buffer.from(o.data, 'base64'))
+      .then(bytes => {
+        try {
+          return cbor.decode(bytes)
+        } catch (err) {
+          return bytes
+        }
+      })
   }
 
   getStatus (): Promise<NodeStatus> {
