@@ -79,7 +79,10 @@ module.exports = {
       })
       .on('error', err => console.error(`Error reading from ${streamName}: `, err))
       .on('end', () => {
-        console.log('input stream ended')
+        Promise.all(publishPromises)
+          .then(() => {
+            console.log('All statements published successfully')
+          })
       })
   }
 }
@@ -112,6 +115,9 @@ function publishBatch (client: RestClient, namespace: string, statementBodies: A
         const refsString = JSON.stringify(statementRefs[i])
         console.log(`statement id: ${statementIds[i]} -- body: ${bodyHashes[i]} -- refs: ${refsString}`)
       }
+    })
+    .catch(err => {
+      console.error('Error publishing statements: ', err)
     })
 }
 
