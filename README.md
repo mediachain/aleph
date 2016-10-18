@@ -3,7 +3,7 @@
 [![Travis CI](https://travis-ci.org/mediachain/aleph.svg?branch=master)](https://travis-ci.org/mediachain/aleph.svg?branch=master)
 [![js-standard-style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg?style=flat-square)](https://github.com/feross/standard)
 
-The Aleph's diameter was probably little more than an inch, but all space was there, actual and undiminished. Each thing (a mirror's face, let us say) was infinite things, since I distinctly saw it from every angle of the universe[1]
+*The Aleph's diameter was probably little more than an inch, but all space was there, actual and undiminished. Each thing (a mirror's face, let us say) was infinite things, since I distinctly saw it from every angle of the universe[1]*
 
 1: http://www.phinnweb.org/links/literature/borges/aleph.html
 
@@ -12,7 +12,7 @@ Aleph is part of the [mediachain](http://mediachain.io) project and is an integr
 [Phase II architecture](https://blog.mediachain.io/looking-backwards-looking-forwards-9149bf00f876#.kkym75h9h).
 
 Aleph provides two main components. First is a client for the HTTP API exposed by
-[concat][concat], the reference go peer implementation.  Second, aleph is also a peer in its own right,
+[concat][concat], the reference go peer implementation. Second is a lightweight peer in its own right.
 
 ## Installation
 
@@ -70,7 +70,7 @@ Once that's set up, `npm run build` will run the `src` directory through babel a
 directory.  At the moment babel is only used for removing flow type annotations from the compiled output, although
 we may lean on it more as we target other execution environments (e.g., the browser).
 
-If you're working on the `mcclient` code, you might want to use `npm run cli -- args for mcclient go after double dashes`, which will
+If you're working on the `mcclient` code, you might want to use `npm run cli -- # args for mcclient go after double dashes`, which will
 compile the code before running the command.  Otherwise you need to remember to run `npm run build` before `mcclient`
 to compile your changes.
 
