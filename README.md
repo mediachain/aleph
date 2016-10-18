@@ -3,9 +3,7 @@
 [![Travis CI](https://travis-ci.org/mediachain/aleph.svg?branch=master)](https://travis-ci.org/mediachain/aleph.svg?branch=master)
 [![js-standard-style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg?style=flat-square)](https://github.com/feross/standard)
 
-*The Aleph's diameter was probably little more than an inch, but all space was there, actual and undiminished. Each thing (a mirror's face, let us say) was infinite things, since I distinctly saw it from every angle of the universe[1]*
-
-1: http://www.phinnweb.org/links/literature/borges/aleph.html
+*The Aleph's diameter was probably little more than an inch, but all space was there, actual and undiminished. Each thing (a mirror's face, let us say) was infinite things, since I distinctly saw it from every angle of the universe[¹]*
 
 
 Aleph is part of the [mediachain](http://mediachain.io) project and is an integral component of the
@@ -107,3 +105,4 @@ The code lives in `src`, and is organized into a few main subdirectories:
 
 
 [concat]: https://github.com/mediachain/concat
+[¹]: http://www.phinnweb.org/links/literature/borges/aleph.html
