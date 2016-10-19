@@ -16,7 +16,8 @@ type HandlerOptions = {
   contentSelector: ?string,
   filename: ?string,
   batchSize: number,
-  idRegex: ?string
+  idRegex: ?string,
+  dryRun: boolean
 }
 
 module.exports = {
@@ -39,11 +40,16 @@ module.exports = {
         'e.g. --idRegex \'(dpla_)http.*/(.*)\' would turn ' +
         '"dpla_http://dp.la/api/items/2e49bf374b1b55f71603aa9aa326a9d6" into ' +
         '"dpla_2e49bf374b1b55f71603aa9aa326a9d6"\n'
+    },
+    dryRun: {
+      type: 'boolean',
+      default: false,
+      description: 'only extract ids and print to the console'
     }
   },
 
   handler: (opts: HandlerOptions) => {
-    const {namespace, peerUrl, batchSize, filename, idRegex} = opts
+    const {namespace, peerUrl, batchSize, filename, idRegex, dryRun} = opts
     const idSelector = parseSelector(opts.idSelector)
     const contentSelector = (opts.contentSelector != null) ? parseSelector(opts.contentSelector) : null
     const streamName = 'standard input'
@@ -80,6 +86,12 @@ module.exports = {
         }
         const refs = [id]
         const tags = [] // TODO: support extracting tags
+
+        if (dryRun) {
+          console.log(`refs: ${JSON.stringify(refs)}, tags: ${JSON.stringify(tags)}`)
+          return
+        }
+
         const stmt = {object: obj, refs, tags}
 
         statementBodies.push(obj)
@@ -103,7 +115,9 @@ module.exports = {
 
         Promise.all(publishPromises)
           .then(() => {
-            console.log('All statements published successfully')
+            if (!dryRun) {
+              console.log('All statements published successfully')
+            }
           })
       })
   },
