@@ -25,26 +25,26 @@ module.exports = {
     'statements will be read from `filename` or stdin.\n',
   builder: {
     batchSize: { default: BATCH_SIZE },
+    idSelector: {
+      required: true,
+      description: 'a dot-separated path to a field containing a well-known identifier, ' +
+      'or, a string containing a JSON array of keys.  Use the latter if your keys contain "."\n'
+    },
     contentSelector: {
       description: 'If present, use as a keypath to select a subset of the data to publish. ' +
-        'If contentSelector is used, idSelector should be relative to it, not to the content root.'
-    },
-    idSelector: {
-      description: '`a dot-separated path to a field containing a well-known identifier, ' +
-      'or, a string containing a JSON array of keys.  Use the latter if your keys contain "."\n'
+        'If contentSelector is used, idSelector should be relative to it, not to the content root.\n'
     },
     idRegex: {
       description: 'if present, any capture groups will be used to extract a portion of the id. ' +
         'e.g. --idRegex \'(dpla_)http.*/(.*)\' would turn ' +
         '"dpla_http://dp.la/api/items/2e49bf374b1b55f71603aa9aa326a9d6" into ' +
-        '"dpla_2e49bf374b1b55f71603aa9aa326a9d6"' +
-        'Only works if an idSelector is specified. \n'
+        '"dpla_2e49bf374b1b55f71603aa9aa326a9d6"\n'
     }
   },
 
   handler: (opts: HandlerOptions) => {
     const {namespace, peerUrl, batchSize, filename, idRegex} = opts
-    const idSelector = (opts.idSelector != null) ? parseSelector(opts.idSelector) : null
+    const idSelector = parseSelector(opts.idSelector)
     const contentSelector = (opts.contentSelector != null) ? parseSelector(opts.contentSelector) : null
     const streamName = 'standard input'
 
@@ -67,14 +67,18 @@ module.exports = {
           obj = getIn(obj, contentSelector)
         }
 
-        const refs = []
-        if (idSelector != null) {
-          let id = getIn(obj, idSelector)
-          if (idRegex != null) {
-            id = extractId(id, idRegex)
-          }
-          if (id !== undefined) refs.push(id)
+        let id = getIn(obj, idSelector)
+        if (idRegex != null) {
+          id = extractId(id, idRegex)
         }
+
+        if (id == null || id.length < 1) {
+          throw new Error(
+            `Unable to extract id using idSelector ${JSON.stringify(idSelector)}. Input record: \n` +
+            JSON.stringify(obj, null, 2)
+          )
+        }
+        const refs = [id]
         const tags = [] // TODO: support extracting tags
         const stmt = {object: obj, refs, tags}
 
