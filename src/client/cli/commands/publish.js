@@ -167,6 +167,9 @@ function parseSelector (selector: string): Array<string> {
 }
 
 function extractId (fullId: string, idRegex: string): string {
+  if (!idRegex.startsWith('^')) idRegex = '^' + idRegex
+  if (!idRegex.endsWith('$')) idRegex = idRegex + '$'
+
   const re = new RegExp(idRegex)
   const match = re.exec(fullId)
   if (match == null) return fullId
