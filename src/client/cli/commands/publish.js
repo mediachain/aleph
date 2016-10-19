@@ -15,7 +15,9 @@ type HandlerOptions = {
   idSelector: string,
   contentSelector: ?string,
   filename: ?string,
-  batchSize: number}
+  batchSize: number,
+  idRegex: ?string
+}
 
 module.exports = {
   command: 'publish <namespace> [filename]',
@@ -30,11 +32,18 @@ module.exports = {
     idSelector: {
       description: '`a dot-separated path to a field containing a well-known identifier, ' +
       'or, a string containing a JSON array of keys.  Use the latter if your keys contain "."\n'
+    },
+    idRegex: {
+      description: 'if present, any capture groups will be used to extract a portion of the id. ' +
+        'e.g. --idRegex \'(dpla_)http.*/(.*)\' would turn ' +
+        '"dpla_http://dp.la/api/items/2e49bf374b1b55f71603aa9aa326a9d6" into ' +
+        '"dpla_2e49bf374b1b55f71603aa9aa326a9d6"' +
+        'Only works if an idSelector is specified. \n'
     }
   },
 
   handler: (opts: HandlerOptions) => {
-    const {namespace, peerUrl, batchSize, filename} = opts
+    const {namespace, peerUrl, batchSize, filename, idRegex} = opts
     const idSelector = (opts.idSelector != null) ? parseSelector(opts.idSelector) : null
     const contentSelector = (opts.contentSelector != null) ? parseSelector(opts.contentSelector) : null
     const streamName = 'standard input'
@@ -60,8 +69,11 @@ module.exports = {
 
         const refs = []
         if (idSelector != null) {
-          const ref = getIn(obj, idSelector)
-          if (ref !== undefined) refs.push(ref)
+          let id = getIn(obj, idSelector)
+          if (idRegex != null) {
+            id = extractId(id, idRegex)
+          }
+          if (id !== undefined) refs.push(id)
         }
         const tags = [] // TODO: support extracting tags
         const stmt = {object: obj, refs, tags}
@@ -84,7 +96,9 @@ module.exports = {
             console.log('All statements published successfully')
           })
       })
-  }
+  },
+
+  extractId
 }
 
 function publishBatch (client: RestClient, namespace: string, statementBodies: Array<Object>, statements: Array<Object>): Promise<*> {
@@ -126,4 +140,16 @@ function parseSelector (selector: string): Array<string> {
     return JSON.parse(selector).map(k => k.toString())
   }
   return selector.split('.')
+}
+
+function extractId (fullId: string, idRegex: string): string {
+  const re = new RegExp(idRegex)
+  const match = re.exec(fullId)
+  if (match == null || match.length < 2) return fullId
+
+  let id = ''
+  for (let i = 1; i < match.length; i++) {
+    id += match[i]
+  }
+  return id
 }
