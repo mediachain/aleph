@@ -151,7 +151,8 @@ function parseSelector (selector: string): Array<string> {
 function extractId (fullId: string, idRegex: string): string {
   const re = new RegExp(idRegex)
   const match = re.exec(fullId)
-  if (match == null || match.length < 2) return fullId
+  if (match == null) return fullId
+  if (match.length === 1) return match[0]
 
   let id = ''
   for (let i = 1; i < match.length; i++) {
