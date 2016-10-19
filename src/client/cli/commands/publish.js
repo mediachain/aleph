@@ -172,8 +172,13 @@ function extractId (fullId: string, idRegex: string): string {
 
   const re = new RegExp(idRegex)
   const match = re.exec(fullId)
-  if (match == null) return fullId
-  if (match.length === 1) return match[0]
+  if (match == null) {
+    throw new Error(`idRegex "${idRegex}" failed to match on id string "${fullId}"`)
+  }
+
+  if (match.length === 1) {
+    throw new Error(`idRegex must contain at least one capture group`)
+  }
 
   let id = ''
   for (let i = 1; i < match.length; i++) {
