@@ -49,9 +49,10 @@ module.exports = {
   },
 
   handler: (opts: HandlerOptions) => {
-    const {namespace, peerUrl, batchSize, filename, idRegex, dryRun} = opts
+    const {namespace, peerUrl, batchSize, filename, dryRun} = opts
     const idSelector = parseSelector(opts.idSelector)
     const contentSelector = (opts.contentSelector != null) ? parseSelector(opts.contentSelector) : null
+    const idRegex = (opts.idRegex != null) ? compileIdRegex(opts.idRegex) : null
     const streamName = 'standard input'
 
     const client = new RestClient({peerUrl})
@@ -166,14 +167,16 @@ function parseSelector (selector: string): Array<string> {
   return selector.split('.')
 }
 
-function extractId (fullId: string, idRegex: string): string {
-  if (!idRegex.startsWith('^')) idRegex = '^' + idRegex
-  if (!idRegex.endsWith('$')) idRegex = idRegex + '$'
+function compileIdRegex (idRegexStr: string): RegExp {
+  if (!idRegexStr.startsWith('^')) idRegexStr = '^' + idRegexStr
+  if (!idRegexStr.endsWith('$')) idRegexStr = idRegexStr + '$'
+  return new RegExp(idRegexStr)
+}
 
-  const re = new RegExp(idRegex)
-  const match = re.exec(fullId)
+function extractId (fullId: string, idRegex: RegExp): string {
+  const match = idRegex.exec(fullId)
   if (match == null) {
-    throw new Error(`idRegex "${idRegex}" failed to match on id string "${fullId}"`)
+    throw new Error(`idRegex ${idRegex.toString()} failed to match on id string "${fullId}"`)
   }
 
   if (match.length === 1) {
