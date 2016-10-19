@@ -91,6 +91,12 @@ module.exports = {
       })
       .on('error', err => console.error(`Error reading from ${streamName}: `, err))
       .on('end', () => {
+        if (statementBodies.length > 0) {
+          publishPromises.push(
+            publishBatch(client, namespace, statementBodies, statements)
+          )
+        }
+
         Promise.all(publishPromises)
           .then(() => {
             console.log('All statements published successfully')
