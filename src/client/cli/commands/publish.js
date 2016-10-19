@@ -2,7 +2,7 @@
 
 const fs = require('fs')
 const ndjson = require('ndjson')
-const getIn = require('lodash.get')
+const objectPath = require('object-path')
 const RestClient = require('../../api/RestClient')
 import type { Readable } from 'stream'
 import type { SimpleStatementMsg } from '../../../protobuf/types'
@@ -17,6 +17,7 @@ type HandlerOptions = {
   filename: ?string,
   batchSize: number,
   idRegex: ?string,
+  contentFilters: ?string,
   dryRun: boolean
 }
 
@@ -35,6 +36,9 @@ module.exports = {
       description: 'If present, use as a keypath to select a subset of the data to publish. ' +
         'If contentSelector is used, idSelector should be relative to it, not to the content root.\n'
     },
+    contentFilters: {
+      description: 'Key-paths to omit from content. Multiple keypaths can be joined with ",". \n'
+    },
     idRegex: {
       description: 'if present, any capture groups will be used to extract a portion of the id. ' +
         'e.g. --idRegex \'(dpla_)http.*/(.*)\' would turn ' +
@@ -52,6 +56,7 @@ module.exports = {
     const {namespace, peerUrl, batchSize, filename, dryRun} = opts
     const idSelector = parseSelector(opts.idSelector)
     const contentSelector = (opts.contentSelector != null) ? parseSelector(opts.contentSelector) : null
+    const contentFilters = parseFilters(opts.contentFilters)
     const idRegex = (opts.idRegex != null) ? compileIdRegex(opts.idRegex) : null
     const streamName = 'standard input'
 
@@ -71,10 +76,16 @@ module.exports = {
     inputStream.pipe(ndjson.parse())
       .on('data', obj => {
         if (contentSelector != null) {
-          obj = getIn(obj, contentSelector)
+          obj = objectPath.get(obj, contentSelector)
         }
 
-        let id = getIn(obj, idSelector)
+        for (let filter of contentFilters) {
+          objectPath.del(obj, filter)
+        }
+        console.log('filtered: ')
+        console.dir(obj, {colors: true, depth: 1000})
+
+        let id = objectPath.get(obj, idSelector)
         if (idRegex != null) {
           id = extractId(id, idRegex)
         }
@@ -159,12 +170,25 @@ function publishBatch (client: RestClient, namespace: string, statementBodies: A
     })
 }
 
-function parseSelector (selector: string): Array<string> {
+function parseSelector (selector: string | Array<string>): Array<string> {
+  if (Array.isArray(selector)) return selector.map(k => k.toString())
+
   selector = selector.trim()
   if (selector.startsWith('[')) {
-    return JSON.parse(selector).map(k => k.toString())
+    return parseSelector(JSON.parse(selector))
   }
   return selector.split('.')
+}
+
+function parseFilters (filterString: ?string): Array<Array<string>> {
+  if (filterString == null) return []
+  filterString = filterString.trim()
+  if (filterString.startsWith('[')) {
+    return JSON.parse(filterString).map(f => parseSelector(f))
+  }
+
+  const filters = filterString.split(',')
+  return filters.map(s => parseSelector(s))
 }
 
 function compileIdRegex (idRegexStr: string): RegExp {
