@@ -2,6 +2,7 @@
 
 import sys
 import os
+import os.path
 import argparse
 import subprocess
 
@@ -27,6 +28,7 @@ def go(cfg):
 
 def fetch(cfg, batch, index):
     wget(cfg, batch, index)
+    zcat(cfg, batch, index)
 
 def wget(cfg, batch, index):
     print "Fetching batch %d" % index
@@ -36,7 +38,19 @@ def wget(cfg, batch, index):
     if rc != 0:
         raise Exception("Error fetching data: wget exit code %d" % rc)
 
-    
+def zcat(cfg, batch, index):
+    chunks = [os.path.join(cfg.dataset, os.path.basename(chunk)) for chunk in batch]
+    batchf = os.path.join(cfg.dataset, "batch_%d" % index)
+    with open(batchf, 'w') as out:
+        p = subprocess.Popen(["zcat"] + chunks, stdout = out)
+        rc = p.wait()
+        if rc != 0:
+            raise Exception("Error batching data: zcat exit code %d" % rc)
+    p = subprocess.Popen(["rm"] + chunks)
+    rc = p.wait()
+    if rc != 0:
+        raise Exception("Error removing compressed chunks; rm exit code %d" % rc)
+
 def main(args):
     parser = argparse.ArgumentParser(
         prog = "dataset-fetch.py",
