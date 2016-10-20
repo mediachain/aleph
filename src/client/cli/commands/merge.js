@@ -11,12 +11,14 @@ module.exports = {
     const client = new RestClient({peerUrl})
     client.merge(queryString, remotePeer)
       .then(({statementCount, objectCount}) => {
-        console.log(`merged ${statementCount} statements and ${objectCount} objects`)
+        console.log(`merged ${countString(statementCount, 'statement')} and ${countString(objectCount, 'object')}`)
       })
       .catch(err => console.error(err.message))
   }
 }
 
-function printValue (obj: Object) {
-  console.dir(obj, {colors: true, depth: 100})
+function countString (count: number, word: string): string {
+  let plural = word
+  if (count !== 1) plural += 's'
+  return count.toString() + ' ' + plural
 }
