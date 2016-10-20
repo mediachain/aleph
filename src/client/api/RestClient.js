@@ -50,16 +50,16 @@ class RestError extends Error {
 }
 
 class RestClient {
-  peerUrl: string;
+  apiUrl: string;
   client: Function;
 
-  constructor (options: {peerUrl?: string}) {
-    this.peerUrl = options.peerUrl || ''
+  constructor (options: {apiUrl?: string}) {
+    this.apiUrl = options.apiUrl || ''
   }
 
   _makeUrl (path: string): string {
     const absPath = path.startsWith('/') ? path : '/' + path
-    return this.peerUrl + absPath
+    return this.apiUrl + absPath
   }
 
   req (path: string, args: Object = {}): Promise<FetchResponse> {
@@ -85,8 +85,12 @@ class RestClient {
     })
   }
 
-  id (): Promise<Object> {
-    return this.getRequest('id')
+  id (peerId?: string): Promise<Object> {
+    let path = 'id'
+    if (peerId != null) {
+      path += '/' + peerId
+    }
+    return this.getRequest(path)
       .then(r => r.json())
   }
 
@@ -107,14 +111,30 @@ class RestClient {
       .then(r => r.json())
   }
 
-  query (queryString: string): Promise<Array<Object>> {
-    return this.queryStream(queryString)
+  query (queryString: string, remotePeer?: string): Promise<Array<Object>> {
+    return this.queryStream(queryString, remotePeer)
       .then(r => r.values())
   }
 
-  queryStream (queryString: string): Promise<NDJsonResponse> {
-    return this.postRequest('query', queryString, false)
+  queryStream (queryString: string, remotePeer?: string): Promise<NDJsonResponse> {
+    let path = 'query'
+    if (remotePeer != null) {
+      path += '/' + remotePeer
+    }
+    return this.postRequest(path, queryString, false)
       .then(r => new NDJsonResponse(r))
+  }
+
+  merge (queryString: string, remotePeer: string): Promise<{statementCount: number, objectCount: number}> {
+    return this.postRequest(`merge/${remotePeer}`, queryString, false)
+      .then(r => r.text())
+      .then(resp => {
+        const counts = resp.split('\n')
+          .filter(line => line.length > 0)
+          .map(line => Number.parseInt(line))
+        const [statementCount, objectCount] = counts
+        return {statementCount, objectCount}
+      })
   }
 
   delete (queryString: string): Promise<number> {
@@ -161,6 +181,12 @@ class RestClient {
       })
   }
 
+  listPeers (): Promise<Array<string>> {
+    return this.getRequest('dir/list')
+      .then(r => r.text())
+      .then(s => s.split('\n').filter(line => line.length > 0))
+  }
+
   getStatus (): Promise<NodeStatus> {
     return this.getRequest('status')
       .then(r => r.text())
@@ -181,6 +207,29 @@ class RestClient {
   setDirectoryId (id: string): Promise<boolean> {
     return this.postRequest('config/dir', id, false)
       .then(() => true)
+  }
+
+  getInfo (): Promise<string> {
+    return this.getRequest('config/info')
+      .then(r => r.text())
+      .then(r => r.trim())
+  }
+
+  setInfo (info: string): Promise<string> {
+    return this.postRequest('config/info', info, false)
+      .then(r => r.text())
+  }
+
+  getNATConfig (): Promise<string> {
+    return this.getRequest('config/nat')
+      .then(r => r.text())
+      .then(s => s.trim())
+  }
+
+  setNATConfig (config: string): Promise<boolean> {
+    return this.postRequest('config/nat', config, false)
+      .then(r => r.text())
+      .then(s => s.trim() === 'OK')
   }
 }
 

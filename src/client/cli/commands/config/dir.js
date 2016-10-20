@@ -5,9 +5,9 @@ const RestClient = require('../../../api/RestClient')
 module.exports = {
   command: 'dir [dirId]',
   description: 'get or set the directory server id',
-  handler: (opts: {peerUrl: string, dirId?: string}) => {
-    const {peerUrl, dirId} = opts
-    const client = new RestClient({peerUrl})
+  handler: (opts: {apiUrl: string, dirId?: string}) => {
+    const {apiUrl, dirId} = opts
+    const client = new RestClient({apiUrl})
     if (dirId) {
       client.setDirectoryId(dirId)
         .then(() => {

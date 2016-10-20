@@ -8,9 +8,9 @@ module.exports = {
     'already been stored in the node.  `statementBodyId` should be the multihash ' +
     'identifier of the statement body.\n',
 
-  handler: (opts: {namespace: string, peerUrl: string, statementBodyId: string}) => {
-    const {namespace, peerUrl, statementBodyId} = opts
-    const client = new RestClient({peerUrl})
+  handler: (opts: {namespace: string, apiUrl: string, statementBodyId: string}) => {
+    const {namespace, apiUrl, statementBodyId} = opts
+    const client = new RestClient({apiUrl})
 
     client.publish(namespace, {object: statementBodyId})
       .then(

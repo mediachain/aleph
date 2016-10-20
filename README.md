@@ -33,7 +33,7 @@ directly instead.
 `mcclient` contains several sub-commands, so the general invocation is
 `mcclient [global-options] <command> [command-options]`.
 
-At the moment, the only global option is `--peerUrl` or `-p`, which sets the location of the remote node's
+At the moment, the only global option is `--apiUrl` or `-p`, which sets the location of the remote node's
 HTTP API. By default, `mcclient` will attempt to connect to a concat node running on localhost at port 9002,
 which is concat's default listen address for the HTTP API.  If you've configured concat to run on a different
 port or on a remote machine, use the `-p` flag to pass in a new URL, e.g. `mcclient -p http://localhost:5678 id`
