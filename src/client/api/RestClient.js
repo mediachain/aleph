@@ -161,6 +161,12 @@ class RestClient {
       })
   }
 
+  listPeers (): Promise<Array<string>> {
+    return this.getRequest('dir/list')
+      .then(r => r.text())
+      .then(s => s.split('\n').filter(line => line.length > 0))
+  }
+
   getStatus (): Promise<NodeStatus> {
     return this.getRequest('status')
       .then(r => r.text())
