@@ -3,13 +3,18 @@
 const RestClient = require('../../api/RestClient')
 
 module.exports = {
-  command: 'query [queryString]',
+  command: 'query <queryString>',
+  builder: {
+    remotePeer: {
+      description: 'the id of a remote peer to route the query to'
+    }
+  },
   description: 'send a mediachain query to the node for evaluation.\n',
-  handler: (opts: {peerUrl: string, queryString: string}) => {
-    const {peerUrl, queryString} = opts
+  handler: (opts: {peerUrl: string, queryString: string, remotePeer?: string}) => {
+    const {peerUrl, queryString, remotePeer} = opts
 
     const client = new RestClient({peerUrl})
-    client.queryStream(queryString)
+    client.queryStream(queryString, remotePeer)
       .then(response => {
         response.stream().on('data', printValue)
       })

@@ -111,13 +111,17 @@ class RestClient {
       .then(r => r.json())
   }
 
-  query (queryString: string): Promise<Array<Object>> {
-    return this.queryStream(queryString)
+  query (queryString: string, remotePeer?: string): Promise<Array<Object>> {
+    return this.queryStream(queryString, remotePeer)
       .then(r => r.values())
   }
 
-  queryStream (queryString: string): Promise<NDJsonResponse> {
-    return this.postRequest('query', queryString, false)
+  queryStream (queryString: string, remotePeer?: string): Promise<NDJsonResponse> {
+    let path = 'query'
+    if (remotePeer != null) {
+      path += '/' + remotePeer
+    }
+    return this.postRequest(path, queryString, false)
       .then(r => new NDJsonResponse(r))
   }
 
