@@ -208,6 +208,17 @@ class RestClient {
     return this.postRequest('config/dir', id, false)
       .then(() => true)
   }
+
+  getInfo (): Promise<string> {
+    return this.getRequest('config/info')
+      .then(r => r.text())
+      .then(r => r.trim())
+  }
+
+  setInfo (info: string): Promise<string> {
+    return this.postRequest('config/info', info, false)
+      .then(r => r.text())
+  }
 }
 
 function validateStatus (status: string): NodeStatus {
