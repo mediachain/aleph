@@ -8,6 +8,7 @@ import argparse
 import tempfile
 import shutil
 import glob
+import multiprocessing
 
 def ingest(ns):
     procs = dict()
@@ -42,15 +43,17 @@ def ingest(ns):
         reap_some()
 
 def main(args):
+    ncpus = multiprocessing.cpu_count()
+    
     parser = argparse.ArgumentParser(
         prog = "ingest-parallel.py",
         description = "ingest a dir of ndjson files in parallel"
     )
     parser.add_argument('-n', '--processes',
                         type = int,
-                        default = 10,
+                        default = ncpus,
                         dest = 'procs',
-                        help = "Number of parallel ingestion processes")
+                        help = "Number of parallel ingestion processes; defaults to number of cpus")
     parser.add_argument('script',
                         type = str,
                         help = "Ingest script; must accept ndjson filname")

@@ -82,8 +82,6 @@ module.exports = {
         for (let filter of contentFilters) {
           objectPath.del(obj, filter)
         }
-        console.log('filtered: ')
-        console.dir(obj, {colors: true, depth: 1000})
 
         let id = objectPath.get(obj, idSelector)
         if (idRegex != null) {
