@@ -40,7 +40,7 @@ def wget(cfg, batch, index):
 
 def zcat(cfg, batch, index):
     chunks = [os.path.join(cfg.dataset, os.path.basename(chunk)) for chunk in batch]
-    batchf = os.path.join(cfg.dataset, "batch_%d" % index)
+    batchf = os.path.join(cfg.dataset, "batch_%d.json" % index)
     with open(batchf, 'w') as out:
         p = subprocess.Popen(["zcat"] + chunks, stdout = out)
         rc = p.wait()
