@@ -13,7 +13,7 @@ const {
   lookupResponseToPeerInfo,
   pullToPromise,
   pullRepeatedly,
-  queryResultThrough
+  resultStreamThrough
 } = require('./util')
 
 import type { QueryResultMsg } from '../protobuf/types'
@@ -156,7 +156,7 @@ class MediachainNode {
           protoStreamEncode(pb.node.QueryRequest),
           conn,
           protoStreamDecode(pb.node.QueryResult),
-          queryResultThrough,
+          resultStreamThrough,
         ))
   }
 

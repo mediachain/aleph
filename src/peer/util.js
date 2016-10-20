@@ -6,7 +6,7 @@ const PeerId = require('peer-id')
 const PeerInfo = require('peer-info')
 const lp = require('pull-length-prefixed')
 
-import type { PeerInfoMsg, LookupPeerResponseMsg, QueryResultMsg, ProtoCodec } from '../protobuf/types'
+import type { PeerInfoMsg, LookupPeerResponseMsg, QueryResultMsg, DataResultMsg, ProtoCodec } from '../protobuf/types'
 
 // Flow signatures for pull-streams
 export type PullStreamCallback<T> = (end: ?mixed, value?: ?T) => void
@@ -136,7 +136,8 @@ function pullRepeatedly<T> (value: T, interval: number = 1000): PullStreamSource
  * and end the stream with an Error object if it receives a StreamError message.  Without this,
  * you need to explicitly `pull.take(n)` from the result stream, or it will never terminate.
  */
-const queryResultThrough: PullStreamThrough<QueryResultMsg, QueryResultMsg> = (read) => {
+type MediachainStreamThrough<T: QueryResultMsg | DataResultMsg> = PullStreamThrough<T, T>
+const resultStreamThrough: MediachainStreamThrough<*> = (read) => {
   return (end, callback) => {
     if (end) return callback(end, null)
 
@@ -165,5 +166,5 @@ module.exports = {
   peerInfoProtoMarshal,
   pullToPromise,
   pullRepeatedly,
-  queryResultThrough
+  resultStreamThrough
 }
