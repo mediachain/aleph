@@ -9,9 +9,16 @@ module.exports = {
   handler: (opts: {peerUrl: string, peerId?: string}) => {
     const {peerUrl, peerId} = opts
     const client = new RestClient({peerUrl})
-    client.id().then(
-      response => { console.log(response) },
+    client.id(peerId).then(
+      printIds,
       err => { console.error(err.message) }
     )
   }
+}
+
+function printIds (opts: {peer: string, publisher: string, info: string}) {
+  const {peer, publisher, info} = opts
+  console.log(`Peer ID: ${peer}`)
+  console.log(`Publisher ID: ${publisher}`)
+  console.log(`Info: ${info}`)
 }
