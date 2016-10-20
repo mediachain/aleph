@@ -85,8 +85,12 @@ class RestClient {
     })
   }
 
-  id (): Promise<Object> {
-    return this.getRequest('id')
+  id (peerId?: string): Promise<Object> {
+    let path = 'id'
+    if (peerId != null) {
+      path += '/' + peerId
+    }
+    return this.getRequest(path)
       .then(r => r.json())
   }
 
