@@ -6,7 +6,8 @@ module.exports = {
   command: 'query <queryString>',
   builder: {
     remotePeer: {
-      description: 'the id of a remote peer to route the query to'
+      description: 'the id of a remote peer to route the query to',
+      alias: 'r'
     }
   },
   description: 'send a mediachain query to the node for evaluation.\n',
