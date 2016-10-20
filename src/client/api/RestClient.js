@@ -219,6 +219,18 @@ class RestClient {
     return this.postRequest('config/info', info, false)
       .then(r => r.text())
   }
+
+  getNATConfig (): Promise<string> {
+    return this.getRequest('config/nat')
+      .then(r => r.text())
+      .then(s => s.trim())
+  }
+
+  setNATConfig (config: string): Promise<boolean> {
+    return this.postRequest('config/nat', config, false)
+      .then(r => r.text())
+      .then(s => s.trim() === 'OK')
+  }
 }
 
 function validateStatus (status: string): NodeStatus {
