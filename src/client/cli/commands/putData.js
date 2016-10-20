@@ -14,10 +14,10 @@ module.exports = {
     batchSize: { default: BATCH_SIZE }
   },
 
-  handler: (opts: {peerUrl: string, batchSize: number, filename: ?string}) => {
-    const {peerUrl, batchSize, filename} = opts
+  handler: (opts: {apiUrl: string, batchSize: number, filename: ?string}) => {
+    const {apiUrl, batchSize, filename} = opts
     const streamName = filename || 'standard input'
-    const client = new RestClient({peerUrl})
+    const client = new RestClient({apiUrl})
 
     let items: Array<Object> = []
 

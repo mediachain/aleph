@@ -6,9 +6,9 @@ module.exports = {
   command: 'id [peerId]',
   description: 'request the peer ids of the connected peer, ' +
     'or a different peer if peerId is given and a directory server is connected\n',
-  handler: (opts: {peerUrl: string, peerId?: string}) => {
-    const {peerUrl, peerId} = opts
-    const client = new RestClient({peerUrl})
+  handler: (opts: {apiUrl: string, peerId?: string}) => {
+    const {apiUrl, peerId} = opts
+    const client = new RestClient({apiUrl})
     client.id(peerId).then(
       printIds,
       err => { console.error(err.message) }

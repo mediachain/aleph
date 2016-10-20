@@ -5,10 +5,10 @@ const RestClient = require('../../api/RestClient')
 module.exports = {
   command: 'merge <remotePeer> <queryString>',
   description: 'send a mediachain query to the node for evaluation.\n',
-  handler: (opts: {peerUrl: string, queryString: string, remotePeer: string}) => {
-    const {peerUrl, queryString, remotePeer} = opts
+  handler: (opts: {apiUrl: string, queryString: string, remotePeer: string}) => {
+    const {apiUrl, queryString, remotePeer} = opts
 
-    const client = new RestClient({peerUrl})
+    const client = new RestClient({apiUrl})
     client.merge(queryString, remotePeer)
       .then(({statementCount, objectCount}) => {
         console.log(`merged ${countString(statementCount, 'statement')} and ${countString(objectCount, 'object')}`)

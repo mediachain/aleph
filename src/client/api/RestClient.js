@@ -50,16 +50,16 @@ class RestError extends Error {
 }
 
 class RestClient {
-  peerUrl: string;
+  apiUrl: string;
   client: Function;
 
-  constructor (options: {peerUrl?: string}) {
-    this.peerUrl = options.peerUrl || ''
+  constructor (options: {apiUrl?: string}) {
+    this.apiUrl = options.apiUrl || ''
   }
 
   _makeUrl (path: string): string {
     const absPath = path.startsWith('/') ? path : '/' + path
-    return this.peerUrl + absPath
+    return this.apiUrl + absPath
   }
 
   req (path: string, args: Object = {}): Promise<FetchResponse> {

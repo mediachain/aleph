@@ -55,7 +55,7 @@ function concatNodePeerId (): PeerId {
 
 function concatNodeClient (): Promise<RestClient> {
   return dnsLookup(NODE_HOSTNAME)
-    .then(ipAddr => new RestClient({peerUrl: `http://${ipAddr}:${NODE_API_PORT}`}))
+    .then(ipAddr => new RestClient({apiUrl: `http://${ipAddr}:${NODE_API_PORT}`}))
 }
 
 function setConcatNodeDirectoryInfo (): Promise<*> {

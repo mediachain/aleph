@@ -11,7 +11,7 @@ const BATCH_SIZE = 1000
 
 type HandlerOptions = {
   namespace: string,
-  peerUrl: string,
+  apiUrl: string,
   idSelector: string,
   contentSelector: ?string,
   filename: ?string,
@@ -53,14 +53,14 @@ module.exports = {
   },
 
   handler: (opts: HandlerOptions) => {
-    const {namespace, peerUrl, batchSize, filename, dryRun} = opts
+    const {namespace, apiUrl, batchSize, filename, dryRun} = opts
     const idSelector = parseSelector(opts.idSelector)
     const contentSelector = (opts.contentSelector != null) ? parseSelector(opts.contentSelector) : null
     const contentFilters = parseFilters(opts.contentFilters)
     const idRegex = (opts.idRegex != null) ? compileIdRegex(opts.idRegex) : null
     const streamName = 'standard input'
 
-    const client = new RestClient({peerUrl})
+    const client = new RestClient({apiUrl})
 
     let inputStream: Readable
     if (filename) {
