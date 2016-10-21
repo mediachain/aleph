@@ -33,7 +33,7 @@ def fetch(cfg, batch, index):
 def wget(cfg, batch, index):
     print "Fetching batch %d" % index
     urls = [cfg.url + chunk for chunk in batch]
-    p = subprocess.Popen(["wget", "-P", cfg.dataset] + urls)
+    p = subprocess.Popen(["wget", "-q", "-P", cfg.dataset] + urls)
     rc = p.wait()
     if rc != 0:
         raise Exception("Error fetching data: wget exit code %d" % rc)
