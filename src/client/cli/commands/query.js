@@ -1,6 +1,7 @@
 // @flow
 
 const RestClient = require('../../api/RestClient')
+const { prettyPrint } = require('../util')
 
 module.exports = {
   command: 'query <queryString>',
@@ -17,12 +18,8 @@ module.exports = {
     const client = new RestClient({apiUrl})
     client.queryStream(queryString, remotePeer)
       .then(response => {
-        response.stream().on('data', printValue)
+        response.stream().on('data', prettyPrint)
       })
       .catch(err => console.error(err.message))
   }
-}
-
-function printValue (obj: Object) {
-  console.dir(obj, {colors: true, depth: 100})
 }

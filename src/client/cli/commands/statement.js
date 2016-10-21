@@ -1,6 +1,7 @@
 // @flow
 
 const RestClient = require('../../api/RestClient')
+const { prettyPrint } = require('../util')
 
 module.exports = {
   command: 'statement <statementId>',
@@ -11,7 +12,7 @@ module.exports = {
 
     client.statement(statementId)
       .then(
-        statement => console.dir(statement, {colors: true}),
+        prettyPrint,
         err => console.error(err.message)
       )
   }

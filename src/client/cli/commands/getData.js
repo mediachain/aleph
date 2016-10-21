@@ -1,6 +1,7 @@
 // @flow
 
 const RestClient = require('../../api/RestClient')
+const { prettyPrint } = require('../util')
 
 module.exports = {
   command: 'getData <objectId>',
@@ -12,7 +13,7 @@ module.exports = {
 
     client.getData(objectId)
       .then(
-        obj => console.log(JSON.stringify(obj)),
+        prettyPrint,
         err => console.error(err.message)
       )
   }
