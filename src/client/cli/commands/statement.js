@@ -11,7 +11,7 @@ module.exports = {
 
     client.statement(statementId)
       .then(
-        statement => console.dir(statement, {colors: true}),
+        statement => console.dir(statement, {colors: true, depth: 1000}),
         err => console.error(err.message)
       )
   }

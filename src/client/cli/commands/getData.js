@@ -12,7 +12,7 @@ module.exports = {
 
     client.getData(objectId)
       .then(
-        obj => console.log(JSON.stringify(obj)),
+        obj => console.dir(obj, {colors: true, depth: 1000}),
         err => console.error(err.message)
       )
   }
