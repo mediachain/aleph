@@ -1,6 +1,7 @@
 // @flow
 
 const RestClient = require('../../api/RestClient')
+const { pluralizeCount } = require('../util')
 
 module.exports = {
   command: 'merge <remotePeer> <queryString>',
@@ -11,14 +12,11 @@ module.exports = {
     const client = new RestClient({apiUrl})
     client.merge(queryString, remotePeer)
       .then(({statementCount, objectCount}) => {
-        console.log(`merged ${countString(statementCount, 'statement')} and ${countString(objectCount, 'object')}`)
+        console.log(
+          `merged ${pluralizeCount(statementCount, 'statement')} and ${pluralizeCount(objectCount, 'object')}`
+        )
       })
       .catch(err => console.error(err.message))
   }
 }
 
-function countString (count: number, word: string): string {
-  let plural = word
-  if (count !== 1) plural += 's'
-  return count.toString() + ' ' + plural
-}
