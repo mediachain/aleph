@@ -5,6 +5,10 @@ import os
 import os.path
 import argparse
 import subprocess
+import multiprocessing
+import math
+
+ncpus = multiprocessing.cpu_count()
 
 def go(cfg):
     with open("%s.manifest" % cfg.dataset) as mf:
@@ -33,10 +37,16 @@ def fetch(cfg, batch, index):
 def wget(cfg, batch, index):
     print "Fetching batch %d" % index
     urls = [cfg.url + chunk for chunk in batch]
-    p = subprocess.Popen(["wget", "-q", "-P", cfg.dataset] + urls)
-    rc = p.wait()
-    if rc != 0:
-        raise Exception("Error fetching data: wget exit code %d" % rc)
+    pchunk = int(math.ceil(len(urls)/ncpus))
+    pargs = (urls[x:x+pchunk] for x in range(0, len(urls), pchunk))
+    procs = [wget1(cfg, args) for args in pargs]
+    for p in procs:
+        rc = p.wait()
+        if rc != 0:
+            raise Exception("Error fetching data: wget exit code %d" % rc)
+
+def wget1(cfg, urls):
+    return subprocess.Popen(["wget", "-q", "-P", cfg.dataset] + urls)
 
 def zcat(cfg, batch, index):
     chunks = [os.path.join(cfg.dataset, os.path.basename(chunk)) for chunk in batch]
