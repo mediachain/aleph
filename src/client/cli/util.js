@@ -6,6 +6,13 @@ function prettyPrint (obj: Object) {
   console.dir(obj, {colors: true, depth: 1000})
 }
 
+function pluralizeCount (count: number, word: string): string {
+  let plural = word
+  if (count !== 1) plural += 's'
+  return count.toString() + ' ' + plural
+}
+
 module.exports = {
-  prettyPrint
+  prettyPrint,
+  pluralizeCount
 }
