@@ -42,8 +42,8 @@ class NDJsonResponse {
 class RestError extends Error {
   response: FetchResponse
   statusCode: number
-  constructor (response) {
-    super(response.statusText)
+  constructor (response, responseBody) {
+    super(response.statusText + '\n' + responseBody)
     this.statusCode = response.status
     this.response = response
   }
@@ -67,7 +67,9 @@ class RestClient {
     return fetch(fullUrl, args)
       .then(response => {
         if (!response.ok) {
-          throw new RestError(response)
+          return response.text().then(responseBody => {
+            throw new RestError(response, responseBody)
+          })
         }
         return response
       })
