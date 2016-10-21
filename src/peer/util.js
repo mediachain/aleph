@@ -6,7 +6,7 @@ const PeerId = require('peer-id')
 const PeerInfo = require('peer-info')
 const lp = require('pull-length-prefixed')
 
-import type { PeerInfoMsg, LookupPeerResponseMsg, QueryResultMsg, DataResultMsg, ProtoCodec } from '../protobuf/types'
+import type { PeerInfoMsg, LookupPeerResponseMsg, ProtoCodec, QueryResultMsg, DataResultMsg } from '../protobuf/types'  // eslint-disable-line no-unused-vars
 
 // Flow signatures for pull-streams
 export type PullStreamCallback<T> = (end: ?mixed, value?: ?T) => void
