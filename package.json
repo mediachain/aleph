@@ -1,7 +1,7 @@
 {
   "name": "aleph",
-  "version": "0.0.1",
-  "description": "API prototype: the peer that knows all things",
+  "version": "1.0.0",
+  "description": "Mediachain client and javascript peer",
   "main": "index.js",
   "scripts": {
     "test": "mocha --compilers js:babel-register ./test",
