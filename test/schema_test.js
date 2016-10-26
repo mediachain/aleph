@@ -33,7 +33,7 @@ describe('schema validation', () => {
   })
 
   it('validates a self-describing object', () => {
-    const schemaRef = Object.assign({}, fooSchemaDescription, {links: {mediachain: 'QmF001234'}})
+    const schemaRef = {'/': 'QmF001234'}
     const result = validate(fooSchema, {schema: schemaRef, data: {foo: 'self-describing-bar'}})
     assert.equal(result, true, 'schema should validate a self-describing record')
   })
