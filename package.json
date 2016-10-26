@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "mocha --compilers js:babel-register ./test",
-    "build": "mkdir -p ./lib && babel src -d lib",
+    "build": "mkdir -p ./lib && babel src -d lib && cp ./src/protobuf/*.proto ./lib/protobuf/",
     "check": "standard && flow",
     "cli": "npm run build >/dev/null && node ./lib/client/cli/index.js",
     "prepublish": "npm run build"

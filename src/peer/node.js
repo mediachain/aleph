@@ -13,10 +13,10 @@ const {
   lookupResponseToPeerInfo,
   pullToPromise,
   pullRepeatedly,
-  queryResultThrough
+  resultStreamThrough
 } = require('./util')
 
-import type { QueryResultMsg } from '../protobuf/types'
+import type { QueryResultMsg, DataResultMsg } from '../protobuf/types'
 import type { Connection } from 'interface-connection'
 import type { PullStreamSource } from './util'
 
@@ -156,7 +156,7 @@ class MediachainNode {
           protoStreamEncode(pb.node.QueryRequest),
           conn,
           protoStreamDecode(pb.node.QueryResult),
-          queryResultThrough,
+          resultStreamThrough,
         ))
   }
 
@@ -171,6 +171,31 @@ class MediachainNode {
           })
         )
       }))
+  }
+
+  remoteData (peer: PeerInfo | PeerId | string, keys: Array<string>): Array<DataResultMsg> {
+    return this.remoteDataStream(peer, keys)
+      .then(stream => new Promise((resolve, reject) => {
+        pull(
+          stream,
+          pull.collect((err, results) => {
+            if (err) return reject(err)
+            resolve(results)
+          })
+        )
+      }))
+  }
+
+  remoteDataStream (peer: PeerInfo | PeerId | string, keys: Array<string>): Promise<PullStreamSource> {
+    return this.openConnection(peer, PROTOCOLS.node.data)
+      .then(conn => pull(
+        pull.once({keys}),
+        protoStreamEncode(pb.node.DataRequest),
+        conn,
+        protoStreamDecode(pb.node.DataResult),
+        resultStreamThrough,
+        pull.map(result => result.data)
+      ))
   }
 }
 
