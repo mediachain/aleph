@@ -2,7 +2,7 @@
 
 const fetch: (url: string, opts?: Object) => Promise<FetchResponse> = require('node-fetch')
 const ndjson = require('ndjson')
-const cbor = require('cbor')
+const serialize = require('../../metadata/serialize')
 
 import type { Transform as TransformStream, Duplex as DuplexStream } from 'stream'
 import type { StatementMsg, SimpleStatementMsg } from '../../protobuf/types'
@@ -151,9 +151,9 @@ class RestClient {
         .map(o => {
           if (o instanceof Buffer) return o
           try {
-            return cbor.encode(o)
+            return serialize.encode(o)
           } catch (err) {
-            console.error('Error converting to cbor: ', err)
+            console.error('Error converting to serialized record: ', err)
             return new Buffer('')
           }
         })
@@ -176,7 +176,7 @@ class RestClient {
       .then(o => Buffer.from(o.data, 'base64'))
       .then(bytes => {
         try {
-          return cbor.decode(bytes)
+          return serialize.decode(bytes)
         } catch (err) {
           return bytes
         }
