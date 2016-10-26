@@ -11,8 +11,7 @@ export type SelfDescribingRecord = {
 }
 
 // human-readable identifiers for a schema, including semantic version
-// this will be contained in the schema itself (under the `self` field),
-// as well as in references to the schema in each self-describing data record
+// this will be contained in the schema itself (under the `self` field)
 export type SchemaDescription = {
   vendor: string,
   name: string,
@@ -20,17 +19,8 @@ export type SchemaDescription = {
   format: string,
 }
 
-export type SchemaReference = SchemaDescription & {
-  links: {
-    // records require a link to a mediachain object containing the schema
-    mediachain: string,
-
-    // optional links via http, iglu (snowplow's schema repo), and ipfs
-    http?: string,
-    iglu?: string,
-    ipfs?: {'/': string},
-  }
-}
+// A SchemaReference is an IPLD-style link object, whose string value is the multihash of a schema
+export type SchemaReference = {'/': string}
 
 export type SelfDescribingSchema = {
   self: SchemaDescription,
@@ -55,7 +45,7 @@ function isSchemaDescription (obj: Object): boolean {
 }
 
 function isSchemaReference (obj: Object): boolean {
-  return isSchemaDescription(obj) && isObject(obj.links)
+  return isObject(obj) && typeof(obj['/']) === 'string'
 }
 
 function isSelfDescribingRecord (obj: Object): boolean {
@@ -84,11 +74,6 @@ function validate (schema: SelfDescribingSchema, payload: Object): boolean {
   let data = payload
   if (isSelfDescribingRecord(payload)) {
     data = (payload.data: Object)
-
-    if (!schemaDescriptionIsCompatible(schema.self, payload.schema)) {
-      console.warn('schema description in payload does not match given schema')
-      return false
-    }
   }
 
   if (schema.self.format !== 'jsonschema') {
