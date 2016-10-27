@@ -9,8 +9,6 @@ const { pluralizeCount, isB58Multihash } = require('../util')
 import type { Readable } from 'stream'
 import type { SelfDescribingSchema } from '../../../metadata/schema'
 
-const BATCH_SIZE = 1000
-
 type HandlerOptions = {
   apiUrl: string,
   schema: string,
@@ -27,7 +25,6 @@ module.exports = {
     '`schema` can be either a path to a local schema, or the base58 object id of a published schema. ' +
   'statements will be read from `filename` or stdin.\n',
   builder: {
-    batchSize: { default: BATCH_SIZE },
     contentSelector: {
       description: 'If present, use as a keypath to select a subset of the data to publish. ' +
       'If contentSelector is used, idSelector should be relative to it, not to the content root.\n'
