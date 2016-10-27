@@ -4,6 +4,7 @@ const fs = require('fs')
 const ndjson = require('ndjson')
 const objectPath = require('object-path')
 const { validate, loadSelfDescribingSchema } = require('../../../metadata/schema')
+const { pluralizeCount } = require('../util')
 import type { Readable } from 'stream'
 import type { SelfDescribingSchema } from '../../../metadata/schema'
 
@@ -73,6 +74,8 @@ function validateStream (opts: {
     contentFilters
   } = opts
 
+  let count = 0
+
   stream.pipe(ndjson.parse())
     .on('data', obj => {
       if (contentSelector != null) {
@@ -87,10 +90,11 @@ function validateStream (opts: {
       if (!result.success) {
         throw new Error(`${result.error.message}.\nFailed object:\n${JSON.stringify(obj, null, 2)}`)
       }
+      count += 1
     })
     .on('error', err => console.error(`Error reading from ${streamName}: `, err))
     .on('end', () => {
-      console.log('All statements validated successfully')
+      console.log(`${pluralizeCount(count, 'statement')} validated successfully`)
     })
 }
 
