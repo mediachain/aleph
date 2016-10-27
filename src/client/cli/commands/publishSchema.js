@@ -1,8 +1,7 @@
 // @flow
 
-const fs = require('fs')
 const RestClient = require('../../api/RestClient')
-const { validateSelfDescribingSchema, schemaDescriptionToWKI } = require('../../../metadata/schema')
+const { loadSelfDescribingSchema, schemaDescriptionToWKI } = require('../../../metadata/schema')
 
 const SCHEMA_NAMESPACE = 'mediachain.schemas'
 
@@ -21,12 +20,7 @@ module.exports = {
     const {apiUrl, filename, namespace} = opts
     const client = new RestClient({apiUrl})
 
-    const obj = JSON.parse(fs.readFileSync(filename, 'utf-8'))
-    if (obj == null || typeof obj !== 'object' || Array.isArray(obj)) {
-      throw new Error(`Schema file "${filename}" must contain a single json object that defines a json schema.`)
-    }
-
-    const schema = validateSelfDescribingSchema(obj)
+    const schema = loadSelfDescribingSchema(filename)
     const wki = schemaDescriptionToWKI(schema.self)
 
     client.putData(schema)

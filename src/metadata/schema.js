@@ -1,7 +1,8 @@
 // @flow
 
+const fs = require('fs')
 const Ajv = require('ajv')
-const ajv = new Ajv()
+const ajv = new Ajv({allErrors: true})
 const SchemaVer = require('./schemaver')
 
 const SCHEMA_WKI_PREFIX = 'schema:'
@@ -105,10 +106,30 @@ function validate (schema: SelfDescribingSchema, payload: Object): ValidationRes
     return {success: true}
   }
 
+  const errorInfo = formatAjvErrors(ajv.errors)
   return {
     success: false,
-    error: new Error(`Schema validation failed: ${ajv.errorsText()}`)
+    error: new Error(`Schema validation failed: \n${errorInfo}`)
   }
+}
+
+type AjvError = {
+  keyword: string,
+  dataPath: string,
+  schemaPath: string,
+  params: {[id:string]: string},
+  message: string
+}
+function formatAjvErrors (errors: Array<AjvError>): string {
+  const lines = []
+  for (const err of errors) {
+    let msg = `root_object${err.dataPath} ${err.message}`
+    if (err.params != null && Object.keys(err.params).length > 0) {
+      msg += ': ' + JSON.stringify(err.params)
+    }
+    lines.push(msg)
+  }
+  return lines.join('\n')
 }
 
 /**
@@ -137,9 +158,19 @@ function validateSelfDescribingSchema (schemaObject: Object): SelfDescribingSche
   return (schemaObject: SelfDescribingSchema) // promote the flow type, now that we know it's valid
 }
 
+function loadSelfDescribingSchema (filename: string): SelfDescribingSchema {
+  const obj = JSON.parse(fs.readFileSync(filename, 'utf-8'))
+  if (obj == null || typeof obj !== 'object' || Array.isArray(obj)) {
+    throw new Error(`Schema file "${filename}" must contain a single json object that defines a json schema.`)
+  }
+
+  return validateSelfDescribingSchema(obj)
+}
+
 module.exports = {
   validate,
   validateSelfDescribingSchema,
+  loadSelfDescribingSchema,
   schemaDescriptionToWKI,
   isSelfDescribingRecord,
   isSchemaDescription,
