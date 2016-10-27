@@ -4,7 +4,7 @@ const fs = require('fs')
 const ndjson = require('ndjson')
 const objectPath = require('object-path')
 const RestClient = require('../../api/RestClient')
-const { validate, validateSelfDescribingSchema } = require('../../../metadata/schema')
+const { validate, validateSelfDescribingSchema, isSelfDescribingRecord } = require('../../../metadata/schema')
 import type { Readable } from 'stream'
 import type { SelfDescribingSchema } from '../../../metadata/schema'
 
@@ -175,9 +175,20 @@ function publishStream (opts: {
         )
       }
 
-      const selfDescribingObj = {
-        schema: {'/': schemaReference},
-        data: obj
+      let selfDescribingObj
+      if (isSelfDescribingRecord(obj)) {
+        const ref = objectPath.get(obj, 'schema', '/')
+        if (ref !== schemaReference) {
+          throw new Error(
+            `Record contains reference to a different schema (${ref}) than the one specified ${schemaReference}`
+          )
+        }
+        selfDescribingObj = obj
+      } else {
+        selfDescribingObj = {
+          schema: {'/': schemaReference},
+          data: obj
+        }
       }
 
       const refs = [id]
