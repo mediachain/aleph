@@ -3,15 +3,17 @@
 const fs = require('fs')
 const ndjson = require('ndjson')
 const objectPath = require('object-path')
-const { validate, loadSelfDescribingSchema } = require('../../../metadata/schema')
-const { pluralizeCount } = require('../util')
+const RestClient = require('../../api/RestClient')
+const { validate, loadSelfDescribingSchema, validateSelfDescribingSchema } = require('../../../metadata/schema')
+const { pluralizeCount, isB58Multihash } = require('../util')
 import type { Readable } from 'stream'
 import type { SelfDescribingSchema } from '../../../metadata/schema'
 
 const BATCH_SIZE = 1000
 
 type HandlerOptions = {
-  schemaFilename: string,
+  apiUrl: string,
+  schema: string,
   filename: ?string,
   idSelector: string,
   contentSelector: ?string,
@@ -20,8 +22,9 @@ type HandlerOptions = {
 }
 
 module.exports = {
-  command: 'validate <schemaFilename> [filename]',
+  command: 'validate <schema> [filename]',
   description: 'validate newline-delimited json statements against the given schema. ' +
+    '`schema` can be either a path to a local schema, or the base58 object id of a published schema. ' +
   'statements will be read from `filename` or stdin.\n',
   builder: {
     batchSize: { default: BATCH_SIZE },
@@ -35,12 +38,10 @@ module.exports = {
   },
 
   handler: (opts: HandlerOptions) => {
-    const { schemaFilename, filename } = opts
+    const { apiUrl, schema, filename } = opts
     const contentSelector = (opts.contentSelector != null) ? parseSelector(opts.contentSelector) : null
     const contentFilters = parseFilters(opts.contentFilters)
     let streamName = 'standard input'
-
-    const schema = loadSelfDescribingSchema(schemaFilename)
 
     let stream: Readable
     if (filename) {
@@ -50,12 +51,23 @@ module.exports = {
       stream = process.stdin
     }
 
-    validateStream({
-      stream,
-      streamName,
-      schema,
-      contentSelector,
-      contentFilters})
+    let schemaPromise: Promise<SelfDescribingSchema>
+    if (isB58Multihash(schema)) {
+      const client = new RestClient({apiUrl})
+      schemaPromise = client.getData(schema).then(validateSelfDescribingSchema)
+    } else {
+      schemaPromise = Promise.resolve(loadSelfDescribingSchema(schema))
+    }
+
+    schemaPromise.then(schema => {
+      validateStream({
+        stream,
+        streamName,
+        schema,
+        contentSelector,
+        contentFilters
+      })
+    })
   }
 }
 
