@@ -4,13 +4,15 @@ const fs = require('fs')
 const ndjson = require('ndjson')
 const objectPath = require('object-path')
 const RestClient = require('../../api/RestClient')
+const { validate, validateSelfDescribingSchema } = require('../../../metadata/schema')
 import type { Readable } from 'stream'
-import type { SimpleStatementMsg } from '../../../protobuf/types'
+import type { SelfDescribingSchema } from '../../../metadata/schema'
 
 const BATCH_SIZE = 1000
 
 type HandlerOptions = {
   namespace: string,
+  schemaReference: string,
   apiUrl: string,
   idSelector: string,
   contentSelector: ?string,
@@ -18,11 +20,12 @@ type HandlerOptions = {
   batchSize: number,
   idRegex: ?string,
   contentFilters: ?string,
-  dryRun: boolean
+  dryRun: boolean,
+  skipSchemaValidation: boolean
 }
 
 module.exports = {
-  command: 'publish <namespace> [filename]',
+  command: 'publish <namespace> <schemaReference> [filename]',
   description: 'publish a batch of statements from a batch of newline-delimited json. ' +
     'statements will be read from `filename` or stdin.\n',
   builder: {
@@ -49,90 +52,170 @@ module.exports = {
       type: 'boolean',
       default: false,
       description: 'only extract ids and print to the console'
+    },
+    skipSchemaValidation: {
+      type: 'boolean',
+      default: false,
+      description: "don't validate records against referenced schema before publishing.  Use only if you've " +
+        'pre-validate your records! \n'
     }
   },
 
   handler: (opts: HandlerOptions) => {
-    const {namespace, apiUrl, batchSize, filename, dryRun} = opts
+    const {namespace, schemaReference, apiUrl, batchSize, filename, dryRun, skipSchemaValidation} = opts
     const idSelector = parseSelector(opts.idSelector)
     const contentSelector = (opts.contentSelector != null) ? parseSelector(opts.contentSelector) : null
     const contentFilters = parseFilters(opts.contentFilters)
     const idRegex = (opts.idRegex != null) ? compileIdRegex(opts.idRegex) : null
-    const streamName = 'standard input'
+    let streamName = 'standard input'
 
     const client = new RestClient({apiUrl})
 
-    let inputStream: Readable
+    let stream: Readable
     if (filename) {
-      inputStream = fs.createReadStream(filename)
+      stream = fs.createReadStream(filename)
+      streamName = filename
     } else {
-      inputStream = process.stdin
+      stream = process.stdin
     }
 
-    let statementBodies: Array<Object> = []
-    let statements: Array<SimpleStatementMsg> = []
-    const publishPromises: Array<Promise<*>> = []
-
-    inputStream.pipe(ndjson.parse())
-      .on('data', obj => {
-        if (contentSelector != null) {
-          obj = objectPath.get(obj, contentSelector)
-        }
-
-        for (let filter of contentFilters) {
-          objectPath.del(obj, filter)
-        }
-
-        let id = objectPath.get(obj, idSelector)
-        if (idRegex != null) {
-          id = extractId(id, idRegex)
-        }
-
-        if (id == null || id.length < 1) {
-          throw new Error(
-            `Unable to extract id using idSelector ${JSON.stringify(idSelector)}. Input record: \n` +
-            JSON.stringify(obj, null, 2)
-          )
-        }
-        const refs = [id]
-        const tags = [] // TODO: support extracting tags
-
-        if (dryRun) {
-          console.log(`refs: ${JSON.stringify(refs)}, tags: ${JSON.stringify(tags)}`)
-          return
-        }
-
-        const stmt = {object: obj, refs, tags}
-
-        statementBodies.push(obj)
-        statements.push(stmt)
-
-        if (statementBodies.length >= batchSize) {
-          publishPromises.push(
-            publishBatch(client, namespace, statementBodies, statements)
-          )
-          statementBodies = []
-          statements = []
-        }
+    client.getData(schemaReference)
+      .catch(err => {
+        throw new Error(`Failed to retrieve schema with object id ${schemaReference}: ${err.message}`)
       })
-      .on('error', err => console.error(`Error reading from ${streamName}: `, err))
-      .on('end', () => {
-        if (statementBodies.length > 0) {
-          publishPromises.push(
-            publishBatch(client, namespace, statementBodies, statements)
+      .then((schema) => {
+        try {
+          schema = validateSelfDescribingSchema(schema)
+        } catch (err) {
+          throw new Error(
+            `Schema with object id ${schemaReference} is not a valid self-describing schema: ${err.message}`
           )
         }
-
-        Promise.all(publishPromises)
-          .then(() => {
-            if (!dryRun) {
-              console.log('All statements published successfully')
-            }
-          })
+        publishStream({
+          stream,
+          streamName,
+          client,
+          batchSize,
+          dryRun,
+          skipSchemaValidation,
+          namespace,
+          schemaReference,
+          schema,
+          idSelector,
+          idRegex,
+          contentSelector,
+          contentFilters})
       })
   },
 
   extractId
+}
+
+function publishStream (opts: {
+  stream: Readable,
+  streamName: string,
+  client: RestClient,
+  batchSize: number,
+  dryRun: boolean,
+  skipSchemaValidation: boolean,
+  namespace: string,
+  schemaReference: string,
+  schema: SelfDescribingSchema,
+  idSelector: Array<string>,
+  idRegex: ?RegExp,
+  contentSelector: ?Array<string>,
+  contentFilters: Array<Array<string>>
+}) {
+  const {
+    stream,
+    streamName,
+    client,
+    namespace,
+    batchSize,
+    dryRun,
+    skipSchemaValidation,
+    schemaReference,
+    schema,
+    idSelector,
+    idRegex,
+    contentSelector,
+    contentFilters
+  } = opts
+
+  let statementBodies: Array<Object> = []
+  let statements: Array<Object> = []
+  const publishPromises: Array<Promise<*>> = []
+
+  stream.pipe(ndjson.parse())
+    .on('data', obj => {
+      if (contentSelector != null) {
+        obj = objectPath.get(obj, contentSelector)
+      }
+
+      for (let filter of contentFilters) {
+        objectPath.del(obj, filter)
+      }
+
+      if (!skipSchemaValidation) {
+        const result = validate(schema, obj)
+        if (!result.success) {
+          throw new Error(`Record failed validation: ${result.error.message}. Failed object: ${JSON.stringify(obj, null, 2)}`)
+        }
+      }
+
+      let id = objectPath.get(obj, idSelector)
+      if (idRegex != null) {
+        id = extractId(id, idRegex)
+      }
+
+      if (id == null || id.length < 1) {
+        throw new Error(
+          `Unable to extract id using idSelector ${JSON.stringify(idSelector)}. Input record: \n` +
+          JSON.stringify(obj, null, 2)
+        )
+      }
+
+      const selfDescribingObj = {
+        schema: {'/': schemaReference},
+        data: obj
+      }
+
+      const refs = [id]
+      const tags = [] // TODO: support extracting tags
+
+      if (dryRun) {
+        console.log(`refs: ${JSON.stringify(refs)}, tags: ${JSON.stringify(tags)}`)
+        return
+      }
+
+      const stmt = {object: selfDescribingObj, refs, tags}
+
+      statementBodies.push(obj)
+      statements.push(stmt)
+
+      if (statementBodies.length >= batchSize) {
+        publishPromises.push(
+          publishBatch(client, namespace, statementBodies, statements)
+        )
+        statementBodies = []
+        statements = []
+      }
+    })
+    .on('error', err => console.error(`Error reading from ${streamName}: `, err))
+    .on('end', () => {
+      if (statementBodies.length > 0) {
+        publishPromises.push(
+          publishBatch(client, namespace, statementBodies, statements)
+        )
+      }
+
+      Promise.all(publishPromises)
+        .then(() => {
+          if (!dryRun) {
+            console.log('All statements published successfully')
+          }
+        })
+    })
 }
 
 function publishBatch (client: RestClient, namespace: string, statementBodies: Array<Object>, statements: Array<Object>): Promise<*> {

@@ -29,16 +29,17 @@ describe('schema validation', () => {
 
   it('validates a correctly formatted object', () => {
     const result = validate(fooSchema, {foo: 'bar'})
-    assert.equal(result, true, 'schema should validate a correct object')
+    assert.equal(result.success, true, 'schema should validate a correct object')
   })
 
   it('validates a self-describing object', () => {
     const schemaRef = {'/': 'QmF001234'}
     const result = validate(fooSchema, {schema: schemaRef, data: {foo: 'self-describing-bar'}})
-    assert.equal(result, true, 'schema should validate a self-describing record')
+    assert.equal(result.success, true, 'schema should validate a self-describing record')
   })
 
   it('does not validate an invalid object', () => {
-    assert.equal(validate(fooSchema, {foo: 1}), false, 'schema should not validate invalid object')
+    const result = validate(fooSchema, {foo: 1})
+    assert.equal(result.success, false, 'schema should not validate invalid object')
   })
 })

@@ -86,17 +86,29 @@ function schemaDescriptionToWKI (desc: SchemaDescription): string {
   return SCHEMA_WKI_PREFIX + [vendor, name, format, version].join('/')
 }
 
-function validate (schema: SelfDescribingSchema, payload: Object): boolean {
+export type ValidationResult = {success: true} | {success: false, error: Error}
+
+function validate (schema: SelfDescribingSchema, payload: Object): ValidationResult {
   let data = payload
   if (isSelfDescribingRecord(payload)) {
     data = (payload.data: Object)
   }
 
   if (schema.self.format !== 'jsonschema') {
-    throw new Error('schema validation is only supported where schema format === "jsonschema"')
+    return {
+      success: false,
+      error: new Error('schema validation is only supported where schema format === "jsonschema"')
+    }
   }
 
-  return ajv.validate(schema, data)
+  if (ajv.validate(schema, data)) {
+    return {success: true}
+  }
+
+  return {
+    success: false,
+    error: new Error(`Schema validation failed: ${ajv.errorsText()}`)
+  }
 }
 
 /**
