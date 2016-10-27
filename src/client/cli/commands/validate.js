@@ -2,7 +2,7 @@
 
 const fs = require('fs')
 const ndjson = require('ndjson')
-const objectPath = require('object-path')
+const { run: runJQ } = require('node-jq')
 const RestClient = require('../../api/RestClient')
 const { validate, loadSelfDescribingSchema, validateSelfDescribingSchema } = require('../../../metadata/schema')
 const { pluralizeCount, isB58Multihash } = require('../util')
@@ -14,9 +14,7 @@ type HandlerOptions = {
   schema: string,
   filename: ?string,
   idSelector: string,
-  contentSelector: ?string,
-  idRegex: ?string,
-  contentFilters: ?string
+  jqFilter: ?string,
 }
 
 module.exports = {
@@ -25,19 +23,16 @@ module.exports = {
     '`schema` can be either a path to a local schema, or the base58 object id of a published schema. ' +
   'statements will be read from `filename` or stdin.\n',
   builder: {
-    contentSelector: {
-      description: 'If present, use as a keypath to select a subset of the data to publish. ' +
-      'If contentSelector is used, idSelector should be relative to it, not to the content root.\n'
-    },
-    contentFilters: {
-      description: 'Key-paths to omit from content. Multiple keypaths can be joined with ",". \n'
+    jqFilter: {
+      type: 'string',
+      description: 'A jq filter to apply to input records as a pre-processing step. ' +
+        'The filtered output will be validated against the schema. ' +
+        'If you use this, idSelector should be relative to the filtered output.\n'
     }
   },
 
   handler: (opts: HandlerOptions) => {
-    const { apiUrl, schema, filename } = opts
-    const contentSelector = (opts.contentSelector != null) ? parseSelector(opts.contentSelector) : null
-    const contentFilters = parseFilters(opts.contentFilters)
+    const { apiUrl, schema, filename, jqFilter } = opts
     let streamName = 'standard input'
 
     let stream: Readable
@@ -61,8 +56,7 @@ module.exports = {
         stream,
         streamName,
         schema,
-        contentSelector,
-        contentFilters
+        jqFilter
       })
     })
   }
@@ -72,58 +66,44 @@ function validateStream (opts: {
   stream: Readable,
   streamName: string,
   schema: SelfDescribingSchema,
-  contentSelector: ?Array<string>,
-  contentFilters: Array<Array<string>>
+  jqFilter: ?string
 }) {
   const {
     stream,
     streamName,
     schema,
-    contentSelector,
-    contentFilters
+    jqFilter
   } = opts
 
   let count = 0
+  let promises = []
 
   stream.pipe(ndjson.parse())
     .on('data', obj => {
-      if (contentSelector != null) {
-        obj = objectPath.get(obj, contentSelector)
-      }
-
-      for (let filter of contentFilters) {
-        objectPath.del(obj, filter)
-      }
-
-      const result = validate(schema, obj)
-      if (!result.success) {
-        throw new Error(`${result.error.message}.\nFailed object:\n${JSON.stringify(obj, null, 2)}`)
-      }
-      count += 1
+      const p = transformObject(obj, jqFilter).then(obj => {
+        const result = validate(schema, obj)
+        if (!result.success) {
+          throw new Error(`${result.error.message}.\nFailed object:\n${JSON.stringify(obj, null, 2)}`)
+        }
+        count += 1
+      })
+      promises.push(p)
     })
     .on('error', err => console.error(`Error reading from ${streamName}: `, err))
     .on('end', () => {
-      console.log(`${pluralizeCount(count, 'statement')} validated successfully`)
+      Promise.all(promises).then(() => {
+        console.log(`${pluralizeCount(count, 'statement')} validated successfully`)
+      })
     })
 }
 
-function parseSelector (selector: string | Array<string>): Array<string> {
-  if (Array.isArray(selector)) return selector.map(k => k.toString())
-
-  selector = selector.trim()
-  if (selector.startsWith('[')) {
-    return parseSelector(JSON.parse(selector))
-  }
-  return selector.split('.')
-}
-
-function parseFilters (filterString: ?string): Array<Array<string>> {
-  if (filterString == null) return []
-  filterString = filterString.trim()
-  if (filterString.startsWith('[')) {
-    return JSON.parse(filterString).map(f => parseSelector(f))
+function transformObject (obj: Object, jqFilter: ?string): Promise<Object> {
+  if (jqFilter == null) {
+    return Promise.resolve(obj)
   }
 
-  const filters = filterString.split(',')
-  return filters.map(s => parseSelector(s))
+  return runJQ(jqFilter, obj, {input: 'json', output: 'json'})
+    .catch(err => {
+      console.error('jq error: ', err)
+    })
 }
