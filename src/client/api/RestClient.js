@@ -233,6 +233,17 @@ class RestClient {
       .then(r => r.text())
       .then(s => s.trim() === 'OK')
   }
+
+  shutdown (): Promise<boolean> {
+    return this.postRequest('shutdown', '', false)
+      .then(() => true)
+      .catch(err => {
+        if (err.errno === 'ECONNRESET') {
+          return true // shutting down the node kills the request socket :)
+        }
+        throw err
+      })
+  }
 }
 
 function validateStatus (status: string): NodeStatus {
