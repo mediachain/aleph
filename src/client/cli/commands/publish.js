@@ -24,8 +24,8 @@ type HandlerOptions = {
 
 module.exports = {
   command: 'publish <namespace> [filename]',
-  description: 'publish a batch of statements from a batch of newline-delimited json. ' +
-    'statements will be read from `filename` or stdin.\n',
+  description: 'publish a batch of statements from a batch of newline-delimited json objects. ' +
+    'objects will be read from `filename` or stdin.\n',
   builder: {
     batchSize: { default: BATCH_SIZE },
     idSelector: {
