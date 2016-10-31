@@ -4,6 +4,8 @@
   "description": "Mediachain client and javascript peer",
   "main": "index.js",
   "scripts": {
+    "build-jq": "node scripts/build-jq.js",
+    "postinstall": "npm run build-jq",
     "test": "mocha --compilers js:babel-register ./test",
     "build": "mkdir -p ./lib && babel src -d lib",
     "check": "standard && flow",
@@ -25,6 +27,7 @@
   "homepage": "https://github.com/mediachain/aleph#readme",
   "dependencies": {
     "ajv": "^4.7.7",
+    "bin-build": "^2.2.0",
     "byline": "^5.0.0",
     "cbor": "^2.0.0",
     "duplex-child-process": "0.0.5",
@@ -40,7 +43,6 @@
     "multihashing": "^0.2.1",
     "ndjson": "^1.4.3",
     "node-fetch": "^1.6.3",
-    "node-jq": "^0.3.13",
     "object-path": "^0.11.2",
     "peer-book": "^0.3.0",
     "peer-id": "^0.7.0",

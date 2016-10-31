@@ -2,6 +2,8 @@
 
 const ChildProcessStream = require('duplex-child-process')
 const byline = require('byline')
+const path = require('path')
+const JQ_PATH = path.join(__dirname, '..', '..', 'node_modules', '.bin', 'jq')
 
 class JQTransform extends ChildProcessStream {
   _args: Array<string>
@@ -19,10 +21,11 @@ class JQTransform extends ChildProcessStream {
     this._reader = byline(this._reader)
 
     // do the thing
-    this.spawn('jq', this._args)
+    this.spawn(JQ_PATH, this._args)
   }
 }
 
 module.exports = {
-  JQTransform
+  JQTransform,
+  JQ_PATH
 }
