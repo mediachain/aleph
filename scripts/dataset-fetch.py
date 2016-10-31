@@ -38,7 +38,7 @@ def wget(cfg, batch, index):
     print "Fetching batch %d" % index
     urls = [cfg.url + chunk for chunk in batch]
     pchunk = int(math.ceil(len(urls)/ncpus))
-    pargs = (urls[x:x+pchunk] for x in range(0, len(urls), pchunk))
+    pargs = [urls[x:x+pchunk] for x in range(0, len(urls), pchunk)]
     procs = [wget1(cfg, args) for args in pargs]
     retry = []
     for x, p in enumerate(procs):
