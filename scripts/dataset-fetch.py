@@ -46,8 +46,7 @@ def wget(cfg, batch, index):
         if rc != 0:
             retry += pargs[x]
     if len(retry) > 0:
-        retry = filter(lambda url: not os.path.exists(os.path.join(cfg.dataset, os.path.basename(url))),
-                       retry)
+        retry = [url for url in retry if not os.path.exists(os.path.join(cfg.dataset, os.path.basename(url)))]
         p = wget1(cfg, retry)
         rc = p.wait()
         if rc != 0:
