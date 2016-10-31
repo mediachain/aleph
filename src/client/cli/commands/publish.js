@@ -84,16 +84,18 @@ module.exports = {
         }
 
         let id = objectPath.get(obj, idSelector)
-        if (idRegex != null) {
-          id = extractId(id, idRegex)
-        }
-
         if (id == null || id.length < 1) {
           throw new Error(
             `Unable to extract id using idSelector ${JSON.stringify(idSelector)}. Input record: \n` +
             JSON.stringify(obj, null, 2)
           )
         }
+
+        id = id.toString()
+        if (idRegex != null) {
+          id = extractId(id, idRegex)
+        }
+
         const refs = [id]
         const tags = [] // TODO: support extracting tags
 
@@ -129,6 +131,9 @@ module.exports = {
               console.log('All statements published successfully')
             }
           })
+          .catch(err => {
+            console.error('Error publishing statements: ', err.message)
+          })
       })
   },
 
@@ -162,9 +167,6 @@ function publishBatch (client: RestClient, namespace: string, statementBodies: A
         const refsString = JSON.stringify(statementRefs[i])
         console.log(`statement id: ${statementIds[i]} -- body: ${bodyHashes[i]} -- refs: ${refsString}`)
       }
-    })
-    .catch(err => {
-      console.error('Error publishing statements: ', err)
     })
 }
 
