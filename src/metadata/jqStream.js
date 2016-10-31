@@ -1,31 +1,28 @@
 // @flow
 
-const childProcess = require('child_process')
+const ChildProcessStream = require('duplex-child-process')
 const byline = require('byline')
-import type { Readable } from 'stream'
 
-function jqStream (filter: string, inputStream: Readable): Readable {
-  // TODO(important): escape filter to prevent shell attacks
+class JQTransform extends ChildProcessStream {
+  _args: Array<string>
 
-  const args = [
-    '-c', // compact (no pretty print)
-    '-M', // monochrome output
-    '-S', // sort object keys
-    filter
-  ]
-  const jq = childProcess.spawn('jq', args, {encoding: 'utf-8'})
-  jq.stdout.setEncoding('utf-8')
-  jq.stderr.setEncoding('utf-8')
+  constructor (filter: string) {
+    super({encoding: 'utf-8'})
+    this._args = [
+      '-c', // compact (no pretty print)
+      '-M', // monochrome output
+      '-S', // sort object keys
+      filter  // don't need to escape input, since child_process.spawn doesn't use a subshell
+    ]
 
-  const output = byline(jq.stdout)
-  const stderr = byline(jq.stderr)
-  inputStream.pipe(jq.stdin)
+    // overwrite the _reader member of superclass to return results line-by-line
+    this._reader = byline(this._reader)
 
-  stderr.on('data', err => { console.error('jq error: ', err) })
-
-  return output
+    // do the thing
+    this.spawn('jq', this._args)
+  }
 }
 
 module.exports = {
-  jqStream
+  JQTransform
 }
