@@ -13,8 +13,6 @@ services:
       args:
         concat_ref: ${concat_ref}
     entrypoint: ["mcdir", "-d", "/integration-test/mcdir"]
-    ports:
-    - "9000:9000"
 
   mcnode:
     build:
@@ -22,6 +20,3 @@ services:
       args:
         concat_ref: ${concat_ref}
     entrypoint: ["mcnode", "-b", "0.0.0.0", "-d", "/integration-test/mcnode"]
-    ports:
-    - "9001:9001"
-    - "9002:9002"
