@@ -40,10 +40,17 @@ def wget(cfg, batch, index):
     pchunk = int(math.ceil(len(urls)/ncpus))
     pargs = (urls[x:x+pchunk] for x in range(0, len(urls), pchunk))
     procs = [wget1(cfg, args) for args in pargs]
-    for p in procs:
+    retry = []
+    for x, p in enumerate(procs):
         rc = p.wait()
         if rc != 0:
-            raise Exception("Error fetching data: wget exit code %d" % rc)
+            retry += pargs[x]
+    if len(retry) > 0:
+        retry = [!os.path.exists(os.path.join(cfg.dataset, os.path.basename(url))) for url in retry]
+        p = wget1(cfg, retry)
+        rc = p.wait()
+        if rc != 0:
+            raise Exception("Error fetching data; wget exit code %d" % rc)
 
 def wget1(cfg, urls):
     return subprocess.Popen(["wget", "-q", "-P", cfg.dataset] + urls)
