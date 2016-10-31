@@ -183,12 +183,14 @@ function publishStream (opts: {
           publishBatch(client, namespace, statementBodies, statements)
         )
       }
-
       Promise.all(publishPromises)
         .then(() => {
           if (!dryRun) {
             console.log('All statements published successfully')
           }
+        })
+        .catch(err => {
+          console.error('Error publishing statements: ', err.message)
         })
     })
 }
@@ -220,9 +222,6 @@ function publishBatch (client: RestClient, namespace: string, statementBodies: A
         const refsString = JSON.stringify(statementRefs[i])
         console.log(`statement id: ${statementIds[i]} -- body: ${bodyHashes[i]} -- refs: ${refsString}`)
       }
-    })
-    .catch(err => {
-      console.error('Error publishing statements: ', err)
     })
 }
 
