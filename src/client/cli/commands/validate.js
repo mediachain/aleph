@@ -1,9 +1,8 @@
 // @flow
 
 const fs = require('fs')
-const ndjson = require('ndjson')
-const { run: runJQ } = require('node-jq')
 const RestClient = require('../../api/RestClient')
+const { JQTransform } = require('../../../metadata/jqStream')
 const { validate, loadSelfDescribingSchema, validateSelfDescribingSchema } = require('../../../metadata/schema')
 const { pluralizeCount, isB58Multihash } = require('../util')
 import type { Readable } from 'stream'
@@ -12,9 +11,9 @@ import type { SelfDescribingSchema } from '../../../metadata/schema'
 type HandlerOptions = {
   apiUrl: string,
   schema: string,
-  filename: ?string,
+  filename?: string,
   idSelector: string,
-  jqFilter: ?string,
+  jqFilter: string,
 }
 
 module.exports = {
@@ -27,7 +26,8 @@ module.exports = {
       type: 'string',
       description: 'A jq filter to apply to input records as a pre-processing step. ' +
         'The filtered output will be validated against the schema. ' +
-        'If you use this, idSelector should be relative to the filtered output.\n'
+        'If you use this, idSelector should be relative to the filtered output.\n',
+      default: '.'
     }
   },
 
@@ -66,7 +66,7 @@ function validateStream (opts: {
   stream: Readable,
   streamName: string,
   schema: SelfDescribingSchema,
-  jqFilter: ?string
+  jqFilter: string
 }) {
   const {
     stream,
@@ -76,34 +76,24 @@ function validateStream (opts: {
   } = opts
 
   let count = 0
-  let promises = []
 
-  stream.pipe(ndjson.parse())
-    .on('data', obj => {
-      const p = transformObject(obj, jqFilter).then(obj => {
-        const result = validate(schema, obj)
-        if (!result.success) {
-          throw new Error(`${result.error.message}.\nFailed object:\n${JSON.stringify(obj, null, 2)}`)
-        }
-        count += 1
-      })
-      promises.push(p)
+  const jq = new JQTransform(jqFilter)
+
+  stream.pipe(jq)
+    .on('data', jsonString => {
+      const obj = JSON.parse(jsonString)
+      const result = validate(schema, obj)
+      if (!result.success) {
+        throw new Error(`${result.error.message}.\nFailed object:\n${jsonString}`)
+      }
+      count += 1
     })
-    .on('error', err => console.error(`Error reading from ${streamName}: `, err))
+    .on('error', err => {
+      console.error(`Error reading from ${streamName}: `, err)
+      process.exit(1)
+    })
     .on('end', () => {
-      Promise.all(promises).then(() => {
-        console.log(`${pluralizeCount(count, 'statement')} validated successfully`)
-      })
+      console.log(`${pluralizeCount(count, 'statement')} validated successfully`)
     })
 }
 
-function transformObject (obj: Object, jqFilter: ?string): Promise<Object> {
-  if (jqFilter == null) {
-    return Promise.resolve(obj)
-  }
-
-  return runJQ(jqFilter, obj, {input: 'json', output: 'json'})
-    .catch(err => {
-      console.error('jq error: ', err)
-    })
-}
