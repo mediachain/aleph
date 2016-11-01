@@ -12,7 +12,7 @@ const BATCH_SIZE = 1000
 
 type HandlerOptions = {
   namespace: string,
-  schemaReference: string,
+  schemaReference?: string,
   apiUrl: string,
   jqFilter: string,
   idFilter: string,
@@ -24,29 +24,42 @@ type HandlerOptions = {
 }
 
 module.exports = {
-  command: 'publish <namespace> <schemaReference> [filename]',
-  description: 'publish a batch of statements from a batch of newline-delimited json. ' +
-    'statements will be read from `filename` or stdin.\n',
+  command: 'publish [filename]',
+  description: 'Publish a batch of statements from a batch of newline-delimited json. ' +
+    'Statements will be read from `filename` or stdin.\n',
   builder: {
     batchSize: { default: BATCH_SIZE },
-    jqFilter: {
-      description: 'a jq filter string to use to pre-process your input data',
-      default: '.'
+    namespace: {
+      required: true,
+      type: 'string',
+      description: 'The mediachain namespace to publish statements to.\n'
     },
     idFilter: {
       required: true,
-      description: 'a jq filter that produces a mediachain identifier from your input object.  ' +
-        'Will be applied after `jqFilter`, and does not modify the object itself.\n'
+      type: 'string',
+      description: 'A jq filter that produces a mediachain identifier from your input object.  ' +
+      'Will be applied after `jqFilter`, and does not modify the object itself.\n'
+    },
+    jqFilter: {
+      type: 'string',
+      description: 'A jq filter string to use to pre-process your input data.\n',
+      default: '.'
     },
     dryRun: {
       type: 'boolean',
       default: false,
-      description: 'Only extract ids and print to the console.'
+      description: 'Only extract ids and print to the console.\n'
+    },
+    schemaReference: {
+      description: 'A multihash reference to a schema object used to validate objects before publishing. ' +
+        'Including a schema reference will result in "self-describing" objects that link to their schema. ' +
+        'The schema object must exist on the local node before running the publish command.\n',
+      type: 'string'
     },
     skipSchemaValidation: {
       type: 'boolean',
       default: false,
-      description: "don't validate records against referenced schema before publishing.  Use only if you've " +
+      description: "Don't validate records against referenced schema before publishing.  Use only if you've " +
         'pre-validated your records! \n'
     },
     compound: {
@@ -70,18 +83,27 @@ module.exports = {
       stream = process.stdin
     }
 
-    client.getData(schemaReference)
-      .catch(err => {
-        throw new Error(`Failed to retrieve schema with object id ${schemaReference}: ${err.message}`)
-      })
-      .then((schema) => {
-        try {
-          schema = validateSelfDescribingSchema(schema)
-        } catch (err) {
-          throw new Error(
-            `Schema with object id ${schemaReference} is not a valid self-describing schema: ${err.message}`
-          )
-        }
+    let schemaPromise: Promise<?SelfDescribingSchema>
+    if (schemaReference == null || skipSchemaValidation) {
+      schemaPromise = Promise.resolve(null)
+    } else {
+      schemaPromise = client.getData(schemaReference)
+        .catch(err => {
+          throw new Error(`Failed to retrieve schema with object id ${schemaReference}: ${err.message}`)
+        })
+        .then((schema) => {
+          try {
+            schema = validateSelfDescribingSchema(schema)
+          } catch (err) {
+            throw new Error(
+              `Schema with object id ${schemaReference} is not a valid self-describing schema: ${err.message}`
+            )
+          }
+        })
+    }
+
+    schemaPromise
+      .then(schema => {
         publishStream({
           stream,
           streamName,
@@ -105,8 +127,8 @@ function publishStream (opts: {
   dryRun: boolean,
   skipSchemaValidation: boolean,
   publishOpts: {namespace: string, compound?: number},
-  schemaReference: string,
-  schema: SelfDescribingSchema,
+  schemaReference?: string,
+  schema: ?SelfDescribingSchema,
   jqFilter: string
 }) {
   const {
@@ -140,7 +162,7 @@ function publishStream (opts: {
         throw new Error(`Error parsing jq output: ${err}\njq output: ${jsonString}`)
       }
 
-      if (!skipSchemaValidation) {
+      if (schema != null && !skipSchemaValidation) {
         const result = validate(schema, obj)
         if (!result.success) {
           throw new Error(`Record failed validation: ${result.error.message}. Failed object: ${JSON.stringify(obj, null, 2)}`)
@@ -154,34 +176,36 @@ function publishStream (opts: {
         )
       }
 
-      let selfDescribingObj
-      if (isSelfDescribingRecord(obj)) {
-        const ref = objectPath.get(obj, 'schema', '/')
-        if (ref !== schemaReference) {
-          throw new Error(
-            `Record contains reference to a different schema (${ref}) than the one specified ${schemaReference}`
-          )
-        }
-        selfDescribingObj = obj
-      } else {
-        selfDescribingObj = {
-          schema: {'/': schemaReference},
-          data: obj
-        }
-      }
-
       const refs = [wki]
       const tags = [] // TODO: support extracting tags
-      const deps = [schemaReference]
+      const deps = []
+
+      if (schemaReference != null) {
+        deps.push(schemaReference)
+
+        if (isSelfDescribingRecord(obj)) {
+          const ref = objectPath.get(obj, 'schema', '/')
+          if (ref !== schemaReference) {
+            throw new Error(
+              `Record contains reference to a different schema (${ref}) than the one specified ${schemaReference}`
+            )
+          }
+        } else {
+          obj = {
+            schema: {'/': schemaReference},
+            data: obj
+          }
+        }
+      }
 
       if (dryRun) {
         console.log(`refs: ${JSON.stringify(refs)}, tags: ${JSON.stringify(tags)}, deps: ${JSON.stringify(deps)}`)
         return
       }
 
-      const stmt = {object: selfDescribingObj, refs, tags, deps}
+      const stmt = {object: obj, refs, tags, deps}
 
-      statementBodies.push(selfDescribingObj)
+      statementBodies.push(obj)
       statements.push(stmt)
 
       if (statementBodies.length >= batchSize) {

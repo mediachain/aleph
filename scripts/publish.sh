@@ -1,10 +1,10 @@
 #!/bin/bash
 
-NAMESPACE='foo.bar'  # FIXME: should accept this as an argument, need to update ingest-parallel to pass it in
+NAMESPACE='--namespace foo.bar'  # FIXME: should accept this as an argument, need to update ingest-parallel to pass it in
 
 # Hash of schema that must be published on the node before ingestion.
 # You must update this if you change the schema.
-SCHEMA_HASH='QmYGRQYmWC3BAtTAi88mFb7GVeFsUKGM4nm25SBUB9vfc9'
+SCHEMA_HASH='--schemaReference QmYGRQYmWC3BAtTAi88mFb7GVeFsUKGM4nm25SBUB9vfc9'
 
 SKIP_VALIDATION='--skipSchemaValidation'
 # if you want to validate every record, use this one instead:

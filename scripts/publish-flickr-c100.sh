@@ -1,11 +1,11 @@
 #!/bin/bash
 
-NAMESPACE="images.flickr"
-SCHEMA_HASH='QmYGRQYmWC3BAtTAi88mFb7GVeFsUKGM4nm25SBUB9vfc9'
+NAMESPACE="--namespace images.flickr"
+#SCHEMA_HASH='--schemaReference QmYGRQYmWC3BAtTAi88mFb7GVeFsUKGM4nm25SBUB9vfc9'
+SCHEMA_HASH=''
 COMPOUND="--compound 100"
 
 mcclient publish ${COMPOUND} \
-    --skipSchemaValidation \
     --jqFilter '._source | del(.aesthetics)' \
     --idFilter '.native_id' \
     ${NAMESPACE} \
