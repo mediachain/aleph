@@ -4,6 +4,8 @@
   "description": "Mediachain client and javascript peer",
   "main": "index.js",
   "scripts": {
+    "build-jq": "node scripts/build-jq.js",
+    "postinstall": "npm run build-jq",
     "test": "mocha --compilers js:babel-register ./test",
     "build": "mkdir -p ./lib && babel src -d lib && cp ./src/protobuf/*.proto ./lib/protobuf/",
     "check": "standard && flow",
@@ -24,8 +26,11 @@
   },
   "homepage": "https://github.com/mediachain/aleph#readme",
   "dependencies": {
+    "ajv": "^4.7.7",
+    "bin-build": "^2.2.0",
+    "byline": "^5.0.0",
     "cbor": "^2.0.0",
-    "ipld": "^0.6.0",
+    "duplex-child-process": "0.0.5",
     "libp2p-crypto": "^0.6.1",
     "libp2p-secio": "^0.5.0",
     "libp2p-spdy": "^0.9.0",

@@ -90,6 +90,7 @@ export type SimpleStatementMsg = {
   object: string,
   refs?: Array<string>,
   tags?: Array<string>,
+  deps?: Array<string>
 };
 
 export type CompoundStatementMsg = {

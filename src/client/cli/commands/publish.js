@@ -1,55 +1,66 @@
 // @flow
 
 const fs = require('fs')
-const ndjson = require('ndjson')
+const { JQTransform } = require('../../../metadata/jqStream')
 const objectPath = require('object-path')
 const RestClient = require('../../api/RestClient')
+const { validate, validateSelfDescribingSchema, isSelfDescribingRecord } = require('../../../metadata/schema')
 import type { Readable } from 'stream'
-import type { SimpleStatementMsg } from '../../../protobuf/types'
+import type { SelfDescribingSchema } from '../../../metadata/schema'
 
 const BATCH_SIZE = 1000
 
 type HandlerOptions = {
   namespace: string,
+  schemaReference?: string,
   apiUrl: string,
-  idSelector: string,
-  contentSelector?: string,
+  jqFilter: string,
+  idFilter: string,
   filename?: string,
   batchSize: number,
-  idRegex?: string,
-  contentFilters?: string,
   compound?: number,
-  dryRun: boolean
+  dryRun: boolean,
+  skipSchemaValidation: boolean
 }
 
 module.exports = {
-  command: 'publish <namespace> [filename]',
-  description: 'Publish a batch of statements from a batch of newline-delimited json objects. ' +
-    'Objects will be read from `filename` or stdin.\n',
+  command: 'publish [filename]',
+  description: 'Publish a batch of statements from a batch of newline-delimited json. ' +
+    'Statements will be read from `filename` or stdin.\n',
   builder: {
     batchSize: { default: BATCH_SIZE },
-    idSelector: {
+    namespace: {
       required: true,
-      description: 'A dot-separated path to a field containing a well-known identifier, ' +
-      'or, a string containing a JSON array of keys.  Use the latter if your keys contain "."\n'
+      type: 'string',
+      description: 'The mediachain namespace to publish statements to.\n'
     },
-    contentSelector: {
-      description: 'If present, use as a keypath to select a subset of the data to publish. ' +
-        'If contentSelector is used, idSelector should be relative to it, not to the content root.\n'
+    idFilter: {
+      required: true,
+      type: 'string',
+      description: 'A jq filter that produces a mediachain identifier from your input object.  ' +
+      'Will be applied after `jqFilter`, and does not modify the object itself.\n'
     },
-    contentFilters: {
-      description: 'Key-paths to omit from content. Multiple keypaths can be joined with ",". \n'
-    },
-    idRegex: {
-      description: 'If present, any capture groups will be used to extract a portion of the id. ' +
-        'e.g. --idRegex \'(dpla_)http.*/(.*)\' would turn ' +
-        '"dpla_http://dp.la/api/items/2e49bf374b1b55f71603aa9aa326a9d6" into ' +
-        '"dpla_2e49bf374b1b55f71603aa9aa326a9d6".\n'
+    jqFilter: {
+      type: 'string',
+      description: 'A jq filter string to use to pre-process your input data.\n',
+      default: '.'
     },
     dryRun: {
       type: 'boolean',
       default: false,
-      description: 'Only extract ids and print to the console.'
+      description: 'Only extract ids and print to the console.\n'
+    },
+    schemaReference: {
+      description: 'A multihash reference to a schema object used to validate objects before publishing. ' +
+        'Including a schema reference will result in "self-describing" objects that link to their schema. ' +
+        'The schema object must exist on the local node before running the publish command.\n',
+      type: 'string'
+    },
+    skipSchemaValidation: {
+      type: 'boolean',
+      default: false,
+      description: "Don't validate records against referenced schema before publishing.  Use only if you've " +
+        'pre-validated your records! \n'
     },
     compound: {
       type: 'int',
@@ -59,92 +70,169 @@ module.exports = {
   },
 
   handler: (opts: HandlerOptions) => {
-    const {namespace, apiUrl, batchSize, filename, dryRun, compound} = opts
-    const idSelector = parseSelector(opts.idSelector)
-    const contentSelector = (opts.contentSelector != null) ? parseSelector(opts.contentSelector) : null
-    const contentFilters = parseFilters(opts.contentFilters)
-    const idRegex = (opts.idRegex != null) ? compileIdRegex(opts.idRegex) : null
-    const streamName = 'standard input'
-
+    const {namespace, schemaReference, apiUrl, batchSize, filename, dryRun, skipSchemaValidation, jqFilter, idFilter, compound} = opts
+    const publishOpts = {namespace, compound}
     const client = new RestClient({apiUrl})
 
-    let inputStream: Readable
+    let stream: Readable
+    let streamName = 'standard input'
     if (filename) {
-      inputStream = fs.createReadStream(filename)
+      stream = fs.createReadStream(filename)
+      streamName = filename
     } else {
-      inputStream = process.stdin
+      stream = process.stdin
     }
 
-    const publishOpts = {namespace, compound}
-    let statementBodies: Array<Object> = []
-    let statements: Array<SimpleStatementMsg> = []
-    const publishPromises: Array<Promise<*>> = []
+    let schemaPromise: Promise<?SelfDescribingSchema>
+    if (schemaReference == null || skipSchemaValidation) {
+      schemaPromise = Promise.resolve(null)
+    } else {
+      schemaPromise = client.getData(schemaReference)
+        .catch(err => {
+          throw new Error(`Failed to retrieve schema with object id ${schemaReference}: ${err.message}`)
+        })
+        .then((schema) => {
+          try {
+            schema = validateSelfDescribingSchema(schema)
+          } catch (err) {
+            throw new Error(
+              `Schema with object id ${schemaReference} is not a valid self-describing schema: ${err.message}`
+            )
+          }
+        })
+    }
 
-    inputStream.pipe(ndjson.parse())
-      .on('data', obj => {
-        if (contentSelector != null) {
-          obj = objectPath.get(obj, contentSelector)
-        }
-
-        for (let filter of contentFilters) {
-          objectPath.del(obj, filter)
-        }
-
-        let id = objectPath.get(obj, idSelector)
-        if (id == null || id.length < 1) {
-          throw new Error(
-            `Unable to extract id using idSelector ${JSON.stringify(idSelector)}. Input record: \n` +
-            JSON.stringify(obj, null, 2)
-          )
-        }
-
-        id = id.toString()
-        if (idRegex != null) {
-          id = extractId(id, idRegex)
-        }
-
-        const refs = [id]
-        const tags = [] // TODO: support extracting tags
-
-        if (dryRun) {
-          console.log(`refs: ${JSON.stringify(refs)}, tags: ${JSON.stringify(tags)}`)
-          return
-        }
-
-        const stmt = {object: obj, refs, tags}
-
-        statementBodies.push(obj)
-        statements.push(stmt)
-
-        if (statementBodies.length >= batchSize) {
-          publishPromises.push(
-            publishBatch(client, publishOpts, statementBodies, statements)
-          )
-          statementBodies = []
-          statements = []
-        }
+    schemaPromise
+      .then(schema => {
+        publishStream({
+          stream,
+          streamName,
+          client,
+          batchSize,
+          dryRun,
+          skipSchemaValidation,
+          publishOpts,
+          schemaReference,
+          schema,
+          jqFilter: composeJQFilters(jqFilter, idFilter)})
       })
-      .on('error', err => console.error(`Error reading from ${streamName}: `, err))
-      .on('end', () => {
-        if (statementBodies.length > 0) {
-          publishPromises.push(
-            publishBatch(client, publishOpts, statementBodies, statements)
-          )
+  }
+}
+
+function publishStream (opts: {
+  stream: Readable,
+  streamName: string,
+  client: RestClient,
+  batchSize: number,
+  dryRun: boolean,
+  skipSchemaValidation: boolean,
+  publishOpts: {namespace: string, compound?: number},
+  schemaReference?: string,
+  schema: ?SelfDescribingSchema,
+  jqFilter: string
+}) {
+  const {
+    stream,
+    streamName,
+    client,
+    publishOpts,
+    batchSize,
+    dryRun,
+    skipSchemaValidation,
+    schemaReference,
+    schema,
+    jqFilter
+  } = opts
+
+  let statementBodies: Array<Object> = []
+  let statements: Array<Object> = []
+  const publishPromises: Array<Promise<*>> = []
+  const jq = new JQTransform(jqFilter)
+
+  let wki: string
+  let obj: Object
+
+  stream.pipe(jq)
+    .on('data', jsonString => {
+      try {
+        const parsed = JSON.parse(jsonString)
+        wki = parsed.wki
+        obj = parsed.obj
+      } catch (err) {
+        throw new Error(`Error parsing jq output: ${err}\njq output: ${jsonString}`)
+      }
+
+      if (schema != null && !skipSchemaValidation) {
+        const result = validate(schema, obj)
+        if (!result.success) {
+          throw new Error(`Record failed validation: ${result.error.message}. Failed object: ${JSON.stringify(obj, null, 2)}`)
         }
+      }
 
-        Promise.all(publishPromises)
-          .then(() => {
-            if (!dryRun) {
-              console.log('All statements published successfully')
-            }
-          })
-          .catch(err => {
-            console.error('Error publishing statements: ', err.message)
-          })
-      })
-  },
+      if (wki == null || wki.length < 1) {
+        throw new Error(
+          `Unable to extract id. Input record: \n` +
+          JSON.stringify(obj, null, 2)
+        )
+      }
 
-  extractId
+      const refs = [wki]
+      const tags = [] // TODO: support extracting tags
+      const deps = []
+
+      if (schemaReference != null) {
+        deps.push(schemaReference)
+
+        if (isSelfDescribingRecord(obj)) {
+          const ref = objectPath.get(obj, 'schema', '/')
+          if (ref !== schemaReference) {
+            throw new Error(
+              `Record contains reference to a different schema (${ref}) than the one specified ${schemaReference}`
+            )
+          }
+        } else {
+          obj = {
+            schema: {'/': schemaReference},
+            data: obj
+          }
+        }
+      }
+
+      if (dryRun) {
+        console.log(`refs: ${JSON.stringify(refs)}, tags: ${JSON.stringify(tags)}, deps: ${JSON.stringify(deps)}`)
+        return
+      }
+
+      const stmt = {object: obj, refs, tags, deps}
+
+      statementBodies.push(obj)
+      statements.push(stmt)
+
+      if (statementBodies.length >= batchSize) {
+        publishPromises.push(
+          publishBatch(client, publishOpts, statementBodies, statements)
+        )
+        statementBodies = []
+        statements = []
+      }
+    })
+    .on('error', err => console.error(`Error reading from ${streamName}: `, err))
+    .on('end', () => {
+      if (statementBodies.length > 0) {
+        publishPromises.push(
+          publishBatch(client, publishOpts, statementBodies, statements)
+        )
+      }
+      Promise.all(publishPromises)
+        .then(() => {
+          if (!dryRun) {
+            console.log('All statements published successfully')
+          }
+        })
+        .catch(err => {
+          console.error('Error publishing statements: ', err.message)
+        })
+    })
 }
 
 function publishBatch (client: RestClient,
@@ -169,6 +257,10 @@ function publishBatch (client: RestClient,
     })
 }
 
+function composeJQFilters (contentFilter: string, idFilter: string): string {
+  return `${contentFilter} as $output | {wki: ($output | ${idFilter} | tostring), obj: $output}`
+}
+
 function printBatchResults (bodyHashes: Array<string>, statementIds: Array<string>, statements: Array<Object>,
                             compoundSize: number) {
   for (let i = 0; i < statementIds.length; i++) {
@@ -185,46 +277,3 @@ function printBatchResults (bodyHashes: Array<string>, statementIds: Array<strin
   }
 }
 
-function parseSelector (selector: string | Array<string>): Array<string> {
-  if (Array.isArray(selector)) return selector.map(k => k.toString())
-
-  selector = selector.trim()
-  if (selector.startsWith('[')) {
-    return parseSelector(JSON.parse(selector))
-  }
-  return selector.split('.')
-}
-
-function parseFilters (filterString: ?string): Array<Array<string>> {
-  if (filterString == null) return []
-  filterString = filterString.trim()
-  if (filterString.startsWith('[')) {
-    return JSON.parse(filterString).map(f => parseSelector(f))
-  }
-
-  const filters = filterString.split(',')
-  return filters.map(s => parseSelector(s))
-}
-
-function compileIdRegex (idRegexStr: string): RegExp {
-  if (!idRegexStr.startsWith('^')) idRegexStr = '^' + idRegexStr
-  if (!idRegexStr.endsWith('$')) idRegexStr = idRegexStr + '$'
-  return new RegExp(idRegexStr)
-}
-
-function extractId (fullId: string, idRegex: RegExp): string {
-  const match = idRegex.exec(fullId)
-  if (match == null) {
-    throw new Error(`idRegex ${idRegex.toString()} failed to match on id string "${fullId}"`)
-  }
-
-  if (match.length === 1) {
-    throw new Error(`idRegex must contain at least one capture group`)
-  }
-
-  let id = ''
-  for (let i = 1; i < match.length; i++) {
-    id += match[i]
-  }
-  return id
-}

@@ -1,7 +1,14 @@
 FROM mhart/alpine-node:6.7
 WORKDIR /integration
 
-# must run npm install outside container before building!
+# install git, needed for npm install
+RUN apk update
+RUN apk add git
+
+# npm install
+COPY ./package.json .
+RUN npm install
+
 # copy sources
 ADD . .
 
