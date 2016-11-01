@@ -5,9 +5,9 @@ import type { NodeStatus } from '../../api/RestClient'
 
 module.exports = {
   command: 'status [newStatus]',
-  description: 'get or set the status of the node. ' +
-    'if newStatus is not given, returns the current status. ' +
-    'newStatus must be one of: online, offline, public\n',
+  description: 'Get or set the status of the local node. ' +
+    'If `newStatus` is not given, returns the current status. ' +
+    '`newStatus` must be one of: online, offline, public\n',
   handler: (opts: {apiUrl: string, newStatus?: string}) => {
     const {apiUrl, newStatus} = opts
     const client = new RestClient({apiUrl})

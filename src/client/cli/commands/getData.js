@@ -5,7 +5,7 @@ const { prettyPrint } = require('../util')
 
 module.exports = {
   command: 'getData <objectId>',
-  description: 'request the object with objectId from the remote node and print to the console\n',
+  description: 'Request the object with `objectId` from the local node and print to the console.\n',
 
   handler: (opts: {apiUrl: string, objectId: string}) => {
     const {apiUrl, objectId} = opts
