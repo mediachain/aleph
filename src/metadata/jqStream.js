@@ -11,6 +11,7 @@ class JQTransform extends ChildProcessStream {
   constructor (filter: string) {
     super({encoding: 'utf-8'})
     this._args = [
+      '-a', // ascii output (escape unicode characters)
       '-c', // compact (no pretty print)
       '-M', // monochrome output
       '-S', // sort object keys

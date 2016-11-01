@@ -121,9 +121,18 @@ function publishStream (opts: {
   const publishPromises: Array<Promise<*>> = []
   const jq = new JQTransform(jqFilter)
 
+  let wki: string
+  let obj: Object
+
   stream.pipe(jq)
     .on('data', jsonString => {
-      const {wki, obj} = JSON.parse(jsonString)
+      try {
+        const parsed = JSON.parse(jsonString)
+        wki = parsed.wki
+        obj = parsed.obj
+      } catch (err) {
+        throw new Error(`Error parsing jq output: ${err}\njq output: ${jsonString}`)
+      }
 
       if (!skipSchemaValidation) {
         const result = validate(schema, obj)
