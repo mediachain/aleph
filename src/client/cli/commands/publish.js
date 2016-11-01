@@ -13,11 +13,12 @@ type HandlerOptions = {
   namespace: string,
   apiUrl: string,
   idSelector: string,
-  contentSelector: ?string,
-  filename: ?string,
+  contentSelector?: string,
+  filename?: string,
   batchSize: number,
-  idRegex: ?string,
-  contentFilters: ?string,
+  idRegex?: string,
+  contentFilters?: string,
+  compound?: number,
   dryRun: boolean
 }
 
@@ -49,11 +50,16 @@ module.exports = {
       type: 'boolean',
       default: false,
       description: 'only extract ids and print to the console'
+    },
+    compound: {
+      type: 'int',
+      required: false,
+      description: 'if present, publish compound statements of `compound` number of records. \n'
     }
   },
 
   handler: (opts: HandlerOptions) => {
-    const {namespace, apiUrl, batchSize, filename, dryRun} = opts
+    const {namespace, apiUrl, batchSize, filename, dryRun, compound} = opts
     const idSelector = parseSelector(opts.idSelector)
     const contentSelector = (opts.contentSelector != null) ? parseSelector(opts.contentSelector) : null
     const contentFilters = parseFilters(opts.contentFilters)
@@ -69,6 +75,7 @@ module.exports = {
       inputStream = process.stdin
     }
 
+    const publishOpts = {namespace, compound}
     let statementBodies: Array<Object> = []
     let statements: Array<SimpleStatementMsg> = []
     const publishPromises: Array<Promise<*>> = []
@@ -111,7 +118,7 @@ module.exports = {
 
         if (statementBodies.length >= batchSize) {
           publishPromises.push(
-            publishBatch(client, namespace, statementBodies, statements)
+            publishBatch(client, publishOpts, statementBodies, statements)
           )
           statementBodies = []
           statements = []
@@ -121,7 +128,7 @@ module.exports = {
       .on('end', () => {
         if (statementBodies.length > 0) {
           publishPromises.push(
-            publishBatch(client, namespace, statementBodies, statements)
+            publishBatch(client, publishOpts, statementBodies, statements)
           )
         }
 
@@ -140,10 +147,10 @@ module.exports = {
   extractId
 }
 
-function publishBatch (client: RestClient, namespace: string, statementBodies: Array<Object>, statements: Array<Object>): Promise<*> {
-  // save the refs for printing to the console on completion:
-  const statementRefs = statements.map(s => s.refs)
-
+function publishBatch (client: RestClient,
+                       publishOpts: {namespace: string, compound?: number},
+                       statementBodies: Array<Object>,
+                       statements: Array<Object>): Promise<*> {
   return client.putData(...statementBodies)
     .then(bodyHashes => {
       if (bodyHashes.length !== statements.length) {
@@ -154,20 +161,28 @@ function publishBatch (client: RestClient, namespace: string, statementBodies: A
         return s
       })
 
-      return client.publish(namespace, ...statements)
+      return client.publish(publishOpts, ...statements)
         .then(statementIds => [bodyHashes, statementIds])
     })
     .then(([bodyHashes, statementIds]) => {
-      if (bodyHashes.length !== statementIds.length) {
-        throw new Error(`Number of statement bodies written (${bodyHashes.length}) does not match ` +
-          `number of statements published (${statementIds.length})`)
-      }
-
-      for (let i = 0; i < bodyHashes.length; i++) {
-        const refsString = JSON.stringify(statementRefs[i])
-        console.log(`statement id: ${statementIds[i]} -- body: ${bodyHashes[i]} -- refs: ${refsString}`)
-      }
+      printBatchResults(bodyHashes, statementIds, statements, publishOpts.compound || 1)
     })
+}
+
+function printBatchResults (bodyHashes: Array<string>, statementIds: Array<string>, statements: Array<Object>,
+                            compoundSize: number) {
+  for (let i = 0; i < statementIds.length; i++) {
+    const objectRefs = bodyHashes.slice(i, i + compoundSize)
+    const stmts = statements.slice(i, i + compoundSize)
+    const bodies = stmts.map((s, idx) => ({
+      object: objectRefs[idx],
+      refs: s.refs,
+      tags: s.tags
+    }))
+
+    console.log(`\nstatement id: ${statementIds[i]}`)
+    console.log(bodies)
+  }
 }
 
 function parseSelector (selector: string | Array<string>): Array<string> {

@@ -17,7 +17,7 @@ const seedStatements = [
 
 describe('Query', () => {
   before(() => {
-    return concatNodeClient().then(client => client.publish('foo.bar', ...seedStatements))
+    return concatNodeClient().then(client => client.publish({namespace: 'foo.bar'}, ...seedStatements))
   })
 
   after(() => {

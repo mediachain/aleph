@@ -101,9 +101,16 @@ class RestClient {
       .then(response => true)
   }
 
-  publish (namespace: string, ...statements: Array<SimpleStatementMsg>): Promise<Array<string>> {
+  publish (opts: {namespace: string, compound?: number}, ...statements: Array<SimpleStatementMsg>): Promise<Array<string>> {
+    const { namespace, compound } = opts
     const statementNDJSON = statements.map(s => JSON.stringify(s)).join('\n')
-    return this.postRequest(`publish/${namespace}`, statementNDJSON, false)
+
+    let path = `publish/${namespace}`
+    if (compound != null) {
+      path += '/' + compound.toString()
+    }
+
+    return this.postRequest(path, statementNDJSON, false)
       .then(r => r.text())
       .then(text => text.split('\n').filter(text => text.length > 0))
   }

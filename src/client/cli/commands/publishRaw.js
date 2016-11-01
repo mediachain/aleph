@@ -12,7 +12,7 @@ module.exports = {
     const {namespace, apiUrl, statementBodyId} = opts
     const client = new RestClient({apiUrl})
 
-    client.publish(namespace, {object: statementBodyId})
+    client.publish({namespace}, {object: statementBodyId})
       .then(
         console.log,
         err => console.error(err.message)
