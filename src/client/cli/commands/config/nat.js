@@ -4,7 +4,7 @@ const RestClient = require('../../../api/RestClient')
 
 module.exports = {
   command: 'nat [natConfig]',
-  description: `get or set the NAT configuration. Valid settings are 'none', 'auto', '*', '*:port', 'ip:port' \n`,
+  description: `Get or set the NAT configuration. Valid settings are 'none', 'auto', '*', '*:port', 'ip:port'. \n`,
   handler: (opts: {apiUrl: string, natConfig?: string}) => {
     const {apiUrl, natConfig} = opts
     const client = new RestClient({apiUrl})

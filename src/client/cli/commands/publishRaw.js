@@ -4,7 +4,7 @@ const RestClient = require('../../api/RestClient')
 
 module.exports = {
   command: 'publishRaw <namespace> <statementBodyId>',
-  description: 'publish a statement whose body (actual metadata content) has ' +
+  description: 'Publish a statement whose body (actual metadata content) has ' +
     'already been stored in the node.  `statementBodyId` should be the multihash ' +
     'identifier of the statement body.\n',
 
@@ -12,7 +12,7 @@ module.exports = {
     const {namespace, apiUrl, statementBodyId} = opts
     const client = new RestClient({apiUrl})
 
-    client.publish(namespace, {object: statementBodyId})
+    client.publish({namespace}, {object: statementBodyId})
       .then(
         console.log,
         err => console.error(err.message)

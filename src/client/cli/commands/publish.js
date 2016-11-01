@@ -18,6 +18,7 @@ type HandlerOptions = {
   idFilter: string,
   filename?: string,
   batchSize: number,
+  compound?: number,
   dryRun: boolean,
   skipSchemaValidation: boolean
 }
@@ -40,23 +41,28 @@ module.exports = {
     dryRun: {
       type: 'boolean',
       default: false,
-      description: 'only extract ids and print to the console'
+      description: 'Only extract ids and print to the console.'
     },
     skipSchemaValidation: {
       type: 'boolean',
       default: false,
       description: "don't validate records against referenced schema before publishing.  Use only if you've " +
         'pre-validated your records! \n'
+    },
+    compound: {
+      type: 'int',
+      required: false,
+      description: 'If present, publish compound statements of `compound` number of records. \n'
     }
   },
 
   handler: (opts: HandlerOptions) => {
-    const {namespace, schemaReference, apiUrl, batchSize, filename, dryRun, skipSchemaValidation, jqFilter, idFilter} = opts
-    let streamName = 'standard input'
-
+    const {namespace, schemaReference, apiUrl, batchSize, filename, dryRun, skipSchemaValidation, jqFilter, idFilter, compound} = opts
+    const publishOpts = {namespace, compound}
     const client = new RestClient({apiUrl})
 
     let stream: Readable
+    let streamName = 'standard input'
     if (filename) {
       stream = fs.createReadStream(filename)
       streamName = filename
@@ -83,7 +89,7 @@ module.exports = {
           batchSize,
           dryRun,
           skipSchemaValidation,
-          namespace,
+          publishOpts,
           schemaReference,
           schema,
           jqFilter: composeJQFilters(jqFilter, idFilter)})
@@ -98,7 +104,7 @@ function publishStream (opts: {
   batchSize: number,
   dryRun: boolean,
   skipSchemaValidation: boolean,
-  namespace: string,
+  publishOpts: {namespace: string, compound?: number},
   schemaReference: string,
   schema: SelfDescribingSchema,
   jqFilter: string
@@ -107,7 +113,7 @@ function publishStream (opts: {
     stream,
     streamName,
     client,
-    namespace,
+    publishOpts,
     batchSize,
     dryRun,
     skipSchemaValidation,
@@ -179,7 +185,7 @@ function publishStream (opts: {
 
       if (statementBodies.length >= batchSize) {
         publishPromises.push(
-          publishBatch(client, namespace, statementBodies, statements)
+          publishBatch(client, publishOpts, statementBodies, statements)
         )
         statementBodies = []
         statements = []
@@ -189,7 +195,7 @@ function publishStream (opts: {
     .on('end', () => {
       if (statementBodies.length > 0) {
         publishPromises.push(
-          publishBatch(client, namespace, statementBodies, statements)
+          publishBatch(client, publishOpts, statementBodies, statements)
         )
       }
       Promise.all(publishPromises)
@@ -204,10 +210,10 @@ function publishStream (opts: {
     })
 }
 
-function publishBatch (client: RestClient, namespace: string, statementBodies: Array<Object>, statements: Array<Object>): Promise<*> {
-  // save the refs for printing to the console on completion:
-  const statementRefs = statements.map(s => s.refs)
-
+function publishBatch (client: RestClient,
+                       publishOpts: {namespace: string, compound?: number},
+                       statementBodies: Array<Object>,
+                       statements: Array<Object>): Promise<*> {
   return client.putData(...statementBodies)
     .then(bodyHashes => {
       if (bodyHashes.length !== statements.length) {
@@ -218,22 +224,31 @@ function publishBatch (client: RestClient, namespace: string, statementBodies: A
         return s
       })
 
-      return client.publish(namespace, ...statements)
+      return client.publish(publishOpts, ...statements)
         .then(statementIds => [bodyHashes, statementIds])
     })
     .then(([bodyHashes, statementIds]) => {
-      if (bodyHashes.length !== statementIds.length) {
-        throw new Error(`Number of statement bodies written (${bodyHashes.length}) does not match ` +
-          `number of statements published (${statementIds.length})`)
-      }
-
-      for (let i = 0; i < bodyHashes.length; i++) {
-        const refsString = JSON.stringify(statementRefs[i])
-        console.log(`statement id: ${statementIds[i]} -- body: ${bodyHashes[i]} -- refs: ${refsString}`)
-      }
+      printBatchResults(bodyHashes, statementIds, statements, publishOpts.compound || 1)
     })
 }
 
 function composeJQFilters (contentFilter: string, idFilter: string): string {
   return `${contentFilter} as $output | {wki: ($output | ${idFilter} | tostring), obj: $output}`
 }
+
+function printBatchResults (bodyHashes: Array<string>, statementIds: Array<string>, statements: Array<Object>,
+                            compoundSize: number) {
+  for (let i = 0; i < statementIds.length; i++) {
+    const objectRefs = bodyHashes.slice(i, i + compoundSize)
+    const stmts = statements.slice(i, i + compoundSize)
+    const bodies = stmts.map((s, idx) => ({
+      object: objectRefs[idx],
+      refs: s.refs,
+      tags: s.tags
+    }))
+
+    console.log(`\nstatement id: ${statementIds[i]}`)
+    console.log(bodies)
+  }
+}
+

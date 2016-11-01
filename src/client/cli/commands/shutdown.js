@@ -4,7 +4,7 @@ const RestClient = require('../../api/RestClient')
 
 module.exports = {
   command: 'shutdown',
-  description: 'tell the node to shutdown',
+  description: 'Tell the local node to shutdown.\n',
   handler: (opts: {apiUrl: string}) => {
     const {apiUrl} = opts
     const client = new RestClient({apiUrl})

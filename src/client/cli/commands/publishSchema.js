@@ -25,7 +25,7 @@ module.exports = {
 
     client.putData(schema)
       .then(([objectId]) =>
-        client.publish(namespace, {object: objectId, refs: [wki]})
+        client.publish({namespace}, {object: objectId, refs: [wki]})
           .then(([statementId]) => {
             console.log(`Published schema with wki = ${wki} to namespace ${namespace}`)
             console.log(`Object ID: ${objectId}`)
