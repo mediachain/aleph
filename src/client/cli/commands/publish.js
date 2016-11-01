@@ -13,7 +13,7 @@ type HandlerOptions = {
   namespace: string,
   apiUrl: string,
   idSelector: string,
-  contentSelector: ?string,
+  contentSelector?: string,
   filename?: string,
   batchSize: number,
   idRegex?: string,
