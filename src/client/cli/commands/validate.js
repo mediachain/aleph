@@ -12,7 +12,6 @@ type HandlerOptions = {
   apiUrl: string,
   schema: string,
   filename?: string,
-  idSelector: string,
   jqFilter: string,
 }
 
