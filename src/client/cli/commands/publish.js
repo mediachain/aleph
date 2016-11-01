@@ -181,7 +181,7 @@ function publishStream (opts: {
 
       const stmt = {object: selfDescribingObj, refs, tags, deps}
 
-      statementBodies.push(obj)
+      statementBodies.push(selfDescribingObj)
       statements.push(stmt)
 
       if (statementBodies.length >= batchSize) {
