@@ -12,7 +12,8 @@ module.exports = {
       description: 'Also fetch the "info" string for each peer.  This requires an extra network request per-peer.\n'
     }
   },
-  description: `fetch a list of peers from the node's directory server.\n`,
+  description: `Fetch a list of remote peers from the directory server. The local node must be ` +
+    `configured to use a directory server.\n`,
   handler: (opts: {apiUrl: string, info: boolean}) => {
     const {apiUrl, info} = opts
     const client = new RestClient({apiUrl})

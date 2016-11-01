@@ -5,7 +5,7 @@ const { prettyPrint } = require('../util')
 
 module.exports = {
   command: 'statement <statementId>',
-  description: 'retrieve a statement by its id\n',
+  description: 'Retrieve a statement from the local node by its id.\n',
   handler: (opts: {statementId: string, apiUrl: string}) => {
     const {statementId, apiUrl} = opts
     const client = new RestClient({apiUrl})

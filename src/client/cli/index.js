@@ -7,7 +7,7 @@ require('yargs')
   .demand(1, 'Missing command argument')
   .option('apiUrl', {
     alias: ['p'],
-    description: 'root URL of the REST API for a mediachain node',
+    description: 'Root URL of the REST API for a mediachain node',
     default: 'http://localhost:9002'
   })
   .global('apiUrl')

@@ -5,7 +5,8 @@ const { pluralizeCount } = require('../util')
 
 module.exports = {
   command: 'merge <remotePeer> <queryString>',
-  description: 'send a mediachain query to the node for evaluation.\n',
+  description: 'Merge statements and their referenced objects that match `query` from ' +
+    '`remotePeer` into the local node.\n',
   handler: (opts: {apiUrl: string, queryString: string, remotePeer: string}) => {
     const {apiUrl, queryString, remotePeer} = opts
 

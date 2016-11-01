@@ -4,7 +4,7 @@ const RestClient = require('../../../api/RestClient')
 
 module.exports = {
   command: 'dir [dirId]',
-  description: 'get or set the directory server id',
+  description: 'Get or set the directory server id.\n',
   handler: (opts: {apiUrl: string, dirId?: string}) => {
     const {apiUrl, dirId} = opts
     const client = new RestClient({apiUrl})

@@ -4,8 +4,8 @@ const RestClient = require('../../api/RestClient')
 
 module.exports = {
   command: 'id [peerId]',
-  description: 'request the peer ids of the connected peer, ' +
-    'or a different peer if peerId is given and a directory server is connected\n',
+  description: 'Request the peer id, publisher id, and info string of the local node, ' +
+    'or a remote peer if `peerId` is given and a directory server is connected.\n',
   handler: (opts: {apiUrl: string, peerId?: string}) => {
     const {apiUrl, peerId} = opts
     const client = new RestClient({apiUrl})

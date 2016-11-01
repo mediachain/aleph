@@ -24,13 +24,13 @@ type HandlerOptions = {
 
 module.exports = {
   command: 'publish <namespace> [filename]',
-  description: 'publish a batch of statements from a batch of newline-delimited json objects. ' +
-    'objects will be read from `filename` or stdin.\n',
+  description: 'Publish a batch of statements from a batch of newline-delimited json objects. ' +
+    'Objects will be read from `filename` or stdin.\n',
   builder: {
     batchSize: { default: BATCH_SIZE },
     idSelector: {
       required: true,
-      description: 'a dot-separated path to a field containing a well-known identifier, ' +
+      description: 'A dot-separated path to a field containing a well-known identifier, ' +
       'or, a string containing a JSON array of keys.  Use the latter if your keys contain "."\n'
     },
     contentSelector: {
@@ -41,20 +41,20 @@ module.exports = {
       description: 'Key-paths to omit from content. Multiple keypaths can be joined with ",". \n'
     },
     idRegex: {
-      description: 'if present, any capture groups will be used to extract a portion of the id. ' +
+      description: 'If present, any capture groups will be used to extract a portion of the id. ' +
         'e.g. --idRegex \'(dpla_)http.*/(.*)\' would turn ' +
         '"dpla_http://dp.la/api/items/2e49bf374b1b55f71603aa9aa326a9d6" into ' +
-        '"dpla_2e49bf374b1b55f71603aa9aa326a9d6"\n'
+        '"dpla_2e49bf374b1b55f71603aa9aa326a9d6".\n'
     },
     dryRun: {
       type: 'boolean',
       default: false,
-      description: 'only extract ids and print to the console'
+      description: 'Only extract ids and print to the console.'
     },
     compound: {
       type: 'int',
       required: false,
-      description: 'if present, publish compound statements of `compound` number of records. \n'
+      description: 'If present, publish compound statements of `compound` number of records. \n'
     }
   },
 
