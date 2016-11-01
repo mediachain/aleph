@@ -172,13 +172,14 @@ function publishStream (opts: {
 
       const refs = [wki]
       const tags = [] // TODO: support extracting tags
+      const deps = [schemaReference]
 
       if (dryRun) {
-        console.log(`refs: ${JSON.stringify(refs)}, tags: ${JSON.stringify(tags)}`)
+        console.log(`refs: ${JSON.stringify(refs)}, tags: ${JSON.stringify(tags)}, deps: ${JSON.stringify(deps)}`)
         return
       }
 
-      const stmt = {object: selfDescribingObj, refs, tags}
+      const stmt = {object: selfDescribingObj, refs, tags, deps}
 
       statementBodies.push(obj)
       statements.push(stmt)

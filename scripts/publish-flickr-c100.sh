@@ -1,10 +1,14 @@
 #!/bin/bash
 
 NAMESPACE="images.flickr"
-CONTENT_SELECTOR="--contentSelector _source"
-CONTENT_FILTERS="--contentFilters aesthetics"
-ID_SELECTOR="--idSelector native_id"
+SCHEMA_HASH='QmYGRQYmWC3BAtTAi88mFb7GVeFsUKGM4nm25SBUB9vfc9'
 COMPOUND="--compound 100"
 
-mcclient publish ${COMPOUND} ${CONTENT_SELECTOR} ${ID_SELECTOR} ${CONTENT_FILTERS} ${NAMESPACE} $1 > /dev/null
+mcclient publish ${COMPOUND} \
+    --skipSchemaValidation \
+    --jqFilter '._source | del(.aesthetics)' \
+    --idFilter '.native_id' \
+    ${NAMESPACE} \
+    ${SCHEMA_HASH} \
+    $1 > /dev/null
 
