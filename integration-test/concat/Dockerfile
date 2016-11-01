@@ -3,9 +3,9 @@ FROM mediachain/concat-dependencies
 # Clone concat repo
 RUN mkdir -p /go/src/github.com/mediachain
 RUN rm -rf /go/src/github.com/mediachain/concat
-RUN git clone https://github.com/mediachain/concat /go/src/github.com/mediachain/concat
-WORKDIR /go/src/github.com/mediachain/concat
 ARG concat_ref=master
+RUN echo "checking out concat at ${concat_ref}" && git clone https://github.com/mediachain/concat /go/src/github.com/mediachain/concat
+WORKDIR /go/src/github.com/mediachain/concat
 RUN git checkout ${concat_ref}
 
 # Build the project

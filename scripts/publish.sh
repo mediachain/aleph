@@ -10,9 +10,8 @@ SKIP_VALIDATION='--skipSchemaValidation'
 # if you want to validate every record, use this one instead:
 # SKIP_VALIDATION=''
 
-CONTENT_SELECTOR='--contentSelector _source'
-ID_SELECTOR='--idSelector native_id'
-CONTENT_FILTERS='--contentFilters aesthetics'
+JQ_FILTER='--jqFilter "._source | del(.aesthetics)"'
+ID_FILTER='--idFilter .native_id'
 
-mcclient publish ${SKIP_VALIDATION} ${CONTENT_SELECTOR} ${ID_SELECTOR} ${CONTENT_FILTERS} ${NAMESPACE} ${SCHEMA_HASH} $1 > /dev/null
+mcclient publish ${SKIP_VALIDATION} ${JQ_FILTER} ${ID_FILTER} ${NAMESPACE} ${SCHEMA_HASH} $1 > /dev/null
 

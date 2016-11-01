@@ -23,7 +23,7 @@ export type ListPeersRequestMsg = {
 }
 
 export type ListPeersResponseMsg = {
-  peers: Array<PeerInfoMsg>
+  peers: Array<string>
 }
 
 // node.proto
@@ -31,13 +31,34 @@ export type ListPeersResponseMsg = {
 export type PingMsg = { }
 export type PongMsg = { }
 
+export type NodeInfoRequestMsg = { }
+
+export type NodeInfoMsg = {
+  peer: string,
+  publisher: string,
+  info: string
+}
+
+export type DataRequestMsg = {
+  keys: Array<string>
+}
+
+export type DataResultMsg = { data: DataObjectMsg } |
+  { end: StreamEndMsg } |
+  { error: StreamErrorMsg }
+
+export type DataObjectMsg = {
+  key: string,
+  data: Buffer
+}
+
 export type QueryRequestMsg = {
   query: string
 }
 
 export type QueryResultMsg = { value: QueryResultValueMsg } |
-  { end: QueryResultEndMsg } |
-  { error: QueryResultErrorMsg }
+  { end: StreamEndMsg } |
+  { error: StreamErrorMsg }
 
 export type QueryResultValueMsg = { simple: SimpleValueMsg } | { compound: CompoundValueMsg }
 
@@ -55,11 +76,11 @@ export type KeyValuePairMsg = {
   value: SimpleValueMsg
 }
 
-export type QueryResultErrorMsg = {
+export type StreamErrorMsg = {
   error: string
 }
 
-export type QueryResultEndMsg = {
+export type StreamEndMsg = {
 
 }
 
