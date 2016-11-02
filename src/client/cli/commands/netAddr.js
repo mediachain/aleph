@@ -3,7 +3,7 @@
 const RestClient = require('../../api/RestClient')
 
 module.exports = {
-  command: 'netAddresses',
+  command: 'netAddr',
   describe: `Print the local node's network addresses in multiaddr format.`,
   handler: (opts: {apiUrl: string}) => {
     const {apiUrl} = opts
