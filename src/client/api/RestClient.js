@@ -241,10 +241,11 @@ class RestClient {
       .then(s => s.trim() === 'OK')
   }
 
-  getNetAddress (): Promise<string> {
+  getNetAddresses (): Promise<Array<string>> {
     return this.getRequest('net/addr')
       .then(r => r.text())
-      .then(s => s.trim())
+      .then(s => s.split('\n'))
+      .then(addrs => addrs.filter(s => s.length > 0))
   }
 
   shutdown (): Promise<boolean> {
