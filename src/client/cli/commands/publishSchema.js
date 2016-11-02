@@ -7,10 +7,10 @@ const SCHEMA_NAMESPACE = 'mediachain.schemas'
 
 module.exports = {
   command: 'publishSchema <filename>',
-  description: 'publish a self-describing json-schema document to the "mediachain.schemas" namespace',
+  description: 'Publish a self-describing json-schema document to the local node.\n',
   builder: {
     namespace: {
-      description: 'namespace to publish the schema to',
+      description: 'Namespace to publish the schema to.',
       type: 'string',
       default: SCHEMA_NAMESPACE
     }
