@@ -21,6 +21,8 @@ console.log('building jq...')
 build.run((err) => {
   if (err) {
     console.log('err', err)
+    process.exit(1)
+  } else {
+    console.log(`jq compiled to ${outputPath}`)
   }
-  console.log(`jq compiled to ${outputPath}`)
 })
