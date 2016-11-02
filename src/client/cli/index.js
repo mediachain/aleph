@@ -12,4 +12,5 @@ require('yargs')
   })
   .global('apiUrl')
   .commandDir('commands')
+  .strict()
   .argv

@@ -9,6 +9,7 @@ module.exports = {
     return yargs
       .commandDir(path.join(__dirname, './config'))
       .help()
+      .strict()
   },
   handler: () => {}
 }
