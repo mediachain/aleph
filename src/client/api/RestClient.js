@@ -241,6 +241,13 @@ class RestClient {
       .then(s => s.trim() === 'OK')
   }
 
+  getNetAddresses (): Promise<Array<string>> {
+    return this.getRequest('net/addr')
+      .then(r => r.text())
+      .then(s => s.split('\n'))
+      .then(addrs => addrs.filter(s => s.length > 0))
+  }
+
   shutdown (): Promise<boolean> {
     return this.postRequest('shutdown', '', false)
       .then(() => true)
