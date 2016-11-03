@@ -11,9 +11,9 @@ const JQ_INFO = {
 const path = require('path')
 const outputPath = path.join(__dirname, '..', 'node_modules', '.bin', 'jq')
 
-const fs = require('fs');
+const fs = require('fs')
 try {
-  fs.accessSync(outputPath, fs.F_OK);
+  fs.accessSync(outputPath, fs.F_OK)
   // already exists
   process.exit(0)
 } catch (e) {}
