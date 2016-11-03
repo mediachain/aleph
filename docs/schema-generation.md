@@ -39,7 +39,7 @@ When you run the command, you can pass in `--vendor`, `--name`, and `--schemaver
 To create the schema, you pass in your example data to schema-guru:
 
 ```
-schema-guru schema --ndjson --no-length --vendor org.moma --name artwork --schamaver 1-0-0 --output org.moma-artwork-jsonschema-1-0-0.json Artworks.ndjson
+schema-guru schema --ndjson --no-length --vendor org.moma --name artwork --schemaver 1-0-0 --output org.moma-artwork-jsonschema-1-0-0.json Artworks.ndjson
 ```
 
 The `--ndjson` flag is only necessary if you're using newline-delimited json; if you pass in a single document or a directory of documents, you should omit it.
