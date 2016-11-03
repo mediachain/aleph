@@ -23,9 +23,10 @@ module.exports = {
       .help()
   },
   handler: (opts: {dirInfo: string}) => {
-    const {dirInfo} = opts
+    console.log(opts)
+    const {dirInfo, parentConcat} = opts
 
-    const options = bootstrap()
+    const options = bootstrap(opts)
     const node = new Node(options)
 
     if(dirInfo !== undefined){
@@ -42,9 +43,11 @@ module.exports = {
   }
 }
 
-function bootstrap(): MediachainNodeOptions {
+function bootstrap(opts: {identityPath: string}): MediachainNodeOptions {
+  const {identityPath} = opts
+
   const options = {
-    peerId: Identity.generateIdentity(),
+    peerId: Identity.loadOrGenerateIdentity(identityPath),
     dirInfo: 'aleph client node'
   }
 

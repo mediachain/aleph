@@ -25,8 +25,23 @@ function loadIdentity (filePath: string): Promise<PeerId> {
     .then(privKeyBytes => PeerId.createFromPrivKey(privKeyBytes))
 }
 
+
+function loadOrGenerateIdentity(filePath: string): PeerId {
+  let peerId
+  try {
+    loadIdentity(filePath)
+  } catch(err) {
+    console.log(`Could not load from ${filePath}, generating new PeerId...`)
+    peerId = generateIdentity()
+    saveIdentity(peerId, filePath)
+  }
+
+  return peerId
+}
+
 module.exports = {
   generateIdentity,
   saveIdentity,
-  loadIdentity
+  loadIdentity,
+  loadOrGenerateIdentity
 }
