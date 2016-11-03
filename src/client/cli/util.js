@@ -1,11 +1,32 @@
 // @flow
 
 const Multihash = require('multihashes')
+const { JQ_PATH } = require('../../metadata/jqStream')
+const childProcess = require('child_process')
 
-function prettyPrint (obj: Object) {
-  // for now, use console.dir to dump the object.
-  // when we have a hard dependency on jq, we can just pipe through it instead :)
-  console.dir(obj, {colors: true, depth: 1000})
+function printJSON (obj: Object,
+                    options: {color?: ?boolean, pretty?: boolean} = {}) {
+  const compactOutput = options.pretty === false
+
+  let useColor = false
+  // print in color if explicitly enabled, or if pretty-printing to a tty
+  if (options.color === true || (options.color == null && process.stdout.isTTY && !compactOutput)) {
+    useColor = true
+  }
+
+  if (!useColor && compactOutput) {
+    // skip jq if we don't want color or pretty printing
+    console.log(JSON.stringify(obj))
+    return
+  }
+
+  const jqOpts = [(useColor ? '-C' : '-M'), '-a', '.']
+  if (options.pretty === false) {
+    jqOpts.unshift('-c')
+  }
+
+  const output = childProcess.execFileSync(JQ_PATH, jqOpts, {input: JSON.stringify(obj), encoding: 'utf-8'})
+  console.log(output)
 }
 
 function pluralizeCount (count: number, word: string): string {
@@ -24,7 +45,7 @@ function isB58Multihash (str: string): boolean {
 }
 
 module.exports = {
-  prettyPrint,
+  printJSON,
   pluralizeCount,
   isB58Multihash
 }
