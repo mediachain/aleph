@@ -14,6 +14,12 @@ function printJSON (obj: Object,
     useColor = true
   }
 
+  if (!useColor && compactOutput) {
+    // skip jq if we don't want color or pretty printing
+    console.log(JSON.stringify(obj))
+    return
+  }
+
   const jqOpts = [(useColor ? '-C' : '-M'), '-a', '.']
   if (options.pretty === false) {
     jqOpts.unshift('-c')
