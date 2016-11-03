@@ -25,16 +25,11 @@ export type SchemaDescription = {
 // A SchemaReference is an IPLD-style link object, whose string value is the b58-encoded multihash of a schema
 export type SchemaReference = {'/': string}
 
-export type JsonSchema = {
-
-}
-
 /**
  * The fields we require a self-describing schema to have.
  */
 export type SelfDescribingSchema = {
-  self: SchemaDescription,
-  description: string,
+  self: SchemaDescription
 }
 
 function isObject (o: ?mixed): boolean {
@@ -145,10 +140,6 @@ function validateSelfDescribingSchema (schemaObject: Object): SelfDescribingSche
 
   if (schemaObject.self == null || !isSchemaDescription(schemaObject.self)) {
     throw new Error('Self-describing schema must have a "self" field with "vendor", "name", "version" and "format"')
-  }
-
-  if (schemaObject.description == null || typeof schemaObject.description !== 'string') {
-    throw new Error('Self-describing schema must have a "description" string field')
   }
 
   if (!ajv.validateSchema(schemaObject)) {
