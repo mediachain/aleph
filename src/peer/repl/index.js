@@ -21,10 +21,10 @@ require('yargs')
       'global': true,
       'default': home + 'identity.node'
     },
-    'parentConcat': {
+    'remotePeer': {
       'global': true,
       'type': 'string',
-      'describe': 'The concat instance to pair with'
+      'describe': 'The remote peer to pair with (multiaddress)'
     }
   })
   .argv
