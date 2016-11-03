@@ -4,13 +4,21 @@ const Multihash = require('multihashes')
 const { JQ_PATH } = require('../../metadata/jqStream')
 const childProcess = require('child_process')
 
-function prettyPrint (obj: Object, options: {color: boolean | 'auto'} = {color: 'auto'}) {
+function printJSON (obj: Object,
+                    options: {color?: ?boolean, pretty?: boolean} = {}) {
+  const compactOutput = options.pretty === false
+
   let useColor = false
-  if (options.color === true || (options.color === 'auto' && process.stdout.isTTY)) {
+  // print in color if explicitly enabled, or if pretty-printing to a tty
+  if (options.color === true || (options.color == null && process.stdout.isTTY && !compactOutput)) {
     useColor = true
   }
 
   const jqOpts = [(useColor ? '-C' : '-M'), '-a', '.']
+  if (options.pretty === false) {
+    jqOpts.unshift('-c')
+  }
+
   const output = childProcess.execFileSync(JQ_PATH, jqOpts, {input: JSON.stringify(obj), encoding: 'utf-8'})
   console.log(output)
 }
@@ -31,7 +39,7 @@ function isB58Multihash (str: string): boolean {
 }
 
 module.exports = {
-  prettyPrint,
+  printJSON,
   pluralizeCount,
   isB58Multihash
 }
