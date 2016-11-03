@@ -176,6 +176,8 @@ function publishStream (opts: {
         )
       }
 
+      wki = wki.toString()
+
       const refs = [wki]
       const tags = [] // TODO: support extracting tags
       const deps = []
@@ -258,7 +260,7 @@ function publishBatch (client: RestClient,
 }
 
 function composeJQFilters (contentFilter: string, idFilter: string): string {
-  return `${contentFilter} as $output | {wki: ($output | ${idFilter} | tostring), obj: $output}`
+  return `${contentFilter} as $output | {wki: ($output | ${idFilter}), obj: $output}`
 }
 
 function printBatchResults (bodyHashes: Array<string>, statementIds: Array<string>, statements: Array<Object>,
