@@ -64,16 +64,59 @@ Object ID: QmdfuvXHnKtewFeunFBBDHrTsG5qyHBFCruWWh4xxXm9PA
 Statement ID: 4XTTM6XcpMB8N8Tnkhc66DqvAotgKzRJgrZbF7SBByihtPnV8:1478191051:34005
 ```
 
-The `Object ID` above is used as the `--schemaReference` flag when publishing records.  To ingest the MoMA artworks:
+The `Object ID` above is used as the `--schemaReference` flag when publishing records.  
+
+## Using your schema when publishing mediachain records
+
+To ingest the MoMA artworks using the published schema:
 
 ```
-mcclient publish --namespace museums.moma.artworks --idFilter '.ObjectID | tostring | "moma:artwork:" + .' --schemaReference QmdfuvXHnKtewFeunFBBDHrTsG5qyHBFCruWWh4xxXm9PA Artworks.ndjson
+mcclient publish --namespace museums.moma.artworks --idFilter .ObjectID --schemaReference QmdfuvXHnKtewFeunFBBDHrTsG5qyHBFCruWWh4xxXm9PA Artworks.ndjson
 ```
 
 The `mcclient publish` command also accepts newline-delimited json, so we give it the same file we prepared earlier as the final argument.  If the argument is ommitted, it will read from standard input.
 
-The `--idFilter` flag is a jq filter that massages the `ObjectID` field from the input object, converts it from a number to a string, then prepends the string "moma:artwork:" to it.  This produces a mediachain "WKI" (well-known-identifier), that can be used to look up the records in queries.  The actual `ObjectID` field in the record is not altered; the filter is just used to extract an id for mediachain usage.
+The `--idFilter` flag is a jq filter that selects the `ObjectID` field from the input records.  Note the `.` preceeding the field name; without it jq will give you an error. This produces a mediachain "WKI" (well-known-identifier), that can be used to look up the records in queries.
 
 The `--namespace` flag is also required to give the records a "home" in the mediachain hierarchy.
 
-The `--schemaReference` is the object ID of the schema we published earlier
+The `--schemaReference` is the object ID of the schema we published earlier.
+
+When you provide a schema reference to the `mcclient publish` command, your input objects are validated against it, and wrapped in a small outer object that contains a link to the schema in the `schema` field, with your record as the `data` field.  Wrapping objects in this way allows other users to fetch the schema for a record without needing to know it up front.
+
+For example, this MoMA artist record:
+
+```json
+{
+    "ArtistBio": "American, 1934\u20132015",
+    "BeginDate": 1934,
+    "ConstituentID": 67350,
+    "DisplayName": "Howard Guttenplan",
+    "EndDate": 2015,
+    "Gender": null,
+    "Nationality": "American",
+    "ULAN": null,
+    "Wiki QID": null
+}
+```
+
+Would stored in mediachain as:
+
+```
+{
+  "schema": {
+    "/": "QmXciNhn4P6veuojsR6uRGHBu27pAztp5o1rtMkkmsTtUf"
+  },
+  "data": {
+    "ArtistBio": "American, 1934\u20132015",
+    "BeginDate": 1934,
+    "ConstituentID": 67350,
+    "DisplayName": "Howard Guttenplan",
+    "EndDate": 2015,
+    "Gender": null,
+    "Nationality": "American",
+    "ULAN": null,
+    "Wiki QID": null
+  }
+}
+```
