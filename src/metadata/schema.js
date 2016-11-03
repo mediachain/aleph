@@ -3,6 +3,13 @@
 const fs = require('fs')
 const Ajv = require('ajv')
 const ajv = new Ajv({allErrors: true})
+
+// add the snowplow self-describing schema definition, so schema-guru generated schemas will resolve correctly
+ajv.addMetaSchema(
+  require('./schemas/com.snowplowanalytics.self-desc-jsonschema-1-0-0.json'),
+  'http://iglucentral.com/schemas/com.snowplowanalytics.self-desc/schema/jsonschema/1-0-0#'
+)
+
 const SchemaVer = require('./schemaver')
 
 const SCHEMA_WKI_PREFIX = 'schema:'
