@@ -16,7 +16,6 @@ describe('schema validation', () => {
   const fooSchema = {
     self: fooSchemaDescription,
 
-    description: 'invalid foo will be rejected!',
     type: 'object',
     properties: {
       'foo': {
