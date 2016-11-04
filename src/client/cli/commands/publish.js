@@ -275,7 +275,8 @@ function printBatchResults (bodyHashes: Array<string>, statementIds: Array<strin
     const bodies = stmts.map((s, idx) => ({
       object: objectRefs[idx],
       refs: s.refs,
-      tags: s.tags
+      tags: s.tags,
+      deps: s.deps
     }))
 
     console.log(`\nstatement id: ${statementIds[i]}`)
