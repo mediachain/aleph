@@ -27,3 +27,13 @@ before_install:
 script:
   - npm run test &&./integration-test/run-in-docker.sh
 
+deploy:
+  provider: npm
+  email: yusef@napora.org
+  api_key:
+    secure: M+mdGML/OzRCUzM39hxityHXNLSHBRUDJ0JuKnaooP8TRWa3buuiIbU3OtjUEizhWfR8VfAxFKzb+4ysdbqYuqWC67Hles85CKHnjl+JH+yj9FAJ+xb6lUyXy0Pd+ehwaAi79BgTRUtpTl11ECjqAT3Swqn0omRkC0R7rEZXFp+LCjnR2fPFceD09qaZMJpDuH72ciC4RFjIB1TWqZOWNh5C/SpmyEOKSpOsNXDYS3XhHjcEEp4kljFMwXt4hM7kN/oc3GL4b351+cEcnU0QJ1e/qyOFFgHz7j4aNzOP0lrGxsMa/gJQQE9ltr1Ql2AacUxxVfRckuRN8qqyFRtoqA/pZHmgvlKM6hDl/KhImLXYDEAyxgrbBGX4/LasezfUfF9Y4JfVQpKCO73n/R2WZrM2SBh9n4mUxbqJY0hqX69Oxsi9GLVwaWU+6aBwhXlijtq/MFb41rpwhcCmNtLyhN89twvQYcba6cDpAjH1zMKmmiT9H43smVnPDz0qsY6Lr1rwQmH5dtNCa8o/1ywYBlk9St5c9xzPSaxKgMTIGgdZUWqm9aFWzTGRgg9IxHcfwFIawDpr3amX6FpzGYaKeIrqEpm35MTs7I6SVOXRfqvOMxP/gr28hvGtqr4r48W/ZWnj8nkNdFGuSHVi6zwUTSzyJslYuUBRvzAqLixdSps=
+  on:
+    tags: true
+    repo: mediachain/aleph
+    # only publish if we're on a commit whose tag starts with 'v'
+    condition: $(git describe --tags) == v*
