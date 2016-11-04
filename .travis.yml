@@ -28,6 +28,7 @@ script:
   - npm run test &&./integration-test/run-in-docker.sh
 
 deploy:
+  skip_cleanup: true
   provider: npm
   email: yusef@napora.org
   api_key:
