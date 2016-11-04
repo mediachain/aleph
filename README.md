@@ -1,5 +1,6 @@
 # א
 
+[![npm version](https://badge.fury.io/js/aleph.svg)](https://badge.fury.io/js/aleph)
 [![Travis CI](https://travis-ci.org/mediachain/aleph.svg?branch=master)](https://travis-ci.org/mediachain/aleph.svg?branch=master)
 [![js-standard-style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg?style=flat-square)](https://github.com/feross/standard)
 
