@@ -1,12 +1,10 @@
 // @flow
 
+const os = require('os')
 const Node = require('../../node')
 // $FlowIssue flow doesn't find repl builtin?
 const Repl = require('repl')
-const PeerId = require('peer-id')
-const PeerInfo = require('peer-info')
 const Identity = require('../../identity')
-const Promirepl = require('promirepl')
 
 import type { MediachainNodeOptions } from '../../node'
 
@@ -68,14 +66,32 @@ module.exports = {
       })
       repl.context.node = node
       repl.context.commands = commands
-      //Promirepl.promirepl(repl)
+      const defaultEval = repl.eval
+      repl.eval = promiseEval(defaultEval)
     }).catch(err => {
       console.log(err)
     })
   }
 }
 
-function bootstrap(opts: {identityPath: string}): MediachainNodeOptions {
+const EMPTY = '(' + os.EOL + ')'
+const promiseEval = (defaultEval) => (cmd, context, filename, callback) => {
+  if (cmd === EMPTY) return callback()
+  defaultEval(cmd, context, filename, (err, result) => {
+    if (err) { return callback(err) }
+
+    if (result instanceof Promise) {
+      result.then(
+        asyncResult => { callback(null, asyncResult) },
+        asyncErr => { callback(asyncErr) }
+      )
+    } else {
+      callback(null, result)
+    }
+  })
+}
+
+function bootstrap (opts: {identityPath: string}): MediachainNodeOptions {
   const {identityPath} = opts
 
   const options = {
