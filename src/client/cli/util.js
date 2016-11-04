@@ -26,7 +26,7 @@ function printJSON (obj: Object,
   }
 
   const output = childProcess.execFileSync(JQ_PATH, jqOpts, {input: JSON.stringify(obj), encoding: 'utf-8'})
-  console.log(output)
+  process.stdout.write(output)
 }
 
 function pluralizeCount (count: number, word: string): string {
