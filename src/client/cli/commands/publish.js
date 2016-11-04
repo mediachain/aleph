@@ -116,6 +116,10 @@ module.exports = {
           schema,
           jqFilter: composeJQFilters(jqFilter, idFilter)})
       })
+      .catch(err => {
+        console.error(err.message)
+        process.exit(1)
+      })
   }
 }
 
@@ -271,7 +275,8 @@ function printBatchResults (bodyHashes: Array<string>, statementIds: Array<strin
     const bodies = stmts.map((s, idx) => ({
       object: objectRefs[idx],
       refs: s.refs,
-      tags: s.tags
+      tags: s.tags,
+      deps: s.deps
     }))
 
     console.log(`\nstatement id: ${statementIds[i]}`)
