@@ -116,6 +116,10 @@ module.exports = {
           schema,
           jqFilter: composeJQFilters(jqFilter, idFilter)})
       })
+      .catch(err => {
+        console.error(err.message)
+        process.exit(1)
+      })
   }
 }
 
