@@ -25,5 +25,5 @@ before_install:
   - docker pull mhart/alpine-node:6.7
 
 script:
-  - npm run test
-  - ./integration-test/run-in-docker.sh
+  - npm run test &&./integration-test/run-in-docker.sh
+
