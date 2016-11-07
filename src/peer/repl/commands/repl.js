@@ -75,17 +75,54 @@ module.exports = {
 }
 
 const EMPTY = '(' + os.EOL + ')'
+
+const ASSIGN_REGEX = /(.*\S+\s*[^=!><]=[^=>])(.*)/
+const REPL_ASSIGNMENT_KEY = '_AlephREPLResult'
+const vm = require('vm')
+
+/**
+ * Helper to perform assignment in the repl. The idea is that, in the promiseEval wrapper,
+ * we check if command is assigning to a var.  If so, we first evaluate just the right-hand
+ * side of the assignment and check if the result is a Promise.  If it is, we perform
+ * the assignment *after* the promise resolves.
+ *
+ * @param context - the vm.context for the REPL evaluator
+ * @param assignmentFragment - the part of the command up to and including the `=`
+ * @param result - the evaluated result of the right-hand side of the assignment statement
+ */
+function performAssignment(context: Object, assignmentFragment: ?string, result: any) {
+  if (assignmentFragment != null) {
+    const oldVal = context[REPL_ASSIGNMENT_KEY] // just in case the user defines a var with that key
+    const assignCommand = assignmentFragment + REPL_ASSIGNMENT_KEY + ';'
+    context[REPL_ASSIGNMENT_KEY] = result
+    vm.runInContext(assignCommand, context)
+    context[REPL_ASSIGNMENT_KEY] = oldVal
+  }
+}
+
 const promiseEval = (defaultEval) => (cmd, context, filename, callback) => {
   if (cmd === EMPTY) return callback()
+
+  const assignmentMatch = ASSIGN_REGEX.exec(cmd)
+  let assignmentFragment: ?string = null
+  if (assignmentMatch !== null && assignmentMatch.length > 2) {
+    assignmentFragment = assignmentMatch[1]
+    cmd = '(' + assignmentMatch[2] + ')'
+  }
+
   defaultEval(cmd, context, filename, (err, result) => {
     if (err) { return callback(err) }
 
     if (result instanceof Promise) {
       result.then(
-        asyncResult => { callback(null, asyncResult) },
+        asyncResult => {
+          performAssignment(context, assignmentFragment, asyncResult)
+          callback(null, asyncResult)
+        },
         asyncErr => { callback(asyncErr) }
       )
     } else {
+      performAssignment(context, assignmentFragment, result)
       callback(null, result)
     }
   })
