@@ -26,12 +26,11 @@ function loadIdentity (filePath: string): PeerId {
   return PeerId.createFromPrivKey(privKeyBytes)
 }
 
-
-function loadOrGenerateIdentity(filePath: string): PeerId {
+function loadOrGenerateIdentity (filePath: string): PeerId {
   let peerId
   try {
     loadIdentity(filePath)
-  } catch(err) {
+  } catch (err) {
     console.log(`Could not load from ${filePath}, generating new PeerId...`)
     peerId = generateIdentity()
     saveIdentity(peerId, filePath)
@@ -40,12 +39,12 @@ function loadOrGenerateIdentity(filePath: string): PeerId {
   return peerId
 }
 
-function inflateMultiaddr(multiaddrString: string): PeerInfo {
-    const multiaddr = Multiaddr(multiaddrString)
-    const peerInfo = new PeerInfo()
-    peerInfo.multiaddr.add(multiaddr)
+function inflateMultiaddr (multiaddrString: string): PeerInfo {
+  const multiaddr = Multiaddr(multiaddrString)
+  const peerInfo = new PeerInfo()
+  peerInfo.multiaddr.add(multiaddr)
 
-    return peerInfo
+  return peerInfo
 }
 
 module.exports = {
