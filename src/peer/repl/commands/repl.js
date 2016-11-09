@@ -1,6 +1,7 @@
 // @flow
 
 const os = require('os')
+const vm = require('vm')
 const Node = require('../../node')
 // $FlowIssue flow doesn't find repl builtin?
 const Repl = require('repl')
@@ -74,11 +75,6 @@ module.exports = {
   }
 }
 
-const EMPTY = '(' + os.EOL + ')'
-
-const ASSIGN_REGEX = /(.*\S+\s*[^=!><]=[^=>])(.*)/
-const REPL_ASSIGNMENT_KEY = '_AlephREPLResult'
-const vm = require('vm')
 
 /**
  * Helper to perform assignment in the repl. The idea is that, in the promiseEval wrapper,
@@ -90,7 +86,7 @@ const vm = require('vm')
  * @param assignmentFragment - the part of the command up to and including the `=`
  * @param result - the evaluated result of the right-hand side of the assignment statement
  */
-function performAssignment(context: Object, assignmentFragment: ?string, result: any) {
+function performAssignment (context: Object, assignmentFragment: ?string, result: any) {
   if (assignmentFragment != null) {
     const oldVal = context[REPL_ASSIGNMENT_KEY] // just in case the user defines a var with that key
     const assignCommand = assignmentFragment + REPL_ASSIGNMENT_KEY + ';'
@@ -100,10 +96,14 @@ function performAssignment(context: Object, assignmentFragment: ?string, result:
   }
 }
 
+const EMPTY = '(' + os.EOL + ')'
+const ASYNC_ASSIGN_REGEX = /(.*\S+\s*[^=!><]=[^=>]\s*)await(.*)/
+const REPL_ASSIGNMENT_KEY = '_AlephREPLResult'
+
 const promiseEval = (defaultEval) => (cmd, context, filename, callback) => {
   if (cmd === EMPTY) return callback()
 
-  const assignmentMatch = ASSIGN_REGEX.exec(cmd)
+  const assignmentMatch = ASYNC_ASSIGN_REGEX.exec(cmd)
   let assignmentFragment: ?string = null
   if (assignmentMatch !== null && assignmentMatch.length > 2) {
     assignmentFragment = assignmentMatch[1]
