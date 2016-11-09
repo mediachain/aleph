@@ -31,32 +31,31 @@ module.exports = {
     const commands = {}
 
     let init, remotePeerInfo
-    if(remotePeer !== undefined){
+    if (remotePeer !== undefined) {
       remotePeerInfo = Identity.inflateMultiaddr(remotePeer)
 
-      commands.remoteQuery = function(queryString){
+      commands.remoteQuery = function (queryString) {
         return node.remoteQuery(remotePeerInfo, queryString)
       }
 
       init = node.start().then(() => {
         node.openConnection(remotePeerInfo)
       }).then(() => {
-        console.log("Connected to " + remotePeer)
+        console.log('Connected to ' + remotePeer)
       })
-
     } else {
-      console.log("No remote peer specified, running in detached mode")
+      console.log('No remote peer specified, running in detached mode')
       init = Promise.resolve(undefined)
     }
 
     // TODO: directory stuff
-    if(dir !== undefined){
+    if (dir !== undefined) {
       const dirInfo = Identity.inflateMultiaddr(dir)
       node.setDirectory(dirInfo)
-    } else if(false){
+    } else if (false) { // eslint-disable-line
       // TODO: get directory from remote peer (and amend message below)
     } else {
-      console.log("No directory specified, running without directory")
+      console.log('No directory specified, running without directory')
     }
 
     init.then(() => {
@@ -74,7 +73,6 @@ module.exports = {
     })
   }
 }
-
 
 /**
  * Helper to perform assignment in the repl. The idea is that, in the promiseEval wrapper,
