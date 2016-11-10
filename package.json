@@ -52,6 +52,7 @@
     "pull-abortable": "^4.1.0",
     "pull-length-prefixed": "^1.2.0",
     "pull-stream": "^3.4.5",
+    "thenify-all": "^1.6.0",
     "varint": "^4.0.1",
     "yargs": "^6.3.0"
   },
