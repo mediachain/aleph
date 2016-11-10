@@ -160,8 +160,9 @@ class RestClient {
           try {
             return serialize.encode(o)
           } catch (err) {
-            console.error('Error converting to serialized record: ', err)
-            return new Buffer('')
+            console.error('Serialization error: ' + err.message)
+            console.error('Failed Object: ' + JSON.stringify(o, null, 2))
+            throw err
           }
         })
         .filter(buf => buf.length > 0)
