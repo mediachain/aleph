@@ -1,7 +1,7 @@
 // @flow
 
 const assert = require('assert')
-const { describe, it } = require('mocha')
+const { before, describe, it } = require('mocha')
 
 const { PROTOCOLS } = require('../src/peer/constants')
 const pull = require('pull-stream')
@@ -11,7 +11,7 @@ const {
   protoStreamEncode
 } = require('../src/peer/util')
 const { loadTestNodeIds, makeNode } = require('./util')
-const nodeIds = loadTestNodeIds()
+
 
 import type Node from '../src/peer/node'
 import type { QueryResultMsg } from '../src/protobuf/types'
@@ -27,18 +27,17 @@ const queryHandler = (results: Array<QueryResultMsg>) => (conn: Connection) => p
   conn
 )
 
-function mockRemote (results: Array<QueryResultMsg>): Node {
-  const node = makeNode({peerId: nodeIds.pop()})
-  node.p2p.handle(PROTOCOLS.node.query, queryHandler(results))
-  return node
-}
-
 function startNodes (...nodes: Array<Node>): Promise<*> {
   return Promise.all(nodes.map(n => n.start()))
 }
 
 describe('Remote Query', () => {
-  const local = makeNode({peerId: nodeIds.pop()})
+  let nodeIds, local
+
+  before(async () => {
+    nodeIds = await loadTestNodeIds()
+    local = makeNode({peerId: nodeIds.pop()})
+  })
 
   it('decodes all query result types correctly', function () {
     this.timeout(3000)
@@ -56,7 +55,9 @@ describe('Remote Query', () => {
 
     // the stream doesn't deliver the "end" response, it just ends the stream
     const expected = responses.slice(0, responses.length - 1)
-    const remote = mockRemote(responses)
+    // mock remote
+    const remote = makeNode({peerId: nodeIds.pop()})
+    remote.p2p.handle(PROTOCOLS.node.query, queryHandler(responses))
 
     return startNodes(local, remote) // start both peers
       .then(() => local.remoteQueryStream(remote.p2p.peerInfo, 'SELECT * FROM foo.bar'))
@@ -82,8 +83,10 @@ describe('Remote Query', () => {
       {value: {simple: {intValue: 123}}},
       {error: {error: errorMessage}}
     ]
+    // mock remote
+    const remote = makeNode({peerId: nodeIds.pop()})
+    remote.p2p.handle(PROTOCOLS.node.query, queryHandler(responses))
 
-    const remote = mockRemote(responses)
     const expected = responses.slice(0, responses.length - 1)
 
     return startNodes(local, remote)
