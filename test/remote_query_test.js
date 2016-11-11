@@ -34,9 +34,10 @@ function startNodes (...nodes: Array<Node>): Promise<*> {
 describe('Remote Query', () => {
   let nodeIds, local
 
-  before(async () => {
-    nodeIds = await loadTestNodeIds()
-    local = makeNode({peerId: nodeIds.pop()})
+  before(() => {
+    const nodeIdsP = loadTestNodeIds()
+    return nodeIdsP.then(nodeIds =>
+      local = makeNode({peerId: nodeIds.pop()}))
   })
 
   it('decodes all query result types correctly', function () {

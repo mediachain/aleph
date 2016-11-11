@@ -4,14 +4,15 @@ const assert = require('assert')
 const { before, describe, it } = require('mocha')
 
 const { loadTestNodeIds, makeNode } = require('./util')
-const nodeIds = loadTestNodeIds()
 
 describe('Ping', () => {
   let p1, p2
-  before(async () => {
-    nodeIds = await loadTestNodeIds()
-	p1 = makeNode({peerId: nodeIds.pop()})
-	p2 = makeNode({peerId: nodeIds.pop()})
+  before(() => {
+    nodeIdsP = loadTestNodeIds()
+    return nodeIdsP.then(nodeIds: Array<PeerId> => {
+	  p1 = makeNode({peerId: nodeIds.pop()})
+	  p2 = makeNode({peerId: nodeIds.pop()})
+    })
   })
 
   it('pings another node directly by PeerInfo', () => {
