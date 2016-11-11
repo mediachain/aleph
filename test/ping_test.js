@@ -8,7 +8,7 @@ const { loadTestNodeIds, makeNode } = require('./util')
 describe('Ping', () => {
   let p1, p2
   before(() => {
-    return loadTestNodeIds().then(nodeId => {
+    return loadTestNodeIds().then(nodeIds => {
 	  p1 = makeNode({peerId: nodeIds.pop()})
 	  p2 = makeNode({peerId: nodeIds.pop()})
     })

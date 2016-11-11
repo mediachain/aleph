@@ -32,11 +32,14 @@ function startNodes (...nodes: Array<Node>): Promise<*> {
 }
 
 describe('Remote Query', () => {
-  let nodeIds, local
+  let local, remoteIds
 
   before(() => {
-    return loadTestNodeIds().then(nodeIds =>
-      local = makeNode({peerId: nodeIds.pop()}))
+    return loadTestNodeIds().then(nodeIds => {
+      console.log(nodeIds)
+      local = makeNode({peerId: nodeIds.pop()})
+      remoteIds = nodeIds
+    })
   })
 
   it('decodes all query result types correctly', function () {
@@ -56,7 +59,7 @@ describe('Remote Query', () => {
     // the stream doesn't deliver the "end" response, it just ends the stream
     const expected = responses.slice(0, responses.length - 1)
     // mock remote
-    const remote = makeNode({peerId: nodeIds.pop()})
+    const remote = makeNode({peerId: remoteIds.pop()})
     remote.p2p.handle(PROTOCOLS.node.query, queryHandler(responses))
 
     return startNodes(local, remote) // start both peers
@@ -84,7 +87,7 @@ describe('Remote Query', () => {
       {error: {error: errorMessage}}
     ]
     // mock remote
-    const remote = makeNode({peerId: nodeIds.pop()})
+    const remote = makeNode({peerId: remoteIds.pop()})
     remote.p2p.handle(PROTOCOLS.node.query, queryHandler(responses))
 
     const expected = responses.slice(0, responses.length - 1)
