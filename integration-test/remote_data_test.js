@@ -5,7 +5,6 @@ const assert = require('assert')
 const { describe, it, before } = require('mocha')
 
 const { loadTestNodeIds } = require('../test/util')
-const nodeIds = loadTestNodeIds()
 const AlephNode = require('../src/peer/node')
 const { concatNodeClient, concatNodePeerInfo } = require('./util')
 
@@ -15,11 +14,14 @@ const seedObjects = [
 ]
 
 describe('Remote Data Fetching', () => {
-  let dataIds = []
+  let nodeIds, dataIds = []
+
   before(() => {
-    return concatNodeClient()
+    const nodeIdsP = loadTestNodeIds().then(res => nodeIds = res)
+    const concatClientP = concatNodeClient()
       .then(client => client.putData(...seedObjects))
       .then(ids => { dataIds = ids })
+    return Promise.all[nodeIdsP, concatClientP]
   })
 
   it('can fetch data from a remote concat node', () => {
