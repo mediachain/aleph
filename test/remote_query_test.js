@@ -35,8 +35,7 @@ describe('Remote Query', () => {
   let nodeIds, local
 
   before(() => {
-    const nodeIdsP = loadTestNodeIds()
-    return nodeIdsP.then(nodeIds =>
+    return loadTestNodeIds().then(nodeIds =>
       local = makeNode({peerId: nodeIds.pop()}))
   })
 

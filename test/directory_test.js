@@ -10,13 +10,12 @@ describe('Directory Node', function () {
   let dir, node, nodeIdB58
 
   before(() => {
-    nodeIdsP = loadTestNodeIds()
-    return nodeIdsP.then(nodeIds => {
+    return loadTestNodeIds().then(nodeIds => {
       const dirId = nodeIds.pop()
       const nodeId = nodeIds.pop()
       nodeIdB58 = nodeId.toB58String()
       dir = makeDirectory({peerId: dirId})
-      node = makeNode({peerId: nodeId, dir.peerInfo})
+      node = makeNode({peerId: nodeId, dirInfo: dir.peerInfo})
       return Promise.all([dir.start(), node.start()])
     })
   })
