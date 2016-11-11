@@ -3,17 +3,16 @@
 const Node = require('../src/peer/node')
 const Directory = require('../src/peer/directory')
 const config = require('./config')
-const thenifyAll = require('thenify-all')
-const PeerId = thenifyAll(require('peer-id'), {}, [
-  'createFromJSON'
-]);
+const thenify = require('thenify')
+const PeerId = require('peer-id')
 
 import type { MediachainNodeOptions } from '../src/peer/node'
 import type { DirectoryNodeOptions } from '../src/peer/directory'
 
 function loadTestNodeIds (): Promise<Array<PeerId>> {
   const ids = require('./resources/test_node_ids.json')
-  return Promise.all(ids.map(PeerId.createFromJSON))
+  const createFromJSON = thenify(PeerId.createFromJSON)
+  return Promise.all(ids.map((el, pos, array) => createFromJSON(el)))
 }
 
 function makeNode (options: MediachainNodeOptions): Node {
