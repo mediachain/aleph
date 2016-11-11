@@ -11,7 +11,7 @@ describe('Directory Node', function () {
 
   before(() => {
     nodeIdsP = loadTestNodeIds()
-    return nodeIdsP.then(nodeIds =>
+    return nodeIdsP.then(nodeIds => {
       const dirId = nodeIds.pop()
       const nodeId = nodeIds.pop()
       nodeIdB58 = nodeId.toB58String()
