@@ -37,9 +37,9 @@ function directoryPeerId (): Promise<PeerId> {
 }
 
 function directoryPeerInfo (): Promise<PeerInfo> {
-  return directoryMultiaddr()
-    .then(maddr => {
-      const peerInfo = new PeerInfo(directoryPeerId())
+  return Promise.all([directoryMultiaddr(), directoryPeerId()])
+    .then(([maddr, peerId]) => {
+      const peerInfo = new PeerInfo(peerId)
       peerInfo.multiaddr.add(maddr)
       return peerInfo
     })
