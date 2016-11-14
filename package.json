@@ -43,6 +43,7 @@
     "multihashing": "^0.2.1",
     "ndjson": "^1.4.3",
     "node-fetch": "^1.6.3",
+    "node-webcrypto-ossl": "^1.0.7",
     "nofilter": "0.0.3",
     "object-path": "^0.11.2",
     "peer-book": "^0.3.0",
