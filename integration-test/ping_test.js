@@ -12,7 +12,7 @@ describe('Ping', () => {
   let nodeIds = []
 
   before(() => {
-    return loadTestNodeIds().then(res => nodeIds = res)
+    return loadTestNodeIds().then(res => { nodeIds = res })
   })
 
   it('pings a concat node directly by PeerInfo', () => {

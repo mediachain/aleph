@@ -12,7 +12,6 @@ const {
 } = require('../src/peer/util')
 const { loadTestNodeIds, makeNode } = require('./util')
 
-
 import type Node from '../src/peer/node'
 import type { QueryResultMsg } from '../src/protobuf/types'
 import type { Connection } from 'interface-connection'
