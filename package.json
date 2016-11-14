@@ -75,7 +75,6 @@
   },
   "greenkeeper": {
     "ignore": [
-      "libp2p-spdy",
       "libp2p-swarm"
     ]
   }
