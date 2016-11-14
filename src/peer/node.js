@@ -199,4 +199,29 @@ class MediachainNode {
   }
 }
 
-module.exports = MediachainNode
+class RemoteNode {
+  node: MediachainNode
+  remotePeerInfo: PeerInfo
+
+  constructor (node: MediachainNode, remotePeerInfo: PeerInfo) {
+    this.node = node
+    this.remotePeerInfo = remotePeerInfo
+  }
+
+  ping (): Promise<boolean> {
+    return node.ping(this.remotePeerInfo)
+  }
+
+  query (queryString: string): Promise<Array<QueryResultMsg>> {
+    return node.query(this.remotePeerInfo, queryString)
+  }
+
+  data (keys: Array<string>): Array<DataResultMsg> {
+    return node.remoteData(this.remotePeerInfo, keys)
+  }
+}
+
+module.exports = {
+  MediachainNode,
+  RemoteNode
+}
