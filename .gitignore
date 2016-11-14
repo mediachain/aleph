@@ -40,3 +40,8 @@ lib/
 
 # emacs backups
 *~
+
+# sublime
+*.sublime-project
+*.sublime-workspace
+
