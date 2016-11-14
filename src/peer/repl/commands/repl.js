@@ -27,11 +27,10 @@ module.exports = {
     const options = bootstrap(opts)
     const node = new Node(options)
 
-    const commands = {}
-
     let init, remotePeerInfo, remote
     if(remotePeer !== undefined){
       remotePeerInfo = Identity.inflateMultiaddr(remotePeer)
+      remote = RemoteNode(node)
 
       init = node.start().then(() => {
         node.openConnection(remotePeerInfo)
@@ -41,7 +40,8 @@ module.exports = {
 
     } else {
       console.log("No remote peer specified, running in detached mode")
-      init = Promise.resolve(undefined)
+      // TODO: create dummy RemoteNode class that just throws
+      init = Promise.resolve()
     }
 
     // TODO: directory stuff
@@ -61,7 +61,7 @@ module.exports = {
         'ignoreUndefined': true
       })
       repl.context.node = node
-      repl.context.commands = commands
+      repl.context.remote = remote
       const defaultEval = repl.eval
       repl.eval = promiseEval(defaultEval)
     }).catch(err => {

@@ -197,6 +197,15 @@ class MediachainNode {
         pull.map(result => result.data)
       ))
   }
+
+  // local queries (NOT IMPLEMENTED -- NO LOCAL STORE)
+  query (queryString: string): Promise<Array<QueryResultMsg>> {
+    throw new Error("Local statement db not implemented!")
+  }
+
+  data (keys: Array<string>): Array<DataResultMsg> {
+    throw new Error("Local datastore not implemented!")
+  }
 }
 
 class RemoteNode {
