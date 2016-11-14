@@ -48,7 +48,7 @@ class DirectoryNode {
     return this.p2p.peerInfo
   }
 
-  registerHandler (conn: Connection) {
+  registerHandler (protocol: string, conn: Connection) {
     // for some reason, conn.peerInfo is always null here,
     // so we store the peerInfo from the register message
     let peerForConn: ?PeerInfo = null
@@ -84,7 +84,7 @@ class DirectoryNode {
     )
   }
 
-  lookupHandler (conn: Connection) {
+  lookupHandler (protocol: string, conn: Connection) {
     const abortable = this.p2p.newAbortable()
 
     pull(
@@ -114,7 +114,7 @@ class DirectoryNode {
     }
   }
 
-  listHandler (conn: Connection) {
+  listHandler (protocol: string, conn: Connection) {
 
   }
 }

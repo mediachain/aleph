@@ -18,7 +18,7 @@ import type { QueryResultMsg } from '../src/protobuf/types'
 import type { Connection } from 'interface-connection'
 
 // accept any query and return a stream of the given results
-const queryHandler = (results: Array<QueryResultMsg>) => (conn: Connection) => pull(
+const queryHandler = (results: Array<QueryResultMsg>) => (protocol: string, conn: Connection) => pull(
   conn,
   protoStreamDecode(pb.node.QueryRequest),
   pull.map(() => results),
