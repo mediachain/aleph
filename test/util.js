@@ -1,6 +1,6 @@
 // @flow
 
-const Node = require('../src/peer/node')
+const { MediachainNode: Node } = require('../src/peer/node')
 const Directory = require('../src/peer/directory')
 const config = require('./config')
 const thenify = require('thenify')

@@ -1,7 +1,7 @@
 // @flow
 
 const os = require('os')
-const Node = require('../../node')
+const { MediachainNode: Node, RemoteNode } = require('../../node');
 // $FlowIssue flow doesn't find repl builtin?
 const Repl = require('repl')
 const Identity = require('../../identity')
@@ -29,13 +29,9 @@ module.exports = {
 
     const commands = {}
 
-    let init, remotePeerInfo
+    let init, remotePeerInfo, remote
     if(remotePeer !== undefined){
       remotePeerInfo = Identity.inflateMultiaddr(remotePeer)
-
-      commands.remoteQuery = function(queryString){
-        return node.remoteQuery(remotePeerInfo, queryString)
-      }
 
       init = node.start().then(() => {
         node.openConnection(remotePeerInfo)
