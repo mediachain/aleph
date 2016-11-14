@@ -15,7 +15,7 @@ const seedStatements = [
 ]
 
 describe('Query', () => {
-  let nodeIds
+  let nodeIds = []
 
   before(() => {
     const nodeIdsP = loadTestNodeIds().then(res => nodeIds = res)

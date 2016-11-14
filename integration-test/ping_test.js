@@ -9,7 +9,7 @@ const AlephNode = require('../src/peer/node')
 const { setConcatNodeStatus, concatNodePeerInfo, concatNodePeerId, directoryPeerInfo } = require('./util')
 
 describe('Ping', () => {
-  let nodeIds
+  let nodeIds = []
 
   before(() => {
     return loadTestNodeIds().then(res => nodeIds = res)

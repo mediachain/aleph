@@ -14,7 +14,7 @@ const seedObjects = [
 ]
 
 describe('Remote Data Fetching', () => {
-  let nodeIds, dataIds = []
+  let nodeIds = [], dataIds = []
 
   before(() => {
     const nodeIdsP = loadTestNodeIds().then(res => nodeIds = res)
