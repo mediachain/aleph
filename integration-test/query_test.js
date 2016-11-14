@@ -5,7 +5,6 @@ const assert = require('assert')
 const { describe, it, before, after } = require('mocha')
 
 const { loadTestNodeIds } = require('../test/util')
-const nodeIds = loadTestNodeIds()
 const AlephNode = require('../src/peer/node')
 const { concatNodeClient, concatNodePeerInfo } = require('./util')
 
@@ -16,8 +15,12 @@ const seedStatements = [
 ]
 
 describe('Query', () => {
+  let nodeIds = []
+
   before(() => {
-    return concatNodeClient().then(client => client.publish({namespace: 'foo.bar'}, ...seedStatements))
+    const nodeIdsP = loadTestNodeIds().then(res => nodeIds = res)
+    const concatClientP = concatNodeClient().then(client => client.publish({namespace: 'foo.bar'}, ...seedStatements))
+    return Promise.all([nodeIdsP, concatClientP])
   })
 
   after(() => {

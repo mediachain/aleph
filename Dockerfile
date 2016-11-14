@@ -5,6 +5,9 @@ WORKDIR /integration
 RUN apk update
 RUN apk add git
 
+# we have native dependencies, we'll need extra tools
+RUN apk add --no-cache make gcc g++ python
+
 # npm install
 COPY ./package.json .
 RUN npm install

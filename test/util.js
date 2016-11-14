@@ -1,16 +1,18 @@
 // @flow
 
-const PeerId = require('peer-id')
 const Node = require('../src/peer/node')
 const Directory = require('../src/peer/directory')
 const config = require('./config')
+const thenify = require('thenify')
+const PeerId = require('peer-id')
 
 import type { MediachainNodeOptions } from '../src/peer/node'
 import type { DirectoryNodeOptions } from '../src/peer/directory'
 
-function loadTestNodeIds (): Array<PeerId> {
+function loadTestNodeIds (): Promise<Array<PeerId>> {
   const ids = require('./resources/test_node_ids.json')
-  return ids.map(PeerId.createFromJSON)
+  const createFromJSON = thenify(PeerId.createFromJSON)
+  return Promise.all(ids.map((el, pos, array) => createFromJSON(el)))
 }
 
 function makeNode (options: MediachainNodeOptions): Node {

@@ -5,18 +5,19 @@ const { describe, it, before, afterEach } = require('mocha')
 const eventually = require('mocha-eventually')
 
 const { loadTestNodeIds, makeNode, makeDirectory } = require('./util')
-const nodeIds = loadTestNodeIds()
 
 describe('Directory Node', function () {
-  const dirId = nodeIds.pop()
-  let dir = makeDirectory({peerId: dirId})
-  const dirInfo = dir.peerInfo
-  const nodeId = nodeIds.pop()
-  const nodeIdB58 = nodeId.toB58String()
-  let node = makeNode({peerId: nodeId, dirInfo})
+  let dir, node, nodeIdB58
 
   before(() => {
-    return Promise.all([dir.start(), node.start()])
+    return loadTestNodeIds().then(nodeIds => {
+      const dirId = nodeIds.pop()
+      const nodeId = nodeIds.pop()
+      nodeIdB58 = nodeId.toB58String()
+      dir = makeDirectory({peerId: dirId})
+      node = makeNode({peerId: nodeId, dirInfo: dir.peerInfo})
+      return Promise.all([dir.start(), node.start()])
+    })
   })
 
   afterEach(() => {

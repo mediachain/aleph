@@ -1,5 +1,8 @@
-const fs = require('fs')
-const PeerId = require('peer-id')
+const thenifyAll = require('thenify-all')
+const fs = thenifyAll(require('fs'), {}
+  ['readFile'])
+const PeerId = thenifyAll(require('peer-id'), {}
+  ['createFromPrivKey'])
 const crypto = require('libp2p-crypto')
 
 const KEY_TYPE = 'RSA'  // change to ECC when possible
@@ -19,9 +22,9 @@ function saveIdentity (peerId: PeerId, filePath: string) {
   fs.writeFileSync(filePath, privKeyBytes)
 }
 
-function loadIdentity (filePath: string): PeerId {
-  const privKeyBytes = fs.readFileSync(filePath)
-  return PeerId.createFromPrivKey(privKeyBytes)
+function loadIdentity (filePath: string): Promise<PeerId> {
+  return fs.readFile(filePath, [])
+    .then(privKeyBytes => PeerId.createFromPrivKey(privKeyBytes))
 }
 
 module.exports = {

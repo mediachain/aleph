@@ -32,14 +32,14 @@ function directoryMultiaddr (): Promise<Multiaddr> {
   return lookupMultiaddr(DIRECTORY_HOSTNAME, DIRECTORY_PORT)
 }
 
-function directoryPeerId (): PeerId {
+function directoryPeerId (): Promise<PeerId> {
   return loadIdentity(path.join(__dirname, 'concat', 'test-identities', 'mcdir', 'identity.node'))
 }
 
 function directoryPeerInfo (): Promise<PeerInfo> {
-  return directoryMultiaddr()
-    .then(maddr => {
-      const peerInfo = new PeerInfo(directoryPeerId())
+  return Promise.all([directoryMultiaddr(), directoryPeerId()])
+    .then(([maddr, peerId]) => {
+      const peerInfo = new PeerInfo(peerId)
       peerInfo.multiaddr.add(maddr)
       return peerInfo
     })
@@ -49,7 +49,7 @@ function concatNodeMultiaddr (): Promise<Multiaddr> {
   return lookupMultiaddr(NODE_HOSTNAME, NODE_P2P_PORT)
 }
 
-function concatNodePeerId (): PeerId {
+function concatNodePeerId (): Promise<PeerId> {
   return loadIdentity(path.join(__dirname, 'concat', 'test-identities', 'mcnode', 'identity.node'))
 }
 
@@ -59,9 +59,8 @@ function concatNodeClient (): Promise<RestClient> {
 }
 
 function setConcatNodeDirectoryInfo (): Promise<*> {
-  return Promise.all([concatNodeClient(), directoryMultiaddr()])
-    .then(([client, dirAddr]) => {
-      const dirId = directoryPeerId()
+  return Promise.all([concatNodeClient(), directoryMultiaddr(), directoryPeerId()])
+    .then(([client, dirAddr, dirId]) => {
       return client.setDirectoryId(dirAddr.toString() + '/' + dirId.toB58String())
     })
 }
@@ -78,9 +77,9 @@ function setConcatNodeStatus (status: NodeStatus): Promise<NodeStatus> {
 }
 
 function concatNodePeerInfo (): Promise<PeerInfo> {
-  return concatNodeMultiaddr()
-    .then(maddr => {
-      const peerInfo = new PeerInfo(concatNodePeerId())
+  return Promise.all([concatNodeMultiaddr(), concatNodePeerId()])
+    .then(([maddr, peerId]) => {
+      const peerInfo = new PeerInfo(peerId)
       peerInfo.multiaddr.add(maddr)
       return peerInfo
     })
