@@ -21,7 +21,7 @@ describe('Remote Data Fetching', () => {
     const concatClientP = concatNodeClient()
       .then(client => client.putData(...seedObjects))
       .then(ids => { dataIds = ids })
-    return Promise.all[nodeIdsP, concatClientP]
+    return Promise.all([nodeIdsP, concatClientP])
   })
 
   it('can fetch data from a remote concat node', () => {
