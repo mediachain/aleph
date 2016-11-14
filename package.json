@@ -26,19 +26,19 @@
   },
   "homepage": "https://github.com/mediachain/aleph#readme",
   "dependencies": {
-    "ajv": "^4.7.7",
+    "ajv": "5.0.0-beta.0",
     "bin-build": "^2.2.0",
     "byline": "^5.0.0",
-    "cbor": "^2.0.0",
+    "cbor": "2.0.2",
     "duplex-child-process": "0.0.5",
-    "libp2p-crypto": "^0.7.0",
-    "libp2p-secio": "^0.6.2",
-    "libp2p-spdy": "^0.9.0",
+    "libp2p-crypto": "0.7.1",
+    "libp2p-secio": "0.6.3",
+    "libp2p-spdy": "0.10.0",
     "libp2p-swarm": "^0.25.0",
     "libp2p-tcp": "^0.9.1",
-    "libp2p-websockets": "^0.9.0",
+    "libp2p-websockets": "0.9.1",
     "mafmt": "^2.1.2",
-    "multiaddr": "^2.0.2",
+    "multiaddr": "2.0.3",
     "multihashes": "^0.2.2",
     "multihashing": "^0.2.1",
     "ndjson": "^1.4.3",
@@ -48,24 +48,24 @@
     "peer-book": "^0.3.0",
     "peer-id": "^0.8.0",
     "peer-info": "^0.8.0",
-    "protocol-buffers": "^3.1.6",
+    "protocol-buffers": "3.1.8",
     "pull-abortable": "^4.1.0",
     "pull-length-prefixed": "^1.2.0",
-    "pull-stream": "^3.4.5",
+    "pull-stream": "3.5.0",
     "thenify-all": "^1.6.0",
-    "varint": "^4.0.1",
+    "varint": "5.0.0",
     "yargs": "^6.3.0"
   },
   "devDependencies": {
-    "babel-cli": "^6.14.0",
+    "babel-cli": "6.18.0",
     "babel-eslint": "^7.1.0",
-    "babel-plugin-transform-flow-strip-types": "^6.14.0",
-    "babel-register": "^6.14.0",
-    "eslint-plugin-flowtype": "^2.18.2",
+    "babel-plugin-transform-flow-strip-types": "6.18.0",
+    "babel-register": "6.18.0",
+    "eslint-plugin-flowtype": "2.25.0",
     "interface-connection": "^0.3.0",
-    "mocha": "^3.0.2",
+    "mocha": "3.1.2",
     "mocha-eventually": "^1.1.0",
-    "standard": "^8.1.0"
+    "standard": "8.5.0"
   },
   "standard": {
     "parser": "babel-eslint",
@@ -74,6 +74,8 @@
     ]
   },
   "greenkeeper": {
-    "ignore" : [ "libp2p-spdy", "libp2p-swarm" ]
+    "ignore": [
+      "libp2p-swarm"
+    ]
   }
 }
