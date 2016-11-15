@@ -31,23 +31,16 @@ module.exports = {
 }
 
 function fetchInfos (client: RestClient, peerIds: Array<string>) {
-  let promises = []
   for (const peer of peerIds) {
-    promises.push(
-      client.id(peer)
-        .then(ids => {
-          let msg = 'No info published'
-          if (ids.info != null && ids.info.length > 0) {
-            msg = ids.info
-          }
-          return peer + ` -- ${msg}`
-        })
-        .catch(err => `${peer} -- Unable to fetch info: ${err.message}`)
-    )
+    client.id(peer)
+      .then(ids => {
+        let msg = 'No info published'
+        if (ids.info != null && ids.info.length > 0) {
+          msg = ids.info
+        }
+        return peer + ` -- ${msg}`
+      })
+      .catch(err => `${peer} -- Unable to fetch info: ${err.message}`)
+      .then(console.log)
   }
-
-  Promise.all(promises)
-    .then(messages => {
-      messages.forEach(m => console.log(m))
-    })
 }
