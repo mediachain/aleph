@@ -89,11 +89,16 @@ function peerInfoProtoMarshal (peerInfo: PeerInfo): PeerInfoMsg {
  * @returns {Promise} a promise that will resolve to the first value that reaches the end of the pipeline.
  */
 function pullToPromise<T> (...streams: Array<Function>): Promise<T> {
-  return new Promise(resolve => {
+  return new Promise((resolve, reject) => {
     pull(
       ...streams,
       pull.take(1),
-      pull.drain(resolve)
+      pull.collect((err, values) => {
+        if (err) {
+          return reject(err)
+        }
+        resolve(values.pop())
+      })
     )
   })
 }
