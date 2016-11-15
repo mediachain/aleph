@@ -19,7 +19,7 @@ const OFFLINE_ERROR_MESSAGE = 'The libp2p node is not started yet'
 const IPFS_CODE = 421
 
 type P2PNodeOptions = {
-  peerInfo?: PeerInfo,
+  peerInfo: PeerInfo,
   peerBook?: PeerBook,
   disableSecureIO?: boolean
 }
@@ -34,11 +34,6 @@ class P2PNode {
   constructor (options: P2PNodeOptions) {
     let {peerInfo, peerBook, disableSecureIO} = options
     this.isOnline = false
-
-    if (!peerInfo) {
-      peerInfo = new PeerInfo()
-      peerInfo.multiaddr.add(multiaddr('/ip4/0.0.0.0/tcp/0'))
-    }
 
     if (!peerBook) peerBook = new PeerBook()
 

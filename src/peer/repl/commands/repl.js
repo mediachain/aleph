@@ -6,8 +6,6 @@ const { MediachainNode: Node, RemoteNode } = require('../../node');
 const Repl = require('repl')
 const Identity = require('../../identity')
 
-import type { MediachainNodeOptions } from '../../node'
-
 module.exports = {
   command: 'repl',
   describe: 'start the aleph repl\n',
@@ -24,49 +22,52 @@ module.exports = {
   handler: (opts: {dir: string, remotePeer: string, identityPath: string}) => {
     const {dir, remotePeer} = opts
 
-    const options = bootstrap(opts)
-    const node = new Node(options)
+    bootstrap(opts)
+      .then(node => {
 
-    let init, remotePeerInfo, remote
-    if(remotePeer !== undefined){
-      remotePeerInfo = Identity.inflateMultiaddr(remotePeer)
-      remote = RemoteNode(node)
+        let init, remote
+        if (remotePeer !== undefined) {
+          init = node.start()
+            .then(() => Identity.inflateMultiaddr(remotePeer))
+            .then(remotePeerInfo => {
+              node.openConnection(remotePeerInfo)
+              remote = new RemoteNode(node, remotePeerInfo)
+            }).then(() => {
+            console.log("Connected to " + remotePeer)
+          })
 
-      init = node.start().then(() => {
-        node.openConnection(remotePeerInfo)
-      }).then(() => {
-        console.log("Connected to " + remotePeer)
+        } else {
+          console.log("No remote peer specified, running in detached mode")
+          // TODO: create dummy RemoteNode class that just throws
+          init = Promise.resolve()
+        }
+
+        // TODO: directory stuff
+        if (dir !== undefined) {
+          Identity.inflateMultiaddr(dir)
+            .then(dirInfo => {
+              node.setDirectory(dirInfo)
+            })
+        } else if (false) {
+          // TODO: get directory from remote peer (and amend message below)
+        } else {
+          console.log("No directory specified, running without directory")
+        }
+
+        init.then(() => {
+          const repl = Repl.start({
+            'prompt': 'א > ',
+            'useColors': true,
+            'ignoreUndefined': true
+          })
+          repl.context.node = node
+          repl.context.remote = remote
+          const defaultEval = repl.eval
+          repl.eval = promiseEval(defaultEval)
+        }).catch(err => {
+          console.log(err)
+        })
       })
-
-    } else {
-      console.log("No remote peer specified, running in detached mode")
-      // TODO: create dummy RemoteNode class that just throws
-      init = Promise.resolve()
-    }
-
-    // TODO: directory stuff
-    if(dir !== undefined){
-      const dirInfo = Identity.inflateMultiaddr(dir)
-      node.setDirectory(dirInfo)
-    } else if(false){
-      // TODO: get directory from remote peer (and amend message below)
-    } else {
-      console.log("No directory specified, running without directory")
-    }
-
-    init.then(() => {
-      const repl = Repl.start({
-        'prompt': 'א > ',
-        'useColors': true,
-        'ignoreUndefined': true
-      })
-      repl.context.node = node
-      repl.context.remote = remote
-      const defaultEval = repl.eval
-      repl.eval = promiseEval(defaultEval)
-    }).catch(err => {
-      console.log(err)
-    })
   }
 }
 
@@ -87,13 +88,9 @@ const promiseEval = (defaultEval) => (cmd, context, filename, callback) => {
   })
 }
 
-function bootstrap (opts: {identityPath: string}): MediachainNodeOptions {
+function bootstrap (opts: {identityPath: string}): Promise<Node> {
   const {identityPath} = opts
 
-  const options = {
-    peerId: Identity.loadOrGenerateIdentity(identityPath),
-    dirInfo: 'aleph client node'
-  }
-
-  return options
+  return Identity.loadOrGenerateIdentity(identityPath)
+    .then(peerId => new Node({peerId}))
 }
