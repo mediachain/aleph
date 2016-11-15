@@ -1,8 +1,6 @@
 const thenifyAll = require('thenify-all')
-const fs = thenifyAll(require('fs'), {}
-  ['readFile'])
-const PeerId = thenifyAll(require('peer-id'), {}
-  ['createFromPrivKey'])
+const fs = thenifyAll(require('fs'), {}, ['readFile'])
+const PeerId = thenifyAll(require('peer-id'), {}, ['createFromPrivKey'])
 const crypto = require('libp2p-crypto')
 
 const KEY_TYPE = 'RSA'  // change to ECC when possible

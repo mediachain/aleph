@@ -14,10 +14,11 @@ const seedObjects = [
 ]
 
 describe('Remote Data Fetching', () => {
-  let nodeIds = [], dataIds = []
+  let nodeIds = []
+  let dataIds = []
 
   before(() => {
-    const nodeIdsP = loadTestNodeIds().then(res => nodeIds = res)
+    const nodeIdsP = loadTestNodeIds().then(res => { nodeIds = res })
     const concatClientP = concatNodeClient()
       .then(client => client.putData(...seedObjects))
       .then(ids => { dataIds = ids })

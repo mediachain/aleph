@@ -18,7 +18,7 @@ describe('Query', () => {
   let nodeIds = []
 
   before(() => {
-    const nodeIdsP = loadTestNodeIds().then(res => nodeIds = res)
+    const nodeIdsP = loadTestNodeIds().then(res => { nodeIds = res })
     const concatClientP = concatNodeClient().then(client => client.publish({namespace: 'foo.bar'}, ...seedStatements))
     return Promise.all([nodeIdsP, concatClientP])
   })

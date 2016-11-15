@@ -140,7 +140,7 @@ class MediachainNode {
       ))
   }
 
-  pingHandler (conn: Connection) {
+  pingHandler (protocol: string, conn: Connection) {
     pull(
       conn,
       protoStreamDecode(pb.node.Ping),
