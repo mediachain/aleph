@@ -89,11 +89,16 @@ function peerInfoProtoMarshal (peerInfo: PeerInfo): PeerInfoMsg {
  * @returns {Promise} a promise that will resolve to the first value that reaches the end of the pipeline.
  */
 function pullToPromise<T> (...streams: Array<Function>): Promise<T> {
-  return new Promise(resolve => {
+  return new Promise((resolve, reject) => {
     pull(
       ...streams,
       pull.take(1),
-      pull.drain(resolve)
+      pull.collect((err, values) => {
+        if (err) {
+          return reject(err)
+        }
+        resolve(values.pop())
+      })
     )
   })
 }
@@ -158,6 +163,20 @@ const resultStreamThrough: MediachainStreamThrough<*> = (read) => {
   }
 }
 
+/**
+ * Reject `promise` if it doesn't complete within `timeout` milliseconds
+ * @param timeout milliseconds to wait before rejecting
+ * @param promise a promise that you want to set a timeout for
+ * @returns a Promise that will resolve to the value of `promise`, unless the timeout is exceeded
+ */
+function promiseTimeout<T> (timeout: number, promise: Promise<T>): Promise<T> {
+  return Promise.race([promise, new Promise((resolve, reject) => {
+    setTimeout(() => {
+      reject(new Error(`Timeout of ${timeout}ms exceeded`))
+    }, timeout)
+  })])
+}
+
 module.exports = {
   protoStreamEncode,
   protoStreamDecode,
@@ -166,5 +185,6 @@ module.exports = {
   peerInfoProtoMarshal,
   pullToPromise,
   pullRepeatedly,
-  resultStreamThrough
+  resultStreamThrough,
+  promiseTimeout
 }
