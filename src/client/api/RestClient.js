@@ -8,6 +8,8 @@ import type { Transform as TransformStream, Duplex as DuplexStream } from 'strea
 import type { StatementMsg, SimpleStatementMsg } from '../../protobuf/types'
 export type NodeStatus = 'online' | 'offline' | 'public'
 
+const DEFAULT_REQUEST_TIMEOUT = 10000
+
 type FetchResponse = {
   text: () => Promise<string>,
   json: () => Promise<Object>,
@@ -52,9 +54,13 @@ class RestError extends Error {
 class RestClient {
   apiUrl: string;
   client: Function;
+  requestTimeout: number;
 
-  constructor (options: {apiUrl?: string}) {
+  constructor (options: {apiUrl?: string, requestTimeout?: number}) {
     this.apiUrl = options.apiUrl || ''
+    this.requestTimeout = (options.requestTimeout != null) ?
+      options.requestTimeout :
+      DEFAULT_REQUEST_TIMEOUT
   }
 
   _makeUrl (path: string): string {
@@ -64,6 +70,7 @@ class RestClient {
 
   req (path: string, args: Object = {}): Promise<FetchResponse> {
     const fullUrl = this._makeUrl(path)
+    args = Object.assign({timeout: this.requestTimeout}, args)
     return fetch(fullUrl, args)
       .then(response => {
         if (!response.ok) {
