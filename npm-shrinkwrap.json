@@ -1174,7 +1174,14 @@
     "libp2p-crypto": {
       "version": "0.7.1",
       "from": "libp2p-crypto@0.7.1",
-      "resolved": "https://registry.npmjs.org/libp2p-crypto/-/libp2p-crypto-0.7.1.tgz"
+      "resolved": "https://registry.npmjs.org/libp2p-crypto/-/libp2p-crypto-0.7.1.tgz",
+      "dependencies": {
+        "webcrypto-shim": {
+          "version": "0.1.1",
+          "from": "dignifiedquire/webcrypto-shim#master",
+          "resolved": "git://github.com/dignifiedquire/webcrypto-shim.git#90cbb1b09161c5a8b21cee3b08c78afef1f6cf54"
+        }
+      }
     },
     "libp2p-identify": {
       "version": "0.3.0",
@@ -1189,12 +1196,19 @@
     "libp2p-spdy": {
       "version": "0.10.0",
       "from": "libp2p-spdy@0.10.0",
-      "resolved": "https://registry.npmjs.org/libp2p-spdy/-/libp2p-spdy-0.10.0.tgz"
+      "resolved": "https://registry.npmjs.org/libp2p-spdy/-/libp2p-spdy-0.10.0.tgz",
+      "dependencies": {
+        "browserify-zlib": {
+          "version": "0.1.5",
+          "from": "ipfs/browserify-zlib",
+          "resolved": "git://github.com/ipfs/browserify-zlib.git#9993effe9f670367bf96b9d23c3e5ca0e1ed4036"
+        }
+      }
     },
     "libp2p-swarm": {
-      "version": "0.25.0",
-      "from": "libp2p-swarm@>=0.25.0 <0.26.0",
-      "resolved": "https://registry.npmjs.org/libp2p-swarm/-/libp2p-swarm-0.25.0.tgz"
+      "version": "0.26.2",
+      "from": "libp2p-swarm@0.26.2",
+      "resolved": "https://registry.npmjs.org/libp2p-swarm/-/libp2p-swarm-0.26.2.tgz"
     },
     "libp2p-tcp": {
       "version": "0.9.1",
@@ -1625,9 +1639,9 @@
       }
     },
     "multistream-select": {
-      "version": "0.12.0",
-      "from": "multistream-select@>=0.12.0 <0.13.0",
-      "resolved": "https://registry.npmjs.org/multistream-select/-/multistream-select-0.12.0.tgz",
+      "version": "0.13.0",
+      "from": "multistream-select@>=0.13.0 <0.14.0",
+      "resolved": "https://registry.npmjs.org/multistream-select/-/multistream-select-0.13.0.tgz",
       "dependencies": {
         "varint": {
           "version": "4.0.1",
@@ -2543,11 +2557,6 @@
       "version": "0.1.0",
       "from": "webcrypto@>=0.1.0 <0.2.0",
       "resolved": "https://registry.npmjs.org/webcrypto/-/webcrypto-0.1.0.tgz"
-    },
-    "webcrypto-shim": {
-      "version": "0.1.1",
-      "from": "dignifiedquire/webcrypto-shim#master",
-      "resolved": "git://github.com/dignifiedquire/webcrypto-shim.git#90cbb1b09161c5a8b21cee3b08c78afef1f6cf54"
     },
     "which-module": {
       "version": "1.0.0",
