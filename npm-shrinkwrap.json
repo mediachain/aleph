@@ -2,6 +2,16 @@
   "name": "aleph",
   "version": "1.1.0",
   "dependencies": {
+    "@types/mkdirp": {
+      "version": "0.3.29",
+      "from": "@types/mkdirp@>=0.3.29 <0.4.0",
+      "resolved": "https://registry.npmjs.org/@types/mkdirp/-/mkdirp-0.3.29.tgz"
+    },
+    "@types/node": {
+      "version": "6.0.48",
+      "from": "@types/node@>=6.0.45 <7.0.0",
+      "resolved": "https://registry.npmjs.org/@types/node/-/node-6.0.48.tgz"
+    },
     "acorn": {
       "version": "1.2.2",
       "from": "acorn@>=1.0.3 <2.0.0",
@@ -859,11 +869,6 @@
       "from": "gulp-util@>=3.0.1 <4.0.0",
       "resolved": "https://registry.npmjs.org/gulp-util/-/gulp-util-3.0.7.tgz",
       "dependencies": {
-        "minimist": {
-          "version": "1.2.0",
-          "from": "minimist@^1.1.0",
-          "resolved": "https://registry.npmjs.org/minimist/-/minimist-1.2.0.tgz"
-        },
         "object-assign": {
           "version": "3.0.0",
           "from": "object-assign@>=3.0.0 <4.0.0",
@@ -1174,14 +1179,7 @@
     "libp2p-crypto": {
       "version": "0.7.1",
       "from": "libp2p-crypto@0.7.1",
-      "resolved": "https://registry.npmjs.org/libp2p-crypto/-/libp2p-crypto-0.7.1.tgz",
-      "dependencies": {
-        "webcrypto-shim": {
-          "version": "0.1.1",
-          "from": "dignifiedquire/webcrypto-shim#master",
-          "resolved": "git://github.com/dignifiedquire/webcrypto-shim.git#90cbb1b09161c5a8b21cee3b08c78afef1f6cf54"
-        }
-      }
+      "resolved": "https://registry.npmjs.org/libp2p-crypto/-/libp2p-crypto-0.7.1.tgz"
     },
     "libp2p-identify": {
       "version": "0.3.0",
@@ -1196,14 +1194,7 @@
     "libp2p-spdy": {
       "version": "0.10.0",
       "from": "libp2p-spdy@0.10.0",
-      "resolved": "https://registry.npmjs.org/libp2p-spdy/-/libp2p-spdy-0.10.0.tgz",
-      "dependencies": {
-        "browserify-zlib": {
-          "version": "0.1.5",
-          "from": "ipfs/browserify-zlib",
-          "resolved": "git://github.com/ipfs/browserify-zlib.git#9993effe9f670367bf96b9d23c3e5ca0e1ed4036"
-        }
-      }
+      "resolved": "https://registry.npmjs.org/libp2p-spdy/-/libp2p-spdy-0.10.0.tgz"
     },
     "libp2p-swarm": {
       "version": "0.26.2",
@@ -1525,11 +1516,6 @@
       "from": "meow@>=3.3.0 <4.0.0",
       "resolved": "https://registry.npmjs.org/meow/-/meow-3.7.0.tgz",
       "dependencies": {
-        "minimist": {
-          "version": "1.2.0",
-          "from": "minimist@^1.1.3",
-          "resolved": "https://registry.npmjs.org/minimist/-/minimist-1.2.0.tgz"
-        },
         "object-assign": {
           "version": "4.1.0",
           "from": "object-assign@>=4.0.1 <5.0.0",
@@ -1575,14 +1561,21 @@
       "resolved": "https://registry.npmjs.org/minimatch/-/minimatch-3.0.3.tgz"
     },
     "minimist": {
-      "version": "0.0.8",
-      "from": "minimist@0.0.8",
-      "resolved": "http://registry.npmjs.org/minimist/-/minimist-0.0.8.tgz"
+      "version": "1.2.0",
+      "from": "minimist@>=1.1.0 <2.0.0",
+      "resolved": "https://registry.npmjs.org/minimist/-/minimist-1.2.0.tgz"
     },
     "mkdirp": {
       "version": "0.5.1",
-      "from": "mkdirp@>=0.5.1 <0.6.0",
-      "resolved": "https://registry.npmjs.org/mkdirp/-/mkdirp-0.5.1.tgz"
+      "from": "mkdirp@>=0.5.0 <0.6.0",
+      "resolved": "https://registry.npmjs.org/mkdirp/-/mkdirp-0.5.1.tgz",
+      "dependencies": {
+        "minimist": {
+          "version": "0.0.8",
+          "from": "minimist@0.0.8",
+          "resolved": "http://registry.npmjs.org/minimist/-/minimist-0.0.8.tgz"
+        }
+      }
     },
     "ms": {
       "version": "0.7.2",
@@ -1652,20 +1645,13 @@
     },
     "nan": {
       "version": "2.4.0",
-      "from": "nan@>=2.4.0 <3.0.0",
+      "from": "nan@>=2.0.5 <3.0.0",
       "resolved": "https://registry.npmjs.org/nan/-/nan-2.4.0.tgz"
     },
     "ndjson": {
       "version": "1.4.3",
       "from": "ndjson@>=1.4.3 <2.0.0",
-      "resolved": "https://registry.npmjs.org/ndjson/-/ndjson-1.4.3.tgz",
-      "dependencies": {
-        "minimist": {
-          "version": "1.2.0",
-          "from": "minimist@^1.2.0",
-          "resolved": "https://registry.npmjs.org/minimist/-/minimist-1.2.0.tgz"
-        }
-      }
+      "resolved": "https://registry.npmjs.org/ndjson/-/ndjson-1.4.3.tgz"
     },
     "node-fetch": {
       "version": "1.6.3",
@@ -1678,9 +1664,9 @@
       "resolved": "https://registry.npmjs.org/node-status-codes/-/node-status-codes-1.0.0.tgz"
     },
     "node-webcrypto-ossl": {
-      "version": "1.0.7",
-      "from": "node-webcrypto-ossl@1.0.7",
-      "resolved": "https://registry.npmjs.org/node-webcrypto-ossl/-/node-webcrypto-ossl-1.0.7.tgz"
+      "version": "1.0.10",
+      "from": "node-webcrypto-ossl@>=1.0.7 <2.0.0",
+      "resolved": "https://registry.npmjs.org/node-webcrypto-ossl/-/node-webcrypto-ossl-1.0.10.tgz"
     },
     "nodeify": {
       "version": "1.0.0",
@@ -1966,11 +1952,6 @@
       "from": "quote-stream@>=1.0.1 <2.0.0",
       "resolved": "https://registry.npmjs.org/quote-stream/-/quote-stream-1.0.2.tgz",
       "dependencies": {
-        "minimist": {
-          "version": "1.2.0",
-          "from": "minimist@^1.1.3",
-          "resolved": "https://registry.npmjs.org/minimist/-/minimist-1.2.0.tgz"
-        },
         "readable-stream": {
           "version": "2.0.6",
           "from": "readable-stream@>=2.0.0 <2.1.0",
@@ -1996,14 +1977,7 @@
     "rc": {
       "version": "1.1.6",
       "from": "rc@>=1.1.2 <2.0.0",
-      "resolved": "https://registry.npmjs.org/rc/-/rc-1.1.6.tgz",
-      "dependencies": {
-        "minimist": {
-          "version": "1.2.0",
-          "from": "minimist@^1.2.0",
-          "resolved": "https://registry.npmjs.org/minimist/-/minimist-1.2.0.tgz"
-        }
-      }
+      "resolved": "https://registry.npmjs.org/rc/-/rc-1.1.6.tgz"
     },
     "read-all-stream": {
       "version": "3.1.0",
@@ -2254,6 +2228,11 @@
           "from": "isarray@0.0.1",
           "resolved": "http://registry.npmjs.org/isarray/-/isarray-0.0.1.tgz"
         },
+        "minimist": {
+          "version": "0.0.8",
+          "from": "minimist@0.0.8",
+          "resolved": "http://registry.npmjs.org/minimist/-/minimist-0.0.8.tgz"
+        },
         "object-keys": {
           "version": "0.4.0",
           "from": "object-keys@>=0.4.0 <0.5.0",
@@ -2324,14 +2303,7 @@
     "strip-dirs": {
       "version": "1.1.1",
       "from": "strip-dirs@>=1.0.0 <2.0.0",
-      "resolved": "https://registry.npmjs.org/strip-dirs/-/strip-dirs-1.1.1.tgz",
-      "dependencies": {
-        "minimist": {
-          "version": "1.2.0",
-          "from": "minimist@>=1.1.0 <2.0.0",
-          "resolved": "https://registry.npmjs.org/minimist/-/minimist-1.2.0.tgz"
-        }
-      }
+      "resolved": "https://registry.npmjs.org/strip-dirs/-/strip-dirs-1.1.1.tgz"
     },
     "strip-indent": {
       "version": "1.0.1",
@@ -2452,6 +2424,11 @@
       "from": "typedarray@>=0.0.5 <0.1.0",
       "resolved": "https://registry.npmjs.org/typedarray/-/typedarray-0.0.6.tgz"
     },
+    "typescript": {
+      "version": "2.0.9",
+      "from": "typescript@>=2.0.0 <3.0.0",
+      "resolved": "https://registry.npmjs.org/typescript/-/typescript-2.0.9.tgz"
+    },
     "ultron": {
       "version": "1.0.2",
       "from": "ultron@>=1.0.0 <1.1.0",
@@ -2557,6 +2534,16 @@
       "version": "0.1.0",
       "from": "webcrypto@>=0.1.0 <0.2.0",
       "resolved": "https://registry.npmjs.org/webcrypto/-/webcrypto-0.1.0.tgz"
+    },
+    "webcrypto-core": {
+      "version": "0.1.2",
+      "from": "git+https://github.com/PeculiarVentures/webcrypto-core.git#types",
+      "resolved": "git+https://github.com/PeculiarVentures/webcrypto-core.git#105a528e5a3d3dc722ac128890353936615f7a16"
+    },
+    "webcrypto-shim": {
+      "version": "0.1.1",
+      "from": "dignifiedquire/webcrypto-shim#master",
+      "resolved": "git://github.com/dignifiedquire/webcrypto-shim.git#90cbb1b09161c5a8b21cee3b08c78afef1f6cf54"
     },
     "which-module": {
       "version": "1.0.0",
