@@ -12,16 +12,19 @@ const PeerBook = require('peer-book')
 const multiaddr = require('multiaddr')
 const mafmt = require('mafmt')
 const Abortable = require('pull-abortable')
+const { promiseTimeout } = require('./util')
 
 import type { Connection } from 'interface-connection'
 
 const OFFLINE_ERROR_MESSAGE = 'The libp2p node is not started yet'
 const IPFS_CODE = 421
+const DEFAULT_DIAL_TIMEOUT = 10000
 
 type P2PNodeOptions = {
   peerInfo?: PeerInfo,
   peerBook?: PeerBook,
-  disableSecureIO?: boolean
+  disableSecureIO?: boolean,
+  dialTimeout?: number
 }
 
 class P2PNode {
@@ -30,10 +33,12 @@ class P2PNode {
   swarm: Swarm
   isOnline: boolean
   abortables: Set<Abortable>
+  dialTimeout: number
 
   constructor (options: P2PNodeOptions) {
-    let {peerInfo, peerBook, disableSecureIO} = options
+    let {peerInfo, peerBook, disableSecureIO, dialTimeout} = options
     this.isOnline = false
+    this.dialTimeout = (dialTimeout != null) ? dialTimeout : DEFAULT_DIAL_TIMEOUT
 
     if (!peerInfo) {
       peerInfo = new PeerInfo()
@@ -163,7 +168,7 @@ class P2PNode {
       return Promise.reject(new Error(OFFLINE_ERROR_MESSAGE))
     }
 
-    return new Promise((resolve, reject) => {
+    const dialPromise = new Promise((resolve, reject) => {
       this.swarm.dial(peer, protocol, (err, conn) => {
         if (err) {
           return reject(err)
@@ -172,6 +177,8 @@ class P2PNode {
         resolve(conn)
       })
     })
+
+    return promiseTimeout(this.dialTimeout, dialPromise)
   }
 
   hangUpById (id: PeerId): Promise<void> {
