@@ -1,16 +1,15 @@
 const thenifyAll = require('thenify-all')
 const fs = thenifyAll(require('fs'), {}, ['readFile'])
-const PeerId = thenifyAll(require('peer-id'), {}, ['createFromPrivKey'])
-const PeerInfo = require('peer-info')
+const PeerId = thenifyAll(require('peer-id'), {}, ['createFromPrivKey', 'create'])
+const PeerInfo = thenifyAll(require('peer-info'), {}, ['create'])
 const Crypto = require('libp2p-crypto')
 const Multiaddr = require('multiaddr')
 
 const KEY_TYPE = 'RSA'  // change to ECC when possible
 const KEY_BITS = 1024
 
-function generateIdentity (): PeerId {
-  const key = Crypto.generateKeyPair(KEY_TYPE, KEY_BITS)
-  return new PeerId(key.public.hash(), key)
+function generateIdentity (): Promise<PeerId> {
+  return PeerId.create({bits: KEY_BITS})
 }
 
 function saveIdentity (peerId: PeerId, filePath: string) {
@@ -28,25 +27,24 @@ function loadIdentity (filePath: string): Promise<PeerId> {
 }
 
 
-function loadOrGenerateIdentity(filePath: string): PeerId {
-  let peerId
-  try {
-    loadIdentity(filePath)
-  } catch(err) {
-    console.log(`Could not load from ${filePath}, generating new PeerId...`)
-    peerId = generateIdentity()
-    saveIdentity(peerId, filePath)
-  }
-
-  return peerId
+function loadOrGenerateIdentity(filePath: string): Promise<PeerId> {
+    return loadIdentity(filePath)
+      .catch(err => {
+        console.log(`Could not load from ${filePath}, generating new PeerId...`)
+        return generateIdentity()
+      })
+      .then(id => {
+        saveIdentity(id, filePath)
+        return id
+      })
 }
 
-function inflateMultiaddr(multiaddrString: string): PeerInfo {
+function inflateMultiaddr(multiaddrString: string): Promise<PeerInfo> {
     const multiaddr = Multiaddr(multiaddrString)
-    const peerInfo = new PeerInfo()
-    peerInfo.multiaddr.add(multiaddr)
-
-    return peerInfo
+    return PeerInfo.create().then(peerInfo => {
+      peerInfo.multiaddr.add(multiaddr)
+      return peerInfo
+    })
 }
 
 module.exports = {

@@ -254,15 +254,15 @@ class RemoteNode {
   }
 
   ping (): Promise<boolean> {
-    return node.ping(this.remotePeerInfo)
+    return this.node.ping(this.remotePeerInfo)
   }
 
   query (queryString: string): Promise<Array<QueryResultMsg>> {
-    return node.query(this.remotePeerInfo, queryString)
+    return this.node.remoteQuery(this.remotePeerInfo, queryString)
   }
 
   data (keys: Array<string>): Array<DataResultMsg> {
-    return node.remoteData(this.remotePeerInfo, keys)
+    return this.node.remoteData(this.remotePeerInfo, keys)
   }
 }
 
