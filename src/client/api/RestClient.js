@@ -58,9 +58,9 @@ class RestClient {
 
   constructor (options: {apiUrl?: string, requestTimeout?: number}) {
     this.apiUrl = options.apiUrl || ''
-    this.requestTimeout = (options.requestTimeout != null) ?
-      options.requestTimeout :
-      DEFAULT_REQUEST_TIMEOUT
+    this.requestTimeout = (options.requestTimeout != null)
+      ? options.requestTimeout
+      : DEFAULT_REQUEST_TIMEOUT
   }
 
   _makeUrl (path: string): string {
