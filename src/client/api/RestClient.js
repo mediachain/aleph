@@ -153,6 +153,18 @@ class RestClient {
       })
   }
 
+  push (queryString: string, remotePeer: string): Promise<{statementCount: number, objectCount: number}> {
+    return this.postRequest(`push/${remotePeer}`, queryString, false)
+      .then(r => r.text())
+      .then(resp => {
+        const counts = resp.split('\n')
+          .filter(line => line.length > 0)
+          .map(line => Number.parseInt(line))
+        const [statementCount, objectCount] = counts
+        return {statementCount, objectCount}
+      })
+  }
+
   delete (queryString: string): Promise<number> {
     return this.postRequest('delete', queryString, false)
       .then(r => r.text())
