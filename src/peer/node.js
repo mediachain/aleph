@@ -16,19 +16,23 @@ const {
   resultStreamThrough
 } = require('./util')
 
-import type { QueryResultMsg, DataResultMsg } from '../protobuf/types'
+import type { QueryResultMsg, DataResultMsg, NodeInfoMsg } from '../protobuf/types'
 import type { Connection } from 'interface-connection'
 import type { PullStreamSource } from './util'
 
 export type MediachainNodeOptions = {
   peerId: PeerId,
   dirInfo?: PeerInfo,
-  listenAddresses?: Array<Multiaddr | string>
+  listenAddresses?: Array<Multiaddr | string>,
+  infoMessage?: string
 }
+
+const DEFAULT_INFO_MESSAGE = '(aleph)'
 
 class MediachainNode {
   p2p: P2PNode
   directory: ?PeerInfo
+  infoMessage: string
 
   constructor (options: MediachainNodeOptions) {
     let {peerId, dirInfo, listenAddresses} = options
@@ -39,9 +43,12 @@ class MediachainNode {
       peerInfo.multiaddr.add(Multiaddr(addr))
     })
 
+    this.infoMessage = options.infoMessage || DEFAULT_INFO_MESSAGE
+
     this.p2p = new P2PNode({peerInfo})
     this.directory = dirInfo
     this.p2p.handle(PROTOCOLS.node.ping, this.pingHandler.bind(this))
+    this.p2p.handle(PROTOCOLS.node.id, this.idHandler.bind(this))
   }
 
   start (): Promise<void> {
@@ -58,6 +65,10 @@ class MediachainNode {
 
   setDirectory (dirInfo: PeerInfo) {
     this.directory = dirInfo
+  }
+
+  setInfoMessage (message: string) {
+    this.infoMessage = message
   }
 
   register (): Promise<boolean> {
@@ -147,6 +158,31 @@ class MediachainNode {
       protoStreamEncode(pb.node.Pong),
       conn
     )
+  }
+
+  idHandler (protocol: string, conn: Connection) {
+    const response = {
+      peer: this.peerInfo.id.toB58String(),
+      info: this.infoMessage
+    }
+
+    pull(
+      conn,
+      protoStreamDecode(pb.node.NodeInfoRequest),
+      pull.map(() => response),
+      protoStreamEncode(pb.node.NodeInfo),
+      conn
+    )
+  }
+
+  remoteNodeInfo (peer: PeerInfo | PeerId | string): Promise<NodeInfoMsg> {
+    return this.openConnection(peer, PROTOCOLS.node.id)
+      .then(conn => pullToPromise(
+        pull.once({}),
+        protoStreamEncode(pb.node.NodeInfoRequest),
+        conn,
+        protoStreamDecode(pb.node.NodeInfo)
+      ))
   }
 
   remoteQueryStream (peer: PeerInfo | PeerId | string, queryString: string): Promise<PullStreamSource> {

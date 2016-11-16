@@ -76,6 +76,11 @@ function setConcatNodeStatus (status: NodeStatus): Promise<NodeStatus> {
     .then(client => client.setStatus(status))
 }
 
+function setConcatNodeInfoMessage (message: string): Promise<string> {
+  return concatNodeClient()
+    .then(client => client.setInfo(message))
+}
+
 function concatNodePeerInfo (): Promise<PeerInfo> {
   return Promise.all([concatNodeMultiaddr(), concatNodePeerId()])
     .then(([maddr, peerId]) => {
@@ -94,6 +99,7 @@ module.exports = {
   concatNodeMultiaddr,
   concatNodeClient,
   setConcatNodeStatus,
+  setConcatNodeInfoMessage,
   concatNodePeerId,
   concatNodePeerInfo
 }

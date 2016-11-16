@@ -14,6 +14,8 @@ import type {
   ListPeersResponseMsg,
   PingMsg,
   PongMsg,
+  NodeInfoRequestMsg,
+  NodeInfoMsg,
   QueryRequestMsg,
   QueryResultMsg,
   QueryResultValueMsg,
@@ -45,6 +47,8 @@ type AllProtos = {
   node: {
     Ping: ProtoCodec<PingMsg>,
     Pong: ProtoCodec<PongMsg>,
+    NodeInfoRequest: ProtoCodec<NodeInfoRequestMsg>,
+    NodeInfo: ProtoCodec<NodeInfoMsg>,
     QueryRequest: ProtoCodec<QueryRequestMsg>,
     QueryResult: ProtoCodec<QueryResultMsg>,
     QueryResultValue: ProtoCodec<QueryResultValueMsg>,
@@ -98,6 +102,8 @@ function loadProtos (): AllProtos {
     node: {
       Ping: pb.Ping,
       Pong: pb.Pong,
+      NodeInfoRequest: pb.NodeInfoRequest,
+      NodeInfo: pb.NodeInfo,
       QueryRequest: pb.QueryRequest,
       QueryResult: pb.QueryResult,
       QueryResultValue: pb.QueryResultValue,
