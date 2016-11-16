@@ -1,12 +1,13 @@
 const thenifyAll = require('thenify-all')
 const fs = thenifyAll(require('fs'), {}, ['readFile'])
 const PeerId = thenifyAll(require('peer-id'), {}, ['createFromPrivKey', 'create'])
-const PeerInfo = thenifyAll(require('peer-info'), {}, ['create'])
+const PeerInfo = require('peer-info')
 const Crypto = require('libp2p-crypto')
 const Multiaddr = require('multiaddr')
 
 const KEY_TYPE = 'RSA'  // change to ECC when possible
 const KEY_BITS = 1024
+const IPFS_CODE = 421
 
 function generateIdentity (): Promise<PeerId> {
   return PeerId.create({bits: KEY_BITS})
@@ -39,12 +40,17 @@ function loadOrGenerateIdentity(filePath: string): Promise<PeerId> {
       })
 }
 
-function inflateMultiaddr(multiaddrString: string): Promise<PeerInfo> {
-    const multiaddr = Multiaddr(multiaddrString)
-    return PeerInfo.create().then(peerInfo => {
-      peerInfo.multiaddr.add(multiaddr)
-      return peerInfo
-    })
+function inflateMultiaddr(multiaddrString: string): PeerInfo {
+  const multiaddr = Multiaddr(multiaddrString)
+  const ipfsIdB58String = multiaddr.stringTuples().filter((tuple) => {
+    if (tuple[0] === IPFS_CODE) {
+      return true
+    }
+  })[0][1]
+  const peerId = PeerId.createFromB58String(ipfsIdB58String)
+  const peerInfo = new PeerInfo(peerId)
+  peerInfo.multiaddr.add(multiaddr)
+  return peerInfo
 }
 
 module.exports = {

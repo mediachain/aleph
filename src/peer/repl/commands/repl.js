@@ -25,17 +25,14 @@ module.exports = {
     bootstrap(opts)
       .then(node => {
 
-        let init, remote
+        let init, remote, remotePeerInfo
         if (remotePeer !== undefined) {
-          init = node.start()
-            .then(() => Identity.inflateMultiaddr(remotePeer))
-            .then(remotePeerInfo => {
-              node.openConnection(remotePeerInfo)
-              remote = new RemoteNode(node, remotePeerInfo)
-            }).then(() => {
-            console.log("Connected to " + remotePeer)
-          })
+          remotePeerInfo = Identity.inflateMultiaddr(remotePeer)
+          remote = new RemoteNode(node, remotePeerInfo)
 
+          init = node.start()
+            .then(() => { node.openConnection(remotePeerInfo) })
+            .then(() => { console.log("Connected to " + remotePeer) })
         } else {
           console.log("No remote peer specified, running in detached mode")
           // TODO: create dummy RemoteNode class that just throws
@@ -44,10 +41,8 @@ module.exports = {
 
         // TODO: directory stuff
         if (dir !== undefined) {
-          Identity.inflateMultiaddr(dir)
-            .then(dirInfo => {
-              node.setDirectory(dirInfo)
-            })
+          const dirInfo = Identity.inflateMultiaddr(dir)
+          node.setDirectory(dirInfo)
         } else if (false) {
           // TODO: get directory from remote peer (and amend message below)
         } else {
