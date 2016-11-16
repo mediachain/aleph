@@ -1,4 +1,5 @@
 const thenifyAll = require('thenify-all')
+const path = require('path')
 const fs = thenifyAll(require('fs'), {}, ['readFile'])
 const PeerId = thenifyAll(require('peer-id'), {}, ['createFromPrivKey', 'create'])
 const PeerInfo = require('peer-info')
@@ -27,10 +28,33 @@ function loadIdentity (filePath: string): Promise<PeerId> {
     .then(privKeyBytes => PeerId.createFromPrivKey(privKeyBytes))
 }
 
+function dirExists (filePath: string): boolean {
+  try {
+    return fs.statSync(filePath).isDirectory()
+  } catch (err) {
+    return false
+  }
+}
 
 function loadOrGenerateIdentity(filePath: string): Promise<PeerId> {
     return loadIdentity(filePath)
       .catch(err => {
+        if (err.code === 'ENOENT') {
+          if (!dirExists(path.dirname(filePath))) {
+            const e = new Error(
+              `Unable to access file at ${filePath} because the containing directory ` +
+              `does not exist.`)
+            e.cause = err
+            throw e
+          }
+        }
+        if (err.code === 'EACCES') {
+          const e = new Error(
+            `Unable to access file at ${filePath} - permission denied.`
+          )
+          e.cause = err
+          throw e
+        }
         console.log(`Could not load from ${filePath}, generating new PeerId...`)
         return generateIdentity()
       })

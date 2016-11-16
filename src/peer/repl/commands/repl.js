@@ -23,6 +23,10 @@ module.exports = {
     const {dir, remotePeer} = opts
 
     bootstrap(opts)
+      .catch(err => {
+        console.error(`Error setting up aleph node: ${err.message}`)
+        process.exit(1)
+      })
       .then(node => {
 
         let init, remote, remotePeerInfo
