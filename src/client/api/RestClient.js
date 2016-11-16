@@ -204,6 +204,21 @@ class RestClient {
       .then(s => s.split('\n').filter(line => line.length > 0))
   }
 
+  getAuthorizations (): Promise<Object> {
+    return this.getRequest('auth')
+      .then(r => r.json())
+  }
+
+  authorize (peerId: string, namespaces: Array<string>): Promise<boolean> {
+    return this.postRequest(`auth/${peerId}`, namespaces.join(','), false)
+      .then(r => r.text())
+      .then(s => s.trim() === 'OK')
+  }
+
+  revokeAuthorization (peerId: string): Promise<boolean> {
+    return this.authorize(peerId, [])
+  }
+
   getStatus (): Promise<NodeStatus> {
     return this.getRequest('status')
       .then(r => r.text())
