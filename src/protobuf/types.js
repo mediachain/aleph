@@ -52,6 +52,23 @@ export type DataObjectMsg = {
   data: Buffer
 }
 
+export type PushRequestMsg = {
+  namespaces: Array<string>
+}
+
+export type PushAcceptMsg = {}
+export type PushRejectMsg = {
+  error: string
+}
+
+export type PushResponseMsg = { accept: PushAcceptMsg } | {reject: PushRejectMsg }
+export type PushValueMsg = {stmt: StatementMsg} | {end: StreamEndMsg}
+export type PushEndMsg = {
+  statements: number,
+  objects: number,
+  error: string
+}
+
 export type QueryRequestMsg = {
   query: string
 }
