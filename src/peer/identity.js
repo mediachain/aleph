@@ -36,35 +36,35 @@ function dirExists (filePath: string): boolean {
   }
 }
 
-function loadOrGenerateIdentity(filePath: string): Promise<PeerId> {
-    return loadIdentity(filePath)
-      .catch(err => {
-        if (err.code === 'ENOENT') {
-          if (!dirExists(path.dirname(filePath))) {
-            const e = new Error(
-              `Unable to access file at ${filePath} because the containing directory ` +
-              `does not exist.`)
-            e.cause = err
-            throw e
-          }
-        }
-        if (err.code === 'EACCES') {
+function loadOrGenerateIdentity (filePath: string): Promise<PeerId> {
+  return loadIdentity(filePath)
+    .catch(err => {
+      if (err.code === 'ENOENT') {
+        if (!dirExists(path.dirname(filePath))) {
           const e = new Error(
-            `Unable to access file at ${filePath} - permission denied.`
-          )
+            `Unable to access file at ${filePath} because the containing directory ` +
+            `does not exist.`)
           e.cause = err
           throw e
         }
-        console.log(`Could not load from ${filePath}, generating new PeerId...`)
-        return generateIdentity()
-      })
-      .then(id => {
-        saveIdentity(id, filePath)
-        return id
-      })
+      }
+      if (err.code === 'EACCES') {
+        const e = new Error(
+          `Unable to access file at ${filePath} - permission denied.`
+        )
+        e.cause = err
+        throw e
+      }
+      console.log(`Could not load from ${filePath}, generating new PeerId...`)
+      return generateIdentity()
+    })
+    .then(id => {
+      saveIdentity(id, filePath)
+      return id
+    })
 }
 
-function inflateMultiaddr(multiaddrString: string): PeerInfo {
+function inflateMultiaddr (multiaddrString: string): PeerInfo {
   const multiaddr = Multiaddr(multiaddrString)
   const ipfsIdB58String = multiaddr.stringTuples().filter((tuple) => {
     if (tuple[0] === IPFS_CODE) {
