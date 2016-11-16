@@ -27,6 +27,8 @@ export type MediachainNodeOptions = {
   infoMessage?: string
 }
 
+const DEFAULT_INFO_MESSAGE = '(aleph)'
+
 class MediachainNode {
   p2p: P2PNode
   directory: ?PeerInfo
@@ -41,7 +43,7 @@ class MediachainNode {
       peerInfo.multiaddr.add(Multiaddr(addr))
     })
 
-    this.infoMessage = options.infoMessage || ''
+    this.infoMessage = options.infoMessage || DEFAULT_INFO_MESSAGE
 
     this.p2p = new P2PNode({peerInfo})
     this.directory = dirInfo
