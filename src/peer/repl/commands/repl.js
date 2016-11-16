@@ -1,7 +1,7 @@
 // @flow
 
 const os = require('os')
-const { MediachainNode: Node, RemoteNode } = require('../../node');
+const { MediachainNode: Node, RemoteNode } = require('../../node')
 // $FlowIssue flow doesn't find repl builtin?
 const Repl = require('repl')
 const Identity = require('../../identity')
@@ -28,7 +28,6 @@ module.exports = {
         process.exit(1)
       })
       .then(node => {
-
         let init, remote, remotePeerInfo
         if (remotePeer !== undefined) {
           remotePeerInfo = Identity.inflateMultiaddr(remotePeer)
@@ -36,9 +35,9 @@ module.exports = {
 
           init = node.start()
             .then(() => { node.openConnection(remotePeerInfo) })
-            .then(() => { console.log("Connected to " + remotePeer) })
+            .then(() => { console.log(`Connected to ${remotePeer}`) })
         } else {
-          console.log("No remote peer specified, running in detached mode")
+          console.log('No remote peer specified, running in detached mode')
           // TODO: create dummy RemoteNode class that just throws
           init = Promise.resolve()
         }
@@ -47,10 +46,10 @@ module.exports = {
         if (dir !== undefined) {
           const dirInfo = Identity.inflateMultiaddr(dir)
           node.setDirectory(dirInfo)
-        } else if (false) {
+        } else if (false) { // eslint-disable-line
           // TODO: get directory from remote peer (and amend message below)
         } else {
-          console.log("No directory specified, running without directory")
+          console.log('No directory specified, running without directory')
         }
 
         init.then(() => {
