@@ -5,8 +5,9 @@ const Multiaddr = require('multiaddr')
 const PeerId = require('peer-id')
 const PeerInfo = require('peer-info')
 const lp = require('pull-length-prefixed')
+const objectPath = require('object-path')
 
-import type { PeerInfoMsg, LookupPeerResponseMsg, ProtoCodec, QueryResultMsg, DataResultMsg } from '../protobuf/types'  // eslint-disable-line no-unused-vars
+import type { PeerInfoMsg, LookupPeerResponseMsg, ProtoCodec, QueryResultMsg, QueryResultValueMsg, SimpleValueMsg, DataResultMsg, StatementMsg, StatementBodyMsg, SimpleStatementMsg } from '../protobuf/types'  // eslint-disable-line no-unused-vars
 
 // Flow signatures for pull-streams
 export type PullStreamCallback<T> = (end: ?mixed, value?: ?T) => void
@@ -177,6 +178,44 @@ function promiseTimeout<T> (timeout: number, promise: Promise<T>): Promise<T> {
   })])
 }
 
+function flatMap<T, U> (array: Array<T>, f: (x: T) => Array<U>): Array<U> {
+  return [].concat(...array.map(x => f(x)))
+}
+
+function objectIdsForQueryResult (result: QueryResultValueMsg): Array<string> {
+  let values: Array<SimpleValueMsg> = []
+
+  const simpleResultValue: ?SimpleValueMsg = objectPath.get(result, 'simple')
+  if (simpleResultValue != null) {
+    values = [simpleResultValue]
+  } else {
+    const compoundResultBodies: ?Array<{key: string, value: SimpleValueMsg}> =
+      objectPath.get(result, 'compound.body')
+    if (compoundResultBodies != null) {
+      values = compoundResultBodies.map(b => b.value)
+    }
+  }
+
+  const statementBodies: Array<StatementBodyMsg> = values
+    .map(v => objectPath.get(v, 'stmt'))
+    .filter(stmt => stmt != null)
+    .map((stmt: StatementMsg) => stmt.body)
+
+
+  const simpleStatements: Array<SimpleStatementMsg> =
+    flatMap(statementBodies, s => {
+      const stmt: ?SimpleStatementMsg = objectPath.get(s, 'simple')
+      if (stmt != null) return [stmt]
+
+      const compoundStatements: Array<SimpleStatementMsg> =
+        objectPath.get(s, 'compound.body')
+      if (compoundStatements != null) return compoundStatements
+      return []
+    })
+
+  return simpleStatements.map(s => s.object)
+}
+
 module.exports = {
   protoStreamEncode,
   protoStreamDecode,
@@ -186,5 +225,7 @@ module.exports = {
   pullToPromise,
   pullRepeatedly,
   resultStreamThrough,
-  promiseTimeout
+  promiseTimeout,
+  objectIdsForQueryResult,
+  flatMap
 }
