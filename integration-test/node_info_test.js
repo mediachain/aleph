@@ -5,7 +5,7 @@ const assert = require('assert')
 const { before, describe, it } = require('mocha')
 
 const { loadTestNodeIds } = require('../test/util')
-const AlephNode = require('../src/peer/node')
+const { MediachainNode: AlephNode } = require('../src/peer/node')
 const { setConcatNodeStatus, concatNodePeerInfo, setConcatNodeInfoMessage } = require('./util')
 
 describe('Node Info', () => {

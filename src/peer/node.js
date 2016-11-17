@@ -233,6 +233,40 @@ class MediachainNode {
         pull.map(result => result.data)
       ))
   }
+
+  // local queries (NOT IMPLEMENTED -- NO LOCAL STORE)
+  query (queryString: string): Promise<Array<QueryResultMsg>> {
+    throw new Error('Local statement db not implemented!')
+  }
+
+  data (keys: Array<string>): Array<DataResultMsg> {
+    throw new Error('Local datastore not implemented!')
+  }
 }
 
-module.exports = MediachainNode
+class RemoteNode {
+  node: MediachainNode
+  remotePeerInfo: PeerInfo
+
+  constructor (node: MediachainNode, remotePeerInfo: PeerInfo) {
+    this.node = node
+    this.remotePeerInfo = remotePeerInfo
+  }
+
+  ping (): Promise<boolean> {
+    return this.node.ping(this.remotePeerInfo)
+  }
+
+  query (queryString: string): Promise<Array<QueryResultMsg>> {
+    return this.node.remoteQuery(this.remotePeerInfo, queryString)
+  }
+
+  data (keys: Array<string>): Array<DataResultMsg> {
+    return this.node.remoteData(this.remotePeerInfo, keys)
+  }
+}
+
+module.exports = {
+  MediachainNode,
+  RemoteNode
+}

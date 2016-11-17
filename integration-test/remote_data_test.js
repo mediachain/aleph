@@ -5,7 +5,7 @@ const assert = require('assert')
 const { describe, it, before } = require('mocha')
 
 const { loadTestNodeIds } = require('../test/util')
-const AlephNode = require('../src/peer/node')
+const { MediachainNode: AlephNode } = require('../src/peer/node')
 const { concatNodeClient, concatNodePeerInfo } = require('./util')
 
 const seedObjects = [

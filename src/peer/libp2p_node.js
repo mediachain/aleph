@@ -21,7 +21,7 @@ const IPFS_CODE = 421
 const DEFAULT_DIAL_TIMEOUT = 10000
 
 type P2PNodeOptions = {
-  peerInfo?: PeerInfo,
+  peerInfo: PeerInfo,
   peerBook?: PeerBook,
   disableSecureIO?: boolean,
   dialTimeout?: number
@@ -39,11 +39,6 @@ class P2PNode {
     let {peerInfo, peerBook, disableSecureIO, dialTimeout} = options
     this.isOnline = false
     this.dialTimeout = (dialTimeout != null) ? dialTimeout : DEFAULT_DIAL_TIMEOUT
-
-    if (!peerInfo) {
-      peerInfo = new PeerInfo()
-      peerInfo.multiaddr.add(multiaddr('/ip4/0.0.0.0/tcp/0'))
-    }
 
     if (!peerBook) peerBook = new PeerBook()
 
