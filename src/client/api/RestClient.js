@@ -153,6 +153,18 @@ class RestClient {
       })
   }
 
+  push (queryString: string, remotePeer: string): Promise<{statementCount: number, objectCount: number}> {
+    return this.postRequest(`push/${remotePeer}`, queryString, false)
+      .then(r => r.text())
+      .then(resp => {
+        const counts = resp.split('\n')
+          .filter(line => line.length > 0)
+          .map(line => Number.parseInt(line))
+        const [statementCount, objectCount] = counts
+        return {statementCount, objectCount}
+      })
+  }
+
   delete (queryString: string): Promise<number> {
     return this.postRequest('delete', queryString, false)
       .then(r => r.text())
@@ -202,6 +214,21 @@ class RestClient {
     return this.getRequest('dir/list')
       .then(r => r.text())
       .then(s => s.split('\n').filter(line => line.length > 0))
+  }
+
+  getAuthorizations (): Promise<Object> {
+    return this.getRequest('auth')
+      .then(r => r.json())
+  }
+
+  authorize (peerId: string, namespaces: Array<string>): Promise<boolean> {
+    return this.postRequest(`auth/${peerId}`, namespaces.join(','), false)
+      .then(r => r.text())
+      .then(s => s.trim() === 'OK')
+  }
+
+  revokeAuthorization (peerId: string): Promise<boolean> {
+    return this.authorize(peerId, [])
   }
 
   getStatus (): Promise<NodeStatus> {

@@ -9,9 +9,9 @@ const AlephNode = require('../src/peer/node')
 const { concatNodeClient, concatNodePeerInfo } = require('./util')
 
 const seedStatements = [
-  {object: 'QmF00123', tags: [], refs: []},
-  {object: 'QmF00456', tags: ['foo'], refs: []},
-  {object: 'QmFoo789', refs: ['bar'], tags: ['foo']}
+  {object: 'QmF00123', tags: [], refs: [], deps: []},
+  {object: 'QmF00456', tags: ['foo'], refs: [], deps: []},
+  {object: 'QmFoo789', refs: ['bar'], tags: ['foo'], deps: []}
 ]
 
 describe('Query', () => {
