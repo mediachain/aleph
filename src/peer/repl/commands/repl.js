@@ -62,6 +62,9 @@ module.exports = {
           repl.context.remote = remote
           const defaultEval = repl.eval
           repl.eval = promiseEval(defaultEval)
+          repl.on('exit', () => {
+            process.exit();
+          });
         }).catch(err => {
           console.log(err)
         })
