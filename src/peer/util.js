@@ -5,9 +5,10 @@ const Multiaddr = require('multiaddr')
 const PeerId = require('peer-id')
 const PeerInfo = require('peer-info')
 const lp = require('pull-length-prefixed')
-const objectPath = require('object-path')
+const {decode} = require('../metadata/serialize')
+const _ = require('lodash')
 
-import type { PeerInfoMsg, LookupPeerResponseMsg, ProtoCodec, QueryResultMsg, QueryResultValueMsg, SimpleValueMsg, DataResultMsg, StatementMsg, StatementBodyMsg, SimpleStatementMsg } from '../protobuf/types'  // eslint-disable-line no-unused-vars
+import type { PeerInfoMsg, LookupPeerResponseMsg, ProtoCodec, QueryResultMsg, QueryResultValueMsg, SimpleValueMsg, DataResultMsg, DataObjectMsg, StatementMsg, StatementBodyMsg, SimpleStatementMsg } from '../protobuf/types'  // eslint-disable-line no-unused-vars
 
 // Flow signatures for pull-streams
 export type PullStreamCallback<T> = (end: ?mixed, value?: ?T) => void
@@ -185,35 +186,57 @@ function flatMap<T, U> (array: Array<T>, f: (x: T) => Array<U>): Array<U> {
 function objectIdsForQueryResult (result: QueryResultValueMsg): Array<string> {
   let values: Array<SimpleValueMsg> = []
 
-  const simpleResultValue: ?SimpleValueMsg = objectPath.get(result, 'simple')
+  const simpleResultValue: ?SimpleValueMsg = _.get(result, 'simple')
   if (simpleResultValue != null) {
     values = [simpleResultValue]
   } else {
     const compoundResultBodies: ?Array<{key: string, value: SimpleValueMsg}> =
-      objectPath.get(result, 'compound.body')
+      _.get(result, 'compound.body')
     if (compoundResultBodies != null) {
       values = compoundResultBodies.map(b => b.value)
     }
   }
 
   const statementBodies: Array<StatementBodyMsg> = values
-    .map(v => objectPath.get(v, 'stmt'))
+    .map(v => _.get(v, 'stmt'))
     .filter(stmt => stmt != null)
     .map((stmt: StatementMsg) => stmt.body)
 
-
   const simpleStatements: Array<SimpleStatementMsg> =
     flatMap(statementBodies, s => {
-      const stmt: ?SimpleStatementMsg = objectPath.get(s, 'simple')
+      const stmt: ?SimpleStatementMsg = _.get(s, 'simple')
       if (stmt != null) return [stmt]
 
       const compoundStatements: Array<SimpleStatementMsg> =
-        objectPath.get(s, 'compound.body')
+        _.get(s, 'compound.body')
       if (compoundStatements != null) return compoundStatements
       return []
     })
 
   return simpleStatements.map(s => s.object)
+}
+
+function expandQueryResult (result: QueryResultValueMsg, dataObjects: Array<DataObjectMsg>): Object {
+  const objectMap = {}
+  for (const obj of dataObjects) {
+    let val: Object | string
+    try {
+      val = decode(obj.data)
+    } catch (err) {
+      val = obj.data.toString('base64')
+    }
+    objectMap[obj.key] = val
+  }
+
+  function replacer (value: any) {
+    const key = _.get(value, 'object')
+    const data = objectMap[key]
+    if (data != null) {
+      return _.set(value, 'object', {key, data})
+    }
+  }
+
+  return _.cloneDeepWith(result, replacer)
 }
 
 module.exports = {
@@ -227,5 +250,6 @@ module.exports = {
   resultStreamThrough,
   promiseTimeout,
   objectIdsForQueryResult,
+  expandQueryResult,
   flatMap
 }

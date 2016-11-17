@@ -5,6 +5,7 @@ const Multiaddr = require('multiaddr')
 const Multihash = require('multihashes')
 const pb = require('../protobuf')
 const pull = require('pull-stream')
+const paramap = require('pull-paramap')
 const { DEFAULT_LISTEN_ADDR, PROTOCOLS } = require('./constants')
 const {
   protoStreamEncode,
@@ -13,10 +14,12 @@ const {
   lookupResponseToPeerInfo,
   pullToPromise,
   pullRepeatedly,
-  resultStreamThrough
+  resultStreamThrough,
+  objectIdsForQueryResult,
+  expandQueryResult
 } = require('./util')
 
-import type { QueryResultMsg, DataResultMsg, NodeInfoMsg } from '../protobuf/types'
+import type { QueryResultMsg, QueryResultValueMsg, DataResultMsg, DataObjectMsg, NodeInfoMsg } from '../protobuf/types'
 import type { Connection } from 'interface-connection'
 import type { PullStreamSource } from './util'
 
@@ -241,6 +244,47 @@ class MediachainNode {
 
   data (keys: Array<string>): Array<DataResultMsg> {
     throw new Error('Local datastore not implemented!')
+  }
+
+  remoteQueryWithDataStream (peer: PeerInfo | PeerId | string, queryString: string): Promise<PullStreamSource> {
+    return this.remoteQueryStream(peer, queryString)
+      .then(resultStream =>
+        pull(
+          resultStream,
+          paramap((queryResult, cb) => {
+            if (queryResult.value == null) {
+              return cb(null, queryResult)
+            }
+
+            this._expandQueryResultData(peer, queryResult.value)
+              .then(result => cb(null, result))
+              .catch(err => cb(err))
+          })
+        )
+      )
+  }
+
+  remoteQueryWithData (peer: PeerInfo | PeerId | string, queryString: string): Promise<Array<Object>> {
+    return this.remoteQueryWithDataStream(peer, queryString)
+      .then(stream => new Promise((resolve, reject) => {
+        pull(
+          stream,
+          pull.collect((err, results) => {
+            if (err) return reject(err)
+            resolve(results)
+          })
+        )
+      }))
+  }
+
+  _expandQueryResultData (peer: PeerInfo | PeerId | string, result: QueryResultValueMsg): Promise<Object> {
+    const objectIds = objectIdsForQueryResult(result)
+    if (objectIds.length < 1) return Promise.resolve(result)
+
+    return this.remoteData(peer, objectIds)
+      .then((dataResults: Array<DataObjectMsg>) =>
+        expandQueryResult(result, dataResults)
+      )
   }
 }
 
