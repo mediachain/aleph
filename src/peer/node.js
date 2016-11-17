@@ -308,6 +308,10 @@ class RemoteNode {
   data (keys: Array<string>): Array<DataResultMsg> {
     return this.node.remoteData(this.remotePeerInfo, keys)
   }
+
+  queryWithData (queryString: string): Promise<Array<Object>> {
+    return this.node.remoteQueryWithData(this.remotePeerInfo, queryString)
+  }
 }
 
 module.exports = {
