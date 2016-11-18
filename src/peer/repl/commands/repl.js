@@ -1,10 +1,8 @@
 // @flow
 
 const os = require('os')
-const { RemoteNode } = require('../../node')
 // $FlowIssue flow doesn't find repl builtin?
 const Repl = require('repl')
-const Identity = require('../../identity')
 const { bootstrap } = require('../util')
 
 module.exports = {
@@ -32,7 +30,7 @@ module.exports = {
         let init
         if (remote != null) {
           init = node.start()
-            .then(() => { node.openConnection(remote.remotePeerInfo) })
+            .then(() => node.openConnection(remote.remotePeerInfo))
             .then(() => { console.log(`Connected to `, remotePeer) })
         } else {
           console.log('No remote peer specified, running in detached mode')
