@@ -7,6 +7,12 @@ const { printJSON } = require('../../../client/cli/util')
 module.exports = {
   command: 'query <queryString>',
   builder: {
+    withObjects: {
+      type: 'boolean',
+      alias: 'o',
+      description: 'Also fetch the associated objects for each query result and display them inline.\n',
+      default: false
+    },
     color: {
       type: 'boolean',
       description: 'Explicitly enable (or disable, with --no-color) colorized output.\n',
@@ -21,8 +27,8 @@ module.exports = {
     }
   },
   description: 'Query a remote peer using the mediachain peer-to-peer query protocol.\n',
-  handler: (opts: {queryString: string, dir?: string, remotePeer?: string, identityPath: string, pretty: boolean, color?: boolean}) => {
-    const {queryString, remotePeer, pretty, color} = opts
+  handler: (opts: {queryString: string, dir?: string, remotePeer?: string, identityPath: string, pretty: boolean, color?: boolean, withObjects: boolean}) => {
+    const {queryString, remotePeer, pretty, color, withObjects} = opts
     if (remotePeer == null) {
       // TODO: better message
       console.error('remotePeer is required.')
@@ -31,16 +37,23 @@ module.exports = {
 
     let node, remote
     bootstrap(opts).then(nodes => {
-        node = nodes.node
-        remote = nodes.remote
-        return node.start()
-      })
+      node = nodes.node
+      remote = nodes.remote
+      return node.start()
+    })
       .then(() => {
         if (remote == null) {
           throw new Error('Remote peer is unavailable')
         }
 
-        return node.remoteQueryStream(remote.remotePeerInfo, queryString)
+        let queryPromise
+        if (withObjects) {
+          queryPromise = node.remoteQueryWithDataStream(remote.remotePeerInfo, queryString)
+        } else {
+          queryPromise = node.remoteQueryStream(remote.remotePeerInfo, queryString)
+        }
+
+        return queryPromise
           .then(stream => printResultStream(stream, color, pretty))
       })
       .then(() => { process.exit(0) })
