@@ -1,4 +1,6 @@
 // @flow
+
+const _ = require('lodash')
 const { MediachainNode, RemoteNode } = require('../node')
 const Identity = require('../identity')
 
@@ -37,6 +39,17 @@ function bootstrap (opts: BootstrapOpts): Promise<BootstrapResult> {
     })
 }
 
+function binaryToB64 (result: Object): Object {
+  const replacer = obj => {
+    if (obj instanceof Buffer) {
+      return obj.toString('base64')
+    }
+  }
+
+  return _.cloneDeepWith(result, replacer)
+}
+
 module.exports = {
-  bootstrap
+  bootstrap,
+  binaryToB64
 }

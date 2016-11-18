@@ -13,6 +13,7 @@
     "prepublish": "npm run build"
   },
   "bin": {
+    "aleph": "./bin/aleph.js",
     "mcclient": "./bin/mcclient.js"
   },
   "repository": {
