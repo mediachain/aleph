@@ -28,8 +28,7 @@ function bootstrap (opts: BootstrapOpts): Promise<BootstrapResult> {
       }
 
       if (dir != null) {
-        const dirInfo = Identity.inflateMultiaddr(dir)
-        node.setDirectory(dirInfo)
+        node.setDirectory(dir)
       }
 
       return {

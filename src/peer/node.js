@@ -7,6 +7,7 @@ const pb = require('../protobuf')
 const pull = require('pull-stream')
 const paramap = require('pull-paramap')
 const { DEFAULT_LISTEN_ADDR, PROTOCOLS } = require('./constants')
+const { inflateMultiaddr } = require('./identity')
 const {
   protoStreamEncode,
   protoStreamDecode,
@@ -66,7 +67,10 @@ class MediachainNode {
     return this.p2p.peerInfo
   }
 
-  setDirectory (dirInfo: PeerInfo) {
+  setDirectory (dirInfo: PeerInfo | string) {
+    if (typeof dirInfo === 'string') {
+      dirInfo = inflateMultiaddr(dirInfo)
+    }
     this.directory = dirInfo
   }
 
@@ -101,10 +105,6 @@ class MediachainNode {
   }
 
   lookup (peerId: string | PeerId): Promise<?PeerInfo> {
-    if (this.directory == null) {
-      return Promise.reject(new Error('No known directory server, cannot lookup'))
-    }
-
     if (peerId instanceof PeerId) {
       peerId = peerId.toB58String()
     } else {
@@ -114,6 +114,23 @@ class MediachainNode {
       } catch (err) {
         return Promise.reject(new Error(`Peer id is not a valid multihash: ${err.message}`))
       }
+    }
+
+    // If we've already got an entry for this PeerId in our PeerBook,
+    // because we already have a multiplex connection open to this peer,
+    // use the existing entry.
+    //
+    // Note that when we close the peer multiplex connection, then entry is
+    // automatically removed from the peer book, so we should never be returning
+    // stale results.
+    try {
+      const peerInfo = this.p2p.peerBook.getByB58String(peerId)
+      return Promise.resolve(peerInfo)
+    } catch (err) {
+    }
+
+    if (this.directory == null) {
+      return Promise.reject(new Error('No known directory server, cannot lookup'))
     }
 
     return this.p2p.dialByPeerInfo(this.directory, PROTOCOLS.dir.lookup)
@@ -131,6 +148,17 @@ class MediachainNode {
     if (peer instanceof PeerInfo) {
       return Promise.resolve(peer)
     }
+    if (typeof peer === 'string' && peer.startsWith('/')) {
+      // try to decode as multiaddr. If it doesn't start with '/', it may be resolvable
+      // as a multihash peer id via lookup()
+      try {
+        const peerInfo = inflateMultiaddr(peer)
+        return Promise.resolve(peerInfo)
+      } catch (err) {
+        return Promise.reject(new Error(`Peer id is not a valid multiaddr: ${err.message}`))
+      }
+    }
+
     return this.lookup(peer)
   }
 
