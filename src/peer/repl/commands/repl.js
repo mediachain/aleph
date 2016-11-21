@@ -55,8 +55,8 @@ module.exports = {
           const defaultEval = repl.eval
           repl.eval = promiseEval(defaultEval)
           repl.on('exit', () => {
-            process.exit();
-          });
+            process.exit()
+          })
         }).catch(err => {
           console.log(err)
         })
