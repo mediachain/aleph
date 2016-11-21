@@ -218,16 +218,26 @@ function objectIdsForQueryResult (result: QueryResultValueMsg): Array<string> {
 
 function expandQueryResult (result: QueryResultValueMsg, dataObjects: Array<DataObjectMsg>): Object {
   const objectMap = {}
+
+  // convert the array of key/value pairs into a map, attempting to
+  // deserialize the raw data Buffer for each object as CBOR along the way
+  // ignore decoding errors in case there's non-cbor data
   for (const obj of dataObjects) {
-    let val: Object | string
+    let val: Object | Buffer = obj.data
     try {
       val = decode(obj.data)
     } catch (err) {
-      val = obj.data.toString('base64')
     }
     objectMap[obj.key] = val
   }
 
+  // for any nested object in `result`, look for keys named "object" whose values
+  // are object ids contained in our `objectMap`.  Replace the object id
+  // with a new object of this shape:
+  // {
+  //   key: originalObjectId,
+  //   data: decodedObjectOrBuffer
+  // }
   function replacer (value: any) {
     const key = _.get(value, 'object')
     const data = objectMap[key]
