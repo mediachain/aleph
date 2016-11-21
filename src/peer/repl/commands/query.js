@@ -7,10 +7,10 @@ const { printJSON } = require('../../../client/cli/util')
 module.exports = {
   command: 'query <queryString>',
   builder: {
-    withObjects: {
+    includeData: {
       type: 'boolean',
-      alias: 'o',
-      description: 'Also fetch the associated objects for each query result and display them inline.\n',
+      alias: 'i',
+      description: 'Also fetch the associated data objects for each query result and display them inline.\n',
       default: false
     },
     color: {
@@ -27,8 +27,8 @@ module.exports = {
     }
   },
   description: 'Query a remote peer using the mediachain peer-to-peer query protocol.\n',
-  handler: (opts: {queryString: string, dir?: string, remotePeer?: string, identityPath: string, pretty: boolean, color?: boolean, withObjects: boolean}) => {
-    const {queryString, remotePeer, pretty, color, withObjects} = opts
+  handler: (opts: {queryString: string, dir?: string, remotePeer?: string, identityPath: string, pretty: boolean, color?: boolean, includeData: boolean}) => {
+    const {queryString, remotePeer, pretty, color, includeData} = opts
     if (remotePeer == null) {
       // TODO: better message
       console.error('remotePeer is required.')
@@ -47,7 +47,7 @@ module.exports = {
         }
 
         let queryPromise
-        if (withObjects) {
+        if (includeData) {
           queryPromise = node.remoteQueryWithDataStream(remote.remotePeerInfo, queryString)
         } else {
           queryPromise = node.remoteQueryStream(remote.remotePeerInfo, queryString)
