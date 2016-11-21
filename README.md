@@ -155,6 +155,8 @@ console.dir(result[0].value.simple)
       Buffer [...] } }
 ```
 
+To also fetch the data objects associated with each result, use `remote.queryWithData` instead of `remote.query`.
+
 #### `aleph query`
 
 `aleph query --remotePeer <peerAddress> <queryString>` will execute a query on a remote peer using the peer-to-peer
@@ -169,11 +171,11 @@ Mediachain records are composed of two main components: statements and objects. 
 By default, the `aleph query` command will only show the statements that match the query results.  However, it's
 common that you'll want to see the content of the objects themselves.
 
-Use the `--withObjects` or `-o` flag to dereference the objects for each statement in the query results.
+Use the `--includeData` or `-i` flag to dereference the objects for each statement in the query results.
 For example:
 
 ```bash
-$ aleph query --remotePeer /ip4/54.205.184.122/tcp/9001/ipfs/QmeiY2eHMwK92Zt6X4kUUC3MsjMmVb2VnGZ17DhnhRPCEQ --withObjects 'SELECT * FROM images.dpla LIMIT 1' 
+$ aleph query --remotePeer /ip4/54.205.184.122/tcp/9001/ipfs/QmeiY2eHMwK92Zt6X4kUUC3MsjMmVb2VnGZ17DhnhRPCEQ --includeData 'SELECT * FROM images.dpla LIMIT 1' 
 ```
 
 ```json
