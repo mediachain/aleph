@@ -1,10 +1,9 @@
 // @flow
 
 const os = require('os')
-const { MediachainNode: Node, RemoteNode } = require('../../node')
 // $FlowIssue flow doesn't find repl builtin?
 const Repl = require('repl')
-const Identity = require('../../identity')
+const { bootstrap } = require('../util')
 
 module.exports = {
   command: 'repl',
@@ -19,36 +18,29 @@ module.exports = {
       })
       .help()
   },
-  handler: (opts: {dir: string, remotePeer: string, identityPath: string}) => {
-    const {dir, remotePeer} = opts
+  handler: (opts: {dir?: string, remotePeer?: string, identityPath: string}) => {
+    const {remotePeer} = opts
 
     bootstrap(opts)
       .catch(err => {
         console.error(`Error setting up aleph node: ${err.message}`)
         process.exit(1)
       })
-      .then(node => {
-        let init, remote, remotePeerInfo
-        if (remotePeer !== undefined) {
-          remotePeerInfo = Identity.inflateMultiaddr(remotePeer)
-          remote = new RemoteNode(node, remotePeerInfo)
-
+      .then(({node, remote}) => {
+        let init
+        if (remote != null) {
           init = node.start()
-            .then(() => { node.openConnection(remotePeerInfo) })
-            .then(() => { console.log(`Connected to ${remotePeer}`) })
+            .then(() => node.openConnection(remote.remotePeerInfo))
+            .then(() => { console.log(`Connected to `, remotePeer) })
         } else {
           console.log('No remote peer specified, running in detached mode')
           // TODO: create dummy RemoteNode class that just throws
-          init = Promise.resolve()
+          init = node.start()
         }
 
         // TODO: directory stuff
-        if (dir !== undefined) {
-          const dirInfo = Identity.inflateMultiaddr(dir)
-          node.setDirectory(dirInfo)
-        } else if (false) { // eslint-disable-line
+        if (node.directory == null) {
           // TODO: get directory from remote peer (and amend message below)
-        } else {
           console.log('No directory specified, running without directory')
         }
 
@@ -63,8 +55,8 @@ module.exports = {
           const defaultEval = repl.eval
           repl.eval = promiseEval(defaultEval)
           repl.on('exit', () => {
-            process.exit();
-          });
+            process.exit()
+          })
         }).catch(err => {
           console.log(err)
         })
@@ -87,11 +79,4 @@ const promiseEval = (defaultEval) => (cmd, context, filename, callback) => {
       callback(null, result)
     }
   })
-}
-
-function bootstrap (opts: {identityPath: string}): Promise<Node> {
-  const {identityPath} = opts
-
-  return Identity.loadOrGenerateIdentity(identityPath)
-    .then(peerId => new Node({peerId}))
 }

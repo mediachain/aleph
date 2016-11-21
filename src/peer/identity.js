@@ -65,12 +65,20 @@ function loadOrGenerateIdentity (filePath: string): Promise<PeerId> {
 }
 
 function inflateMultiaddr (multiaddrString: string): PeerInfo {
+  // total hack to patch in support for /p2p/ multiaddrs, which should
+  // be supported upstream soon
+  multiaddrString = multiaddrString.replace('/p2p/', '/ipfs/')
+
   const multiaddr = Multiaddr(multiaddrString)
   const ipfsIdB58String = multiaddr.stringTuples().filter((tuple) => {
     if (tuple[0] === IPFS_CODE) {
       return true
     }
   })[0][1]
+  if (ipfsIdB58String == null) {
+    throw new Error('multiaddr string must contain /p2p/ or /ipfs/ protocol')
+  }
+
   const peerId = PeerId.createFromB58String(ipfsIdB58String)
   const peerInfo = new PeerInfo(peerId)
   peerInfo.multiaddr.add(multiaddr)
