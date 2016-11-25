@@ -2,8 +2,6 @@
 
 const yargs = require('yargs')
 
-const {deployCredsToTunnelConfig} = require('./util')
-
 yargs
   .usage('Usage: $0 [options] <command> [command-options]')
   .help()
@@ -14,11 +12,10 @@ yargs
     default: 'http://localhost:9002'
   })
   .option('deployCredentialsFile', {
-    coerce: deployCredsToTunnelConfig,
-    alias: 'sshTunnelConfig'
+    description: 'Path to a credentials file created by Mediachain Deploy',
   })
   .global('apiUrl')
-  .global('sshTunnelConfig')
+  .global('deployCredentialsFile')
   .commandDir('commands')
   .strict()
   .wrap(yargs.terminalWidth())

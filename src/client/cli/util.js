@@ -94,7 +94,7 @@ function deployCredsToTunnelConfig (deployCreds: Object | string, extraConfigOpt
 
 type GlobalOptions = {
   apiUrl: string,
-  sshTunnelConfig?: Object
+  deployCredentialsFile?: Object
 }
 
 type SubcommandGlobalOptions = {
@@ -103,8 +103,12 @@ type SubcommandGlobalOptions = {
 
 function subcommand (handler: (argv: SubcommandGlobalOptions) => Promise<*>): (argv: GlobalOptions) => void {
   return (argv: GlobalOptions) => {
-    const {apiUrl, sshTunnelConfig} = argv
+    const {apiUrl, deployCredentialsFile} = argv
     const client = new RestClient({apiUrl})
+
+    const sshTunnelConfig = (deployCredentialsFile != null)
+      ? deployCredsToTunnelConfig(deployCredentialsFile)
+      : null
 
     let sshTunnelPromise = Promise.resolve()
     let sshTunnel = null
