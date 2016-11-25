@@ -6,6 +6,7 @@ const { JQ_PATH } = require('../../metadata/jqStream')
 const childProcess = require('child_process')
 const sshTunnel = require('tunnel-ssh')
 const yaml = require('js-yaml')
+const { RestClient } = require('../api')
 
 function printJSON (obj: Object,
                     options: {color?: ?boolean, pretty?: boolean} = {}) {
@@ -58,11 +59,7 @@ function setupSSHTunnel(config: Object): Promise<Object> {
 
 function sshTunnelFromDeployCredentialsFile (filePath: string): Promise<Object> {
   const creds = loadDeployCredentials(filePath)
-  const config = deployCredsToTunnelConfig(creds, {
-    dstPort: '9002',
-    localHost: 'localhost',
-    keepAlive: true
-  })
+  const config = deployCredsToTunnelConfig(creds)
   return setupSSHTunnel(config)
 }
 
@@ -87,14 +84,58 @@ function deployCredsToTunnelConfig (deployCreds: Object | string, extraConfigOpt
   const opts = {
     username,
     password,
-    host
+    host,
+    dstPort: '9002',
+    localHost: 'localhost',
+    keepAlive: true
   }
   return Object.assign({}, opts, extraConfigOptions)
+}
+
+type GlobalOptions = {
+  apiUrl: string,
+  sshTunnelConfig?: Object
+}
+
+type SubcommandGlobalOptions = {
+  client: RestClient
+}
+
+function subcommand (handler: (argv: SubcommandGlobalOptions) => Promise<*>): (argv: GlobalOptions) => void {
+  return (argv: GlobalOptions) => {
+    const {apiUrl, sshTunnelConfig} = argv
+    const client = new RestClient({apiUrl})
+
+    let sshTunnelPromise = Promise.resolve()
+    let sshTunnel = null
+    if (sshTunnelConfig != null) {
+      sshTunnelPromise = setupSSHTunnel(sshTunnelConfig)
+        .then(tunnel => { sshTunnel = tunnel })
+    }
+
+    function closeTunnel () {
+      if (sshTunnel != null) {
+        sshTunnel.close()
+      }
+    }
+
+    const subcommandOptions = Object.assign({}, argv, {client})
+
+    sshTunnelPromise
+      .then(() => handler(subcommandOptions))
+      .then(closeTunnel)
+      .catch(err => {
+        closeTunnel()
+        throw err
+      })
+  }
 }
 
 module.exports = {
   printJSON,
   pluralizeCount,
   isB58Multihash,
+  subcommand,
+  deployCredsToTunnelConfig,
   sshTunnelFromDeployCredentialsFile
 }

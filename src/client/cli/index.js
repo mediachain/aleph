@@ -2,8 +2,7 @@
 
 const yargs = require('yargs')
 
-const {sshTunnelFromDeployCredentialsFile} = require('./util')
-let sshTunnel = null
+const {deployCredsToTunnelConfig} = require('./util')
 
 yargs
   .usage('Usage: $0 [options] <command> [command-options]')
@@ -15,25 +14,13 @@ yargs
     default: 'http://localhost:9002'
   })
   .option('deployCredentialsFile', {
-    coerce: (filePath) => {
-      if (sshTunnel != null) return filePath
-      console.log('in coerce')
-      sshTunnel = sshTunnelFromDeployCredentialsFile(filePath)
-      return filePath
-    },
-    alias: 'sshTunnel'
+    coerce: deployCredsToTunnelConfig,
+    alias: 'sshTunnelConfig'
   })
   .global('apiUrl')
-  .global('sshTunnel')
+  .global('sshTunnelConfig')
   .commandDir('commands')
   .strict()
   .wrap(yargs.terminalWidth())
   .argv
 
-
-if (sshTunnel != null) {
-  sshTunnel.then(tunnel => {
-    console.log('ssh tunnel setup, closing')
-    tunnel.close()
-  })
-}
