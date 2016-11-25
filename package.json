@@ -68,7 +68,7 @@
     "babel-register": "6.18.0",
     "eslint-plugin-flowtype": "2.25.0",
     "interface-connection": "^0.3.0",
-    "mocha": "3.1.2",
+    "mocha": "3.2.0",
     "mocha-eventually": "^1.1.0",
     "standard": "8.6.0"
   },
