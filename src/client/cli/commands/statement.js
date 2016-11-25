@@ -1,7 +1,7 @@
 // @flow
 
 const RestClient = require('../../api/RestClient')
-const { printJSON } = require('../util')
+const { subcommand, printJSON } = require('../util')
 
 module.exports = {
   command: 'statement <statementId>',
@@ -21,14 +21,13 @@ module.exports = {
     }
   },
 
-  handler: (opts: {statementId: string, apiUrl: string, color: ?boolean, pretty: boolean}) => {
-    const {statementId, apiUrl, color, pretty} = opts
-    const client = new RestClient({apiUrl})
+  handler: subcommand((opts: {client: RestClient, statementId: string, color: ?boolean, pretty: boolean}) => {
+    const {client, statementId, color, pretty} = opts
 
-    client.statement(statementId)
+    return client.statement(statementId)
       .then(
         obj => { printJSON(obj, {color, pretty}) },
         err => { console.error(err.message) }
       )
-  }
+  })
 }

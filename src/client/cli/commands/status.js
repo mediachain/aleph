@@ -1,6 +1,7 @@
 // @flow
 
 const RestClient = require('../../api/RestClient')
+const { subcommand } = require('../util')
 import type { NodeStatus } from '../../api/RestClient'
 
 module.exports = {
@@ -8,9 +9,8 @@ module.exports = {
   description: 'Get or set the status of the local node. ' +
     'If `newStatus` is not given, returns the current status. ' +
     '`newStatus` must be one of: online, offline, public\n',
-  handler: (opts: {apiUrl: string, newStatus?: string}) => {
-    const {apiUrl, newStatus} = opts
-    const client = new RestClient({apiUrl})
+  handler: subcommand((opts: {client: RestClient, newStatus?: string}) => {
+    const {client, newStatus} = opts
 
     if (!newStatus) {
       return client.getStatus().then(console.log)
@@ -27,10 +27,10 @@ module.exports = {
         console.error(`Cannot set status to ${newStatus}. Must be one of: online, offline, public`)
         return
     }
-    client.setStatus(status)
+    return client.setStatus(status)
       .then(
         returnedStatus => console.log(`status set to ${returnedStatus}`),
         err => console.error(err.message)
       )
-  }
+  })
 }

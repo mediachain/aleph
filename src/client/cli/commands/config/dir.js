@@ -1,15 +1,15 @@
 // @flow
 
 const RestClient = require('../../../api/RestClient')
+const { subcommand } = require('../../util')
 
 module.exports = {
   command: 'dir [dirId]',
   description: 'Get or set the directory server id.\n',
-  handler: (opts: {apiUrl: string, dirId?: string}) => {
-    const {apiUrl, dirId} = opts
-    const client = new RestClient({apiUrl})
+  handler: subcommand((opts: {client: RestClient, dirId?: string}) => {
+    const {client, dirId} = opts
     if (dirId) {
-      client.setDirectoryId(dirId)
+      return client.setDirectoryId(dirId)
         .then(() => {
           console.log(`set directory to ${dirId}`)
         })
@@ -20,5 +20,5 @@ module.exports = {
           err => console.error(err.message)
         )
     }
-  }
+  })
 }

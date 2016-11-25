@@ -3,6 +3,7 @@
 const fs = require('fs')
 const ndjson = require('ndjson')
 const RestClient = require('../../api/RestClient')
+const { subcommand } = require('../util')
 import type { Readable } from 'stream'
 
 const BATCH_SIZE = 1000
@@ -14,12 +15,12 @@ module.exports = {
     batchSize: { default: BATCH_SIZE }
   },
 
-  handler: (opts: {apiUrl: string, batchSize: number, filename: ?string}) => {
-    const {apiUrl, batchSize, filename} = opts
+  handler: subcommand((opts: {client: RestClient, batchSize: number, filename: ?string}) => {
+    const {client, batchSize, filename} = opts
     const streamName = filename || 'standard input'
-    const client = new RestClient({apiUrl})
 
     let items: Array<Object> = []
+    let promises: Array<Promise<*>> = []
 
     let inputStream: Readable
     if (filename) {
@@ -28,19 +29,35 @@ module.exports = {
       inputStream = process.stdin
     }
 
-    inputStream.pipe(ndjson.parse())
-      .on('data', obj => {
-        items.push(obj)
-        if (items.length >= batchSize) {
-          client.putData(...items).then(
-            hashes => {
-              hashes.forEach(h => console.log(h))
-            },
-            err => console.error(err.message)
-          )
-          items = []
-        }
-      })
-      .on('error', err => console.error(`Error reading from ${streamName}: `, err))
-  }
+    return new Promise((resolve, reject) => {
+      inputStream.pipe(ndjson.parse())
+        .on('data', obj => {
+          items.push(obj)
+          if (items.length >= batchSize) {
+            promises.push(putItems(client, items))
+            items = []
+          }
+        })
+        .on('end', () => {
+          if (items.length > 0) {
+            promises.push(putItems(client, items))
+          }
+          Promise.all(promises)
+            .then(() => resolve())
+        })
+        .on('error', err => {
+          console.error(`Error reading from ${streamName}: `, err)
+          reject(err)
+        })
+    })
+  })
+}
+
+function putItems (client: RestClient, items: Array<Object>): Promise<*> {
+  return client.putData(...items).then(
+    hashes => {
+      hashes.forEach(h => console.log(h))
+    },
+    err => console.error(err.message)
+  )
 }

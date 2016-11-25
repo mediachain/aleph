@@ -1,7 +1,7 @@
 // @flow
 
 const RestClient = require('../../api/RestClient')
-const { printJSON } = require('../util')
+const { printJSON, subcommand } = require('../util')
 
 module.exports = {
   command: 'getData <objectId>',
@@ -21,11 +21,10 @@ module.exports = {
     }
   },
 
-  handler: (opts: {apiUrl: string, objectId: string, color: ?boolean, pretty: boolean}) => {
-    const {apiUrl, objectId, color, pretty} = opts
-    const client = new RestClient({apiUrl})
+  handler: subcommand((opts: {client: RestClient, objectId: string, color: ?boolean, pretty: boolean}) => {
+    const {objectId, color, pretty} = opts
 
-    client.getData(objectId)
+    return client.getData(objectId)
       .then(
         obj => {
           if (obj instanceof Buffer) {
@@ -36,5 +35,5 @@ module.exports = {
         },
         err => console.error(err.message)
       )
-  }
+  })
 }

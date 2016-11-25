@@ -1,15 +1,15 @@
 // @flow
 
 const RestClient = require('../../../api/RestClient')
+const { subcommand } = require('../../util')
 
 module.exports = {
   command: 'nat [natConfig]',
   description: `Get or set the NAT configuration. Valid settings are 'none', 'auto', '*', '*:port', 'ip:port'. \n`,
-  handler: (opts: {apiUrl: string, natConfig?: string}) => {
-    const {apiUrl, natConfig} = opts
-    const client = new RestClient({apiUrl})
+  handler: subcommand((opts: {client: RestClient, natConfig?: string}) => {
+    const {client, natConfig} = opts
     if (natConfig) {
-      client.setNATConfig(natConfig)
+      return client.setNATConfig(natConfig)
         .then(() => {
           console.log(`set NAT configuration to "${natConfig}"`)
         })
@@ -23,5 +23,5 @@ module.exports = {
           err => console.error(err.message)
         )
     }
-  }
+  })
 }

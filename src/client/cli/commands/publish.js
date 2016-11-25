@@ -4,6 +4,7 @@ const fs = require('fs')
 const { JQTransform } = require('../../../metadata/jqStream')
 const objectPath = require('object-path')
 const RestClient = require('../../api/RestClient')
+const { subcommand } = require('../util')
 const { validate, validateSelfDescribingSchema, isSelfDescribingRecord } = require('../../../metadata/schema')
 import type { Readable } from 'stream'
 import type { SelfDescribingSchema } from '../../../metadata/schema'
@@ -13,7 +14,7 @@ const BATCH_SIZE = 1000
 type HandlerOptions = {
   namespace: string,
   schemaReference?: string,
-  apiUrl: string,
+  client: RestClient,
   jqFilter: string,
   idFilter: string,
   filename?: string,
@@ -69,10 +70,9 @@ module.exports = {
     }
   },
 
-  handler: (opts: HandlerOptions) => {
-    const {namespace, schemaReference, apiUrl, batchSize, filename, dryRun, skipSchemaValidation, jqFilter, idFilter, compound} = opts
+  handler: subcommand((opts: HandlerOptions) => {
+    const {client, namespace, schemaReference, batchSize, filename, dryRun, skipSchemaValidation, jqFilter, idFilter, compound} = opts
     const publishOpts = {namespace, compound}
-    const client = new RestClient({apiUrl})
 
     let stream: Readable
     let streamName = 'standard input'
@@ -102,8 +102,8 @@ module.exports = {
         })
     }
 
-    schemaPromise
-      .then(schema => {
+    return schemaPromise
+      .then(schema =>
         publishStream({
           stream,
           streamName,
@@ -115,12 +115,12 @@ module.exports = {
           schemaReference,
           schema,
           jqFilter: composeJQFilters(jqFilter, idFilter)})
-      })
+      )
       .catch(err => {
         console.error(err.message)
         process.exit(1)
       })
-  }
+  })
 }
 
 function publishStream (opts: {
@@ -134,7 +134,7 @@ function publishStream (opts: {
   schemaReference?: string,
   schema: ?SelfDescribingSchema,
   jqFilter: string
-}) {
+}): Promise<*> {
   const {
     stream,
     streamName,
@@ -156,89 +156,96 @@ function publishStream (opts: {
   let wki: string
   let obj: Object
 
-  stream.pipe(jq)
-    .on('data', jsonString => {
-      try {
-        const parsed = JSON.parse(jsonString)
-        wki = parsed.wki
-        obj = parsed.obj
-      } catch (err) {
-        throw new Error(`Error parsing jq output: ${err}\njq output: ${jsonString}`)
-      }
-
-      if (schema != null && !skipSchemaValidation) {
-        const result = validate(schema, obj)
-        if (!result.success) {
-          throw new Error(`Record failed validation: ${result.error.message}. Failed object: ${JSON.stringify(obj, null, 2)}`)
+  return new Promise((resolve, reject) => {
+    stream.pipe(jq)
+      .on('data', jsonString => {
+        try {
+          const parsed = JSON.parse(jsonString)
+          wki = parsed.wki
+          obj = parsed.obj
+        } catch (err) {
+          throw new Error(`Error parsing jq output: ${err}\njq output: ${jsonString}`)
         }
-      }
 
-      if (wki == null || wki.length < 1) {
-        throw new Error(
-          `Unable to extract id. Input record: \n` +
-          JSON.stringify(obj, null, 2)
-        )
-      }
-
-      wki = wki.toString()
-
-      const refs = [wki]
-      const tags = [] // TODO: support extracting tags
-      const deps = []
-
-      if (schemaReference != null) {
-        deps.push(schemaReference)
-
-        if (isSelfDescribingRecord(obj)) {
-          const ref = objectPath.get(obj, 'schema', '/')
-          if (ref !== schemaReference) {
-            throw new Error(
-              `Record contains reference to a different schema (${ref}) than the one specified ${schemaReference}`
-            )
-          }
-        } else {
-          obj = {
-            schema: {'/': schemaReference},
-            data: obj
+        if (schema != null && !skipSchemaValidation) {
+          const result = validate(schema, obj)
+          if (!result.success) {
+            throw new Error(`Record failed validation: ${result.error.message}. Failed object: ${JSON.stringify(obj, null, 2)}`)
           }
         }
-      }
 
-      if (dryRun) {
-        console.log(`refs: ${JSON.stringify(refs)}, tags: ${JSON.stringify(tags)}, deps: ${JSON.stringify(deps)}`)
-        return
-      }
+        if (wki == null || wki.length < 1) {
+          throw new Error(
+            `Unable to extract id. Input record: \n` +
+            JSON.stringify(obj, null, 2)
+          )
+        }
 
-      const stmt = {object: obj, refs, tags, deps}
+        wki = wki.toString()
 
-      statementBodies.push(obj)
-      statements.push(stmt)
+        const refs = [ wki ]
+        const tags = [] // TODO: support extracting tags
+        const deps = []
 
-      if (statementBodies.length >= batchSize) {
-        publishPromises.push(
-          publishBatch(client, publishOpts, statementBodies, statements)
-        )
-        statementBodies = []
-        statements = []
-      }
-    })
-    .on('error', err => console.error(`Error reading from ${streamName}: `, err))
-    .on('end', () => {
-      if (statementBodies.length > 0) {
-        publishPromises.push(
-          publishBatch(client, publishOpts, statementBodies, statements)
-        )
-      }
-      Promise.all(publishPromises)
-        .then(() => {
-          if (!dryRun) {
-            console.log('All statements published successfully')
+        if (schemaReference != null) {
+          deps.push(schemaReference)
+
+          if (isSelfDescribingRecord(obj)) {
+            const ref = objectPath.get(obj, 'schema', '/')
+            if (ref !== schemaReference) {
+              throw new Error(
+                `Record contains reference to a different schema (${ref}) than the one specified ${schemaReference}`
+              )
+            }
+          } else {
+            obj = {
+              schema: { '/': schemaReference },
+              data: obj
+            }
           }
-        })
-        .catch(err => {
-          console.error('Error publishing statements: ', err.message)
-        })
-    })
+        }
+
+        if (dryRun) {
+          console.log(`refs: ${JSON.stringify(refs)}, tags: ${JSON.stringify(tags)}, deps: ${JSON.stringify(deps)}`)
+          return
+        }
+
+        const stmt = { object: obj, refs, tags, deps }
+
+        statementBodies.push(obj)
+        statements.push(stmt)
+
+        if (statementBodies.length >= batchSize) {
+          publishPromises.push(
+            publishBatch(client, publishOpts, statementBodies, statements)
+          )
+          statementBodies = []
+          statements = []
+        }
+      })
+      .on('end', () => {
+        if (statementBodies.length > 0) {
+          publishPromises.push(
+            publishBatch(client, publishOpts, statementBodies, statements)
+          )
+        }
+        Promise.all(publishPromises)
+          .then(() => {
+            if (!dryRun) {
+              console.log('All statements published successfully')
+            }
+            resolve()
+          })
+          .catch(err => {
+            console.error('Error publishing statements: ', err.message)
+            reject(err)
+          })
+      })
+      .on('error', err => {
+        console.error(`Error reading from ${streamName}: `, err)
+        reject(err)
+      })
+  })
 }
 
 function publishBatch (client: RestClient,

@@ -1,7 +1,7 @@
 // @flow
 
 const RestClient = require('../../api/RestClient')
-const { printJSON } = require('../util')
+const { subcommand, printJSON } = require('../util')
 
 module.exports = {
   command: 'query <queryString>',
@@ -24,16 +24,18 @@ module.exports = {
     }
   },
   description: 'Send a mediachain query to the local node or a remote peer for evaluation.\n',
-  handler: (opts: {apiUrl: string, queryString: string, remotePeer?: string, pretty: boolean, color?: boolean}) => {
-    const {apiUrl, queryString, remotePeer, pretty, color} = opts
+  handler: subcommand((opts: {client: RestClient, queryString: string, remotePeer?: string, pretty: boolean, color?: boolean}) => {
+    const {client, queryString, remotePeer, pretty, color} = opts
 
-    const client = new RestClient({apiUrl})
-    client.queryStream(queryString, remotePeer)
-      .then(response => {
-        response.stream().on('data', result => {
-          printJSON(result, {color, pretty})
-        })
-      })
+    return client.queryStream(queryString, remotePeer)
+      .then(response => new Promise((resolve, reject) => {
+        response.stream()
+          .on('data', result => {
+            printJSON(result, {color, pretty})
+          })
+          .on('end', resolve)
+          .on('error', reject)
+      }))
       .catch(err => console.error(err.message))
-  }
+  })
 }
