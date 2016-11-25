@@ -3,7 +3,7 @@
 const ChildProcessStream = require('duplex-child-process')
 const byline = require('byline')
 const path = require('path')
-const JQ_PATH = path.join(__dirname, '..', '..', 'node_modules', '.bin', 'jq')
+const JQ_PATH = path.join(__dirname, '..', '..', 'bin', 'jq')
 
 class JQTransform extends ChildProcessStream {
   _args: Array<string>

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 const BinBuild = require('bin-build')
+const mkdirp = require('mkdirp')
 
 const JQ_INFO = {
   name: 'jq',
@@ -9,7 +10,8 @@ const JQ_INFO = {
 }
 
 const path = require('path')
-const outputPath = path.join(__dirname, '..', 'node_modules', '.bin', 'jq')
+const outputDir = path.join(__dirname, '..', 'bin')
+const outputPath = path.join(outputDir, 'jq')
 
 const fs = require('fs')
 try {
@@ -25,6 +27,7 @@ const build = new BinBuild()
   .cmd(`cp ./jq ${outputPath}`)
 
 console.log('building jq...')
+mkdirp.sync(outputDir)
 build.run((err) => {
   if (err) {
     console.log('err', err)
