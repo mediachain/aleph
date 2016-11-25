@@ -64,7 +64,7 @@ module.exports = {
     if (schema == null) {
       console.error('You must provide either the --schema or --jsonld arguments.')
       process.exit(1)
-      return  // flow doesn't seem to recognize process.exit
+      return Promise.resolve() // flow doesn't seem to recognize process.exit
     }
 
     let schemaPromise: Promise<SelfDescribingSchema>
@@ -74,7 +74,7 @@ module.exports = {
       schemaPromise = Promise.resolve(loadSelfDescribingSchema(schema))
     }
 
-    schemaPromise.then(schema =>
+    return schemaPromise.then(schema =>
       validateStream({
         stream,
         streamName,

@@ -1,5 +1,6 @@
 // @flow
 
+const { clone, set } = require('lodash')
 const fs = require('fs')
 const Multihash = require('multihashes')
 const { JQ_PATH } = require('../../metadata/jqStream')
@@ -48,7 +49,7 @@ function isB58Multihash (str: string): boolean {
   }
 }
 
-function setupSSHTunnel(config: Object): Promise<Object> {
+function setupSSHTunnel (config: Object): Promise<Object> {
   return new Promise((resolve, reject) => {
     sshTunnel(config, (err, server) => {
       if (err) return reject(err)
@@ -73,7 +74,7 @@ function loadDeployCredentials (filePath: string): Object {
   }
 }
 
-function deployCredsToTunnelConfig (deployCreds: Object | string, extraConfigOptions = {}): Object {
+function deployCredsToTunnelConfig (deployCreds: Object | string, extraConfigOptions: Object = {}): Object {
   if (typeof deployCreds === 'string') {
     deployCreds = loadDeployCredentials(deployCreds)
   }
@@ -97,11 +98,11 @@ type GlobalOptions = {
   deployCredentialsFile?: Object
 }
 
-type SubcommandGlobalOptions = {
+type SubcommandGlobalOptions = { // eslint-disable-line no-unused-vars
   client: RestClient
 }
 
-function subcommand (handler: (argv: SubcommandGlobalOptions) => Promise<*>): (argv: GlobalOptions) => void {
+function subcommand<T: SubcommandGlobalOptions> (handler: (argv: T) => Promise<*>): (argv: GlobalOptions) => void {
   return (argv: GlobalOptions) => {
     const {apiUrl, deployCredentialsFile} = argv
     const client = new RestClient({apiUrl})
@@ -123,7 +124,8 @@ function subcommand (handler: (argv: SubcommandGlobalOptions) => Promise<*>): (a
       }
     }
 
-    const subcommandOptions = Object.assign({}, argv, {client})
+    // Using lodash as a kind of flow "escape valve", since it's being stubborn
+    const subcommandOptions: T = set(clone(argv), 'client', client)
 
     sshTunnelPromise
       .then(() => handler(subcommandOptions))

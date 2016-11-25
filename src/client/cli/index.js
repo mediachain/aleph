@@ -12,7 +12,7 @@ yargs
     default: 'http://localhost:9002'
   })
   .option('deployCredentialsFile', {
-    description: 'Path to a credentials file created by Mediachain Deploy',
+    description: 'Path to a credentials file created by Mediachain Deploy'
   })
   .global('apiUrl')
   .global('deployCredentialsFile')

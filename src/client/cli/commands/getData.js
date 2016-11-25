@@ -22,7 +22,7 @@ module.exports = {
   },
 
   handler: subcommand((opts: {client: RestClient, objectId: string, color: ?boolean, pretty: boolean}) => {
-    const {objectId, color, pretty} = opts
+    const {client, objectId, color, pretty} = opts
 
     return client.getData(objectId)
       .then(

@@ -25,7 +25,7 @@ module.exports = {
         break
       default:
         console.error(`Cannot set status to ${newStatus}. Must be one of: online, offline, public`)
-        return
+        return Promise.resolve()
     }
     return client.setStatus(status)
       .then(
