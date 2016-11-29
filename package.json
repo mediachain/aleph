@@ -42,7 +42,7 @@
     "mafmt": "^2.1.2",
     "mkdirp": "https://registry.npmjs.org/mkdirp/-/mkdirp-0.5.1.tgz",
     "multiaddr": "2.1.1",
-    "multihashes": "^0.2.2",
+    "multihashes": "^0.3.0",
     "multihashing": "^0.2.1",
     "ndjson": "^1.4.3",
     "node-fetch": "^1.6.3",
