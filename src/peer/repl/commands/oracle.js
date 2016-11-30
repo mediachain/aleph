@@ -2,7 +2,7 @@
 
 const os = require('os')
 const { bootstrap } = require('../util')
-const web3 = require('web3');
+const Web3 = require('web3');
 
 module.exports = {
   command: 'oracle',
@@ -44,6 +44,7 @@ module.exports = {
         }
 
         init.then(() => {
+          let web3 = new Web3()
           web3.setProvider(new web3.providers.HttpProvider('http://localhost:8545'));
           console.log(web3);
         }).catch(err => {
