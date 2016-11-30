@@ -50,12 +50,11 @@ module.exports = {
         }
 
         init.then(() => {
-          let web3 = new Web3()
-          web3.setProvider(new web3.providers.HttpProvider(rpc));
+          let web3 = initEth(rpc)
           if(!web3.isConnected()){
             // TODO: may need to sleep here?
-            throw new Error(`Unable to connect to ethereum RPC: ${rpc}`)
-            process.exit()
+            console.error(`Unable to connect to ethereum RPC:`, rpc)
+            process.exit(-1)
           } else {
             // listener entrypoint here
             console.log(`Connected to ethereum RPC:`, rpc)
@@ -67,19 +66,8 @@ module.exports = {
   }
 }
 
-const EMPTY = '(' + os.EOL + ')'
-const promiseEval = (defaultEval) => (cmd, context, filename, callback) => {
-  if (cmd === EMPTY) return callback()
-  defaultEval(cmd, context, filename, (err, result) => {
-    if (err) { return callback(err) }
-
-    if (result instanceof Promise) {
-      result.then(
-        asyncResult => { callback(null, asyncResult) },
-        asyncErr => { callback(asyncErr) }
-      )
-    } else {
-      callback(null, result)
-    }
-  })
+function initEth(rpc: string): Web3 {
+  const web3 = new Web3()
+  web3.setProvider(new web3.providers.HttpProvider(rpc));
+  return web3
 }
