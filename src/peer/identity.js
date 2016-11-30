@@ -7,7 +7,7 @@ const Crypto = require('libp2p-crypto')
 const Multiaddr = require('multiaddr')
 
 const KEY_TYPE = 'RSA'  // change to ECC when possible
-const KEY_BITS = 1024
+const KEY_BITS = 2048
 const IPFS_CODE = 421
 
 function generateIdentity (): Promise<PeerId> {
