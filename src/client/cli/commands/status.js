@@ -24,13 +24,13 @@ module.exports = {
         status = newStatus
         break
       default:
-        console.error(`Cannot set status to ${newStatus}. Must be one of: online, offline, public`)
-        return Promise.resolve()
+        return Promise.reject(
+          new Error(`Cannot set status to ${newStatus}. Must be one of: online, offline, public`)
+        )
     }
     return client.setStatus(status)
-      .then(
-        returnedStatus => console.log(`status set to ${returnedStatus}`),
-        err => console.error(err.message)
-      )
+      .then(returnedStatus => {
+        console.log(`status set to ${returnedStatus}`)
+      })
   })
 }

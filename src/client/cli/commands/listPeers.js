@@ -24,8 +24,7 @@ module.exports = {
         } else {
           peers.forEach(p => console.log(p))
         }
-      },
-      err => { console.error(err.message) }
+      }
     )
   })
 }

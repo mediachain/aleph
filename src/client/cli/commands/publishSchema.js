@@ -31,6 +31,5 @@ module.exports = {
             console.log(`Object ID: ${objectId}`)
             console.log(`Statement ID: ${statementId}`)
           }))
-      .catch(err => console.error(err.message))
   })
 }

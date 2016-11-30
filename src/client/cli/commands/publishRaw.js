@@ -13,9 +13,6 @@ module.exports = {
     const {client, namespace, statementBodyId} = opts
 
     return client.publish({namespace}, {object: statementBodyId})
-      .then(
-        console.log,
-        err => console.error(err.message)
-      )
+      .then(console.log)
   })
 }

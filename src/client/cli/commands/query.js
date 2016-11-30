@@ -36,6 +36,5 @@ module.exports = {
           .on('end', resolve)
           .on('error', reject)
       }))
-      .catch(err => console.error(err.message))
   })
 }

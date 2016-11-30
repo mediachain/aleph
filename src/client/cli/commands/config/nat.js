@@ -14,14 +14,11 @@ module.exports = {
           console.log(`set NAT configuration to "${natConfig}"`)
         })
         .catch(err => {
-          console.error('Error setting NAT configuration: ', err.message)
+          throw new Error(`Error setting NAT configuration: ${err.message}`)
         })
     } else {
       return client.getNATConfig()
-        .then(
-          console.log,
-          err => console.error(err.message)
-        )
+        .then(console.log)
     }
   })
 }

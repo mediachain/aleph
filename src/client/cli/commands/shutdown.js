@@ -9,8 +9,7 @@ module.exports = {
   handler: subcommand((opts: {client: RestClient}) => {
     const {client} = opts
     return client.shutdown().then(
-      console.log('Node shutdown successfully'),
-      err => { console.error(err.message) }
+      console.log('Node shutdown successfully')
     )
   })
 }

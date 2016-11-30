@@ -11,6 +11,5 @@ module.exports = {
     const client = new RestClient({apiUrl})
     return client.revokeAuthorization(peerId)
       .then(() => { console.log(`Revoked authorization for ${peerId}.`) })
-      .catch(err => { console.error(err.message) })
   })
 }

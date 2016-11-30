@@ -16,7 +16,6 @@ module.exports = {
           `merged ${pluralizeCount(statementCount, 'statement')} and ${pluralizeCount(objectCount, 'object')}`
         )
       })
-      .catch(err => console.error(err.message))
   })
 }
 

@@ -21,8 +21,9 @@ module.exports = {
               console.log(addr)
             })
           }
-        },
-        err => console.error('Error retrieving addresses: ', err.message)
+        })
+      .catch(
+        err => { throw new Error(`Error retrieving addresses: ${err.message}`) }
       )
   })
 }

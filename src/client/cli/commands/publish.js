@@ -116,10 +116,6 @@ module.exports = {
           schema,
           jqFilter: composeJQFilters(jqFilter, idFilter)})
       )
-      .catch(err => {
-        console.error(err.message)
-        process.exit(1)
-      })
   })
 }
 
@@ -236,14 +232,10 @@ function publishStream (opts: {
             }
             resolve()
           })
-          .catch(err => {
-            console.error('Error publishing statements: ', err.message)
-            reject(err)
-          })
+          .catch(reject)
       })
       .on('error', err => {
-        console.error(`Error reading from ${streamName}: `, err)
-        reject(err)
+        reject(new Error(`Error reading from ${streamName}: ${err.message}`))
       })
   })
 }

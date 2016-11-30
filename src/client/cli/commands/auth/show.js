@@ -10,6 +10,5 @@ module.exports = {
     const {client} = opts
     return client.getAuthorizations()
       .then(authInfo => printJSON(authInfo))
-      .catch(err => console.error(err.message))
   })
 }

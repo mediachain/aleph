@@ -19,6 +19,5 @@ module.exports = {
         console.log(`Granted authorizations for peer ${peerId}:`)
         printJSON(auths[peerId])
       })
-      .catch(err => console.error(err.message))
   })
 }

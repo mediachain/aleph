@@ -13,6 +13,5 @@ module.exports = {
       .then(count => {
         console.log(`Deleted ${pluralizeCount(count, 'statement')}`)
       })
-      .catch(err => console.error(err.message))
   })
 }

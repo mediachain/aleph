@@ -132,7 +132,8 @@ function subcommand<T: SubcommandGlobalOptions> (handler: (argv: T) => Promise<*
       .then(closeTunnel)
       .catch(err => {
         closeTunnel()
-        throw err
+        console.error(err.message)
+        process.exit(1)
       })
   }
 }

@@ -15,10 +15,7 @@ module.exports = {
         })
     } else {
       return client.getInfo()
-        .then(
-          console.log,
-          err => console.error(err.message)
-        )
+        .then(console.log)
     }
   })
 }

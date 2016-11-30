@@ -25,9 +25,6 @@ module.exports = {
     const {client, statementId, color, pretty} = opts
 
     return client.statement(statementId)
-      .then(
-        obj => { printJSON(obj, {color, pretty}) },
-        err => { console.error(err.message) }
-      )
+      .then(obj => { printJSON(obj, {color, pretty}) })
   })
 }

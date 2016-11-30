@@ -62,9 +62,7 @@ module.exports = {
     }
 
     if (schema == null) {
-      console.error('You must provide either the --schema or --jsonld arguments.')
-      process.exit(1)
-      return Promise.resolve() // flow doesn't seem to recognize process.exit
+      throw new Error('You must provide either the --schema or --jsonld arguments.')
     }
 
     let schemaPromise: Promise<SelfDescribingSchema>
@@ -102,20 +100,18 @@ function validateStream (opts: {
 
   const jq = new JQTransform(jqFilter)
 
-  return new Promise(resolve => {
+  return new Promise((resolve, reject) => {
     stream.pipe(jq)
       .on('data', jsonString => {
         const obj = JSON.parse(jsonString)
         const result = validate(schema, obj)
         if (!result.success) {
-          console.error(`${result.error.message}.\nFailed object:\n${jsonString}`)
-          process.exit(1)
+          return reject(new Error(`${result.error.message}.\nFailed object:\n${jsonString}`))
         }
         count += 1
       })
       .on('error', err => {
-        console.error(`Error reading from ${streamName}: `, err.message)
-        process.exit(1)
+        return reject(new Error(`Error reading from ${streamName}: ${err.message}`))
       })
       .on('end', () => {
         console.log(`${pluralizeCount(count, 'statement')} validated successfully`)

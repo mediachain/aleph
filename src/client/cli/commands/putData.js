@@ -46,7 +46,7 @@ module.exports = {
             .then(() => resolve())
         })
         .on('error', err => {
-          console.error(`Error reading from ${streamName}: `, err)
+          err = new Error(`Error reading from ${streamName}: ${err.message}`)
           reject(err)
         })
     })
@@ -57,7 +57,6 @@ function putItems (client: RestClient, items: Array<Object>): Promise<*> {
   return client.putData(...items).then(
     hashes => {
       hashes.forEach(h => console.log(h))
-    },
-    err => console.error(err.message)
+    }
   )
 }

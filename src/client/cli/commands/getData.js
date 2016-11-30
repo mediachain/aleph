@@ -32,8 +32,7 @@ module.exports = {
           } else {
             printJSON(obj, {color, pretty})
           }
-        },
-        err => console.error(err.message)
+        }
       )
   })
 }

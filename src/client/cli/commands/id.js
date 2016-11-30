@@ -9,10 +9,8 @@ module.exports = {
     'or a remote peer if `peerId` is given and a directory server is connected.\n',
   handler: subcommand((opts: {client: RestClient, peerId?: string}) => {
     const {client, peerId} = opts
-    return client.id(peerId).then(
-      printIds,
-      err => { console.error(err.message) }
-    )
+    return client.id(peerId)
+      .then(printIds)
   })
 }
 
