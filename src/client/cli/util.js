@@ -1,8 +1,11 @@
 // @flow
 
+const fs = require('fs')
 const Multihash = require('multihashes')
 const { JQ_PATH } = require('../../metadata/jqStream')
 const childProcess = require('child_process')
+const sshTunnel = require('tunnel-ssh')
+const yaml = require('js-yaml')
 
 function printJSON (obj: Object,
                     options: {color?: ?boolean, pretty?: boolean} = {}) {
@@ -44,8 +47,54 @@ function isB58Multihash (str: string): boolean {
   }
 }
 
+function setupSSHTunnel(config: Object): Promise<Object> {
+  return new Promise((resolve, reject) => {
+    sshTunnel(config, (err, server) => {
+      if (err) return reject(err)
+      resolve(server)
+    })
+  })
+}
+
+function sshTunnelFromDeployCredentialsFile (filePath: string): Promise<Object> {
+  const creds = loadDeployCredentials(filePath)
+  const config = deployCredsToTunnelConfig(creds, {
+    dstPort: '9002',
+    localHost: 'localhost',
+    keepAlive: true
+  })
+  return setupSSHTunnel(config)
+}
+
+function loadDeployCredentials (filePath: string): Object {
+  if (filePath.endsWith('.yaml')) {
+    return yaml.safeLoad(fs.readFileSync(filePath, 'utf8'))
+  } else if (filePath.endsWith('.json')) {
+    return JSON.parse(fs.readFileSync(filePath, 'utf8'))
+  } else {
+    throw new Error('Loading deploy credentials is only supported from .json or .yaml files')
+  }
+}
+
+function deployCredsToTunnelConfig (deployCreds: Object | string, extraConfigOptions = {}): Object {
+  if (typeof deployCreds === 'string') {
+    deployCreds = loadDeployCredentials(deployCreds)
+  }
+  const {ip: host, vps_user: {name: username, password}} = deployCreds
+  if (host == null || username == null || password == null) {
+    throw new Error('Deploy credentials are in unexpected format')
+  }
+  const opts = {
+    username,
+    password,
+    host
+  }
+  return Object.assign({}, opts, extraConfigOptions)
+}
+
 module.exports = {
   printJSON,
   pluralizeCount,
-  isB58Multihash
+  isB58Multihash,
+  sshTunnelFromDeployCredentialsFile
 }
