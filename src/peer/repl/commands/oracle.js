@@ -15,10 +15,16 @@ module.exports = {
         'describe': 'directory to connect to (multiaddress)',
         'demand': false
       })
+      .option('rpc', {
+        'type': 'string',
+        'describe': 'ethereum RPC host to connect to',
+        // can use http://eth3.augur.net:8545 testnet public node
+        'default': 'http://localhost:8545'
+      })
       .help()
   },
-  handler: (opts: {dir?: string, remotePeer?: string, identityPath: string}) => {
-    const {remotePeer} = opts
+  handler: (opts: {dir?: string, remotePeer?: string, identityPath: string, rpc: string}) => {
+    const {remotePeer, rpc} = opts
 
     bootstrap(opts)
       .catch(err => {
@@ -45,8 +51,15 @@ module.exports = {
 
         init.then(() => {
           let web3 = new Web3()
-          web3.setProvider(new web3.providers.HttpProvider('http://localhost:8545'));
-          console.log(web3);
+          web3.setProvider(new web3.providers.HttpProvider(rpc));
+          if(!web3.isConnected()){
+            // TODO: may need to sleep here?
+            throw new Error(`Unable to connect to ethereum RPC: ${rpc}`)
+            process.exit()
+          } else {
+            // listener entrypoint here
+            console.log(`Connected to ethereum RPC:`, rpc)
+          }
         }).catch(err => {
           console.log(err)
         })
