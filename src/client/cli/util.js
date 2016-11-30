@@ -57,45 +57,41 @@ function setupSSHTunnel (config: Object): Promise<Object> {
   })
 }
 
-function sshTunnelFromDeployCredentialsFile (filePath: string): Promise<Object> {
-  const creds = loadDeployCredentials(filePath)
-  const config = deployCredsToTunnelConfig(creds)
-  return setupSSHTunnel(config)
+function ensureAll (obj: Object, keys: Array<string>, description: string = 'object') {
+  for (const key of keys) {
+    if (obj[key] === undefined) {
+      throw new Error(`${description} is missing required field ${key}`)
+    }
+  }
 }
 
-function loadDeployCredentials (filePath: string): Object {
-  return JSON.parse(fs.readFileSync(filePath, 'utf8'))
+function ensureAny (obj: Object, keys: Array<string>, description: string = 'object') {
+  for (const key of keys) {
+    if (obj[key] !== undefined) return
+  }
+  throw new Error(`${description} must have one of the following fields: ${keys.join(', ')}`)
 }
 
-function deployCredsToTunnelConfig (deployCreds: Object | string, extraConfigOptions: Object = {}): Object {
-  if (typeof deployCreds === 'string') {
-    deployCreds = loadDeployCredentials(deployCreds)
-  }
-  const {host, username, password, privateKey} = deployCreds
-  if (host == null || username == null || (password == null && privateKey == null)) {
-    throw new Error('Deploy credentials are in unexpected format')
+function prepareSSHConfig (config: Object | string): Object {
+  if (typeof config === 'string') {
+    config = JSON.parse(fs.readFileSync(config, 'utf8'))
   }
 
-  const opts: Object = {
-    username,
-    host,
+  ensureAll(config, ['host', 'username'], 'SSH configuration')
+  ensureAny(config, ['password', 'privateKey'], 'SSH configuration')
+
+  const defaultOpts = {
     dstPort: '9002',
     localHost: 'localhost',
     keepAlive: true
   }
 
-  if (privateKey) {
-    opts.privateKey = privateKey
-  } else {
-    opts.password = password
-  }
-
-  return Object.assign({}, opts, extraConfigOptions)
+  return Object.assign({}, defaultOpts, config)
 }
 
 type GlobalOptions = {
   apiUrl: string,
-  deployCredentialsFile?: Object
+  sshConfig?: string | Object
 }
 
 type SubcommandGlobalOptions = { // eslint-disable-line no-unused-vars
@@ -104,11 +100,11 @@ type SubcommandGlobalOptions = { // eslint-disable-line no-unused-vars
 
 function subcommand<T: SubcommandGlobalOptions> (handler: (argv: T) => Promise<*>): (argv: GlobalOptions) => void {
   return (argv: GlobalOptions) => {
-    const {apiUrl, deployCredentialsFile} = argv
+    const {apiUrl, sshConfig} = argv
     const client = new RestClient({apiUrl})
 
-    const sshTunnelConfig = (deployCredentialsFile != null)
-      ? deployCredsToTunnelConfig(deployCredentialsFile)
+    const sshTunnelConfig = (sshConfig != null)
+      ? prepareSSHConfig(sshConfig)
       : null
 
     let sshTunnelPromise
@@ -145,6 +141,5 @@ module.exports = {
   pluralizeCount,
   isB58Multihash,
   subcommand,
-  deployCredsToTunnelConfig,
-  sshTunnelFromDeployCredentialsFile
+  prepareSSHConfig
 }
