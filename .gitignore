@@ -45,3 +45,4 @@ lib/
 *.sublime-project
 *.sublime-workspace
 
+bin/jq
