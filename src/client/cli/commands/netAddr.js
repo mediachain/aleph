@@ -1,15 +1,15 @@
 // @flow
 
 const RestClient = require('../../api/RestClient')
+const { subcommand } = require('../util')
 
 module.exports = {
   command: 'netAddr',
   describe: `Print the local node's network addresses in multiaddr format.\n`,
-  handler: (opts: {apiUrl: string}) => {
-    const {apiUrl} = opts
+  handler: subcommand((opts: {client: RestClient}) => {
+    const {client} = opts
 
-    const client = new RestClient({apiUrl})
-    client.getNetAddresses()
+    return client.getNetAddresses()
       .then(
         addresses => {
           if (addresses.length < 1) {
@@ -21,8 +21,9 @@ module.exports = {
               console.log(addr)
             })
           }
-        },
-        err => console.error('Error retrieving addresses: ', err.message)
+        })
+      .catch(
+        err => { throw new Error(`Error retrieving addresses: ${err.message}`) }
       )
-  }
+  })
 }

@@ -1,6 +1,7 @@
 // @flow
 
 const RestClient = require('../../api/RestClient')
+const { subcommand } = require('../util')
 
 module.exports = {
   command: 'listPeers',
@@ -14,33 +15,35 @@ module.exports = {
   },
   description: `Fetch a list of remote peers from the directory server. The local node must be ` +
     `configured to use a directory server.\n`,
-  handler: (opts: {apiUrl: string, info: boolean}) => {
-    const {apiUrl, info} = opts
-    const client = new RestClient({apiUrl})
-    client.listPeers().then(
+  handler: subcommand((opts: {client: RestClient, info: boolean}) => {
+    const {client, info} = opts
+    return client.listPeers().then(
       peers => {
         if (info) {
-          fetchInfos(client, peers)
+          return fetchInfos(client, peers)
         } else {
           peers.forEach(p => console.log(p))
         }
-      },
-      err => { console.error(err.message) }
+      }
     )
-  }
+  })
 }
 
-function fetchInfos (client: RestClient, peerIds: Array<string>) {
+function fetchInfos (client: RestClient, peerIds: Array<string>): Promise<*> {
+  const promises: Array<Promise<*>> = []
   for (const peer of peerIds) {
-    client.id(peer)
-      .then(ids => {
-        let msg = 'No info published'
-        if (ids.info != null && ids.info.length > 0) {
-          msg = ids.info
-        }
-        return peer + ` -- ${msg}`
-      })
-      .catch(err => `${peer} -- Unable to fetch info: ${err.message}`)
-      .then(console.log)
+    promises.push(
+      client.id(peer)
+        .then(ids => {
+          let msg = 'No info published'
+          if (ids.info != null && ids.info.length > 0) {
+            msg = ids.info
+          }
+          return peer + ` -- ${msg}`
+        })
+        .catch(err => `${peer} -- Unable to fetch info: ${err.message}`)
+        .then(console.log)
+    )
   }
+  return Promise.all(promises)
 }

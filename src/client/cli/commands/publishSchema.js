@@ -1,6 +1,7 @@
 // @flow
 
 const RestClient = require('../../api/RestClient')
+const { subcommand } = require('../util')
 const { loadSelfDescribingSchema, schemaDescriptionToWKI } = require('../../../metadata/schema')
 
 const SCHEMA_NAMESPACE = 'mediachain.schemas'
@@ -16,14 +17,13 @@ module.exports = {
     }
   },
 
-  handler: (opts: {apiUrl: string, schemaName: string, version: string, filename: string, namespace: string}) => {
-    const {apiUrl, filename, namespace} = opts
-    const client = new RestClient({apiUrl})
+  handler: subcommand((opts: {client: RestClient, schemaName: string, version: string, filename: string, namespace: string}) => {
+    const {client, filename, namespace} = opts
 
     const schema = loadSelfDescribingSchema(filename)
     const wki = schemaDescriptionToWKI(schema.self)
 
-    client.putData(schema)
+    return client.putData(schema)
       .then(([objectId]) =>
         client.publish({namespace}, {object: objectId, refs: [wki]})
           .then(([statementId]) => {
@@ -31,6 +31,5 @@ module.exports = {
             console.log(`Object ID: ${objectId}`)
             console.log(`Statement ID: ${statementId}`)
           }))
-      .catch(err => console.error(err.message))
-  }
+  })
 }

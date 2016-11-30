@@ -5,12 +5,12 @@ const path = require('path')
 const RestClient = require('../../api/RestClient')
 const { JQTransform } = require('../../../metadata/jqStream')
 const { validate, loadSelfDescribingSchema, validateSelfDescribingSchema } = require('../../../metadata/schema')
-const { pluralizeCount, isB58Multihash } = require('../util')
+const { subcommand, pluralizeCount, isB58Multihash } = require('../util')
 import type { Readable } from 'stream'
 import type { SelfDescribingSchema } from '../../../metadata/schema'
 
 type HandlerOptions = {
-  apiUrl: string,
+  client: RestClient,
   schema?: string,
   jsonld: boolean,
   filename?: string,
@@ -43,8 +43,8 @@ module.exports = {
     }
   },
 
-  handler: (opts: HandlerOptions) => {
-    const { apiUrl, filename, jqFilter, jsonld } = opts
+  handler: subcommand((opts: HandlerOptions) => {
+    const { client, filename, jqFilter, jsonld } = opts
     let { schema } = opts
     let streamName = 'standard input'
 
@@ -62,28 +62,25 @@ module.exports = {
     }
 
     if (schema == null) {
-      console.error('You must provide either the --schema or --jsonld arguments.')
-      process.exit(1)
-      return  // flow doesn't seem to recognize process.exit
+      throw new Error('You must provide either the --schema or --jsonld arguments.')
     }
 
     let schemaPromise: Promise<SelfDescribingSchema>
     if (isB58Multihash(schema)) {
-      const client = new RestClient({apiUrl})
       schemaPromise = client.getData(schema).then(validateSelfDescribingSchema)
     } else {
       schemaPromise = Promise.resolve(loadSelfDescribingSchema(schema))
     }
 
-    schemaPromise.then(schema => {
+    return schemaPromise.then(schema =>
       validateStream({
         stream,
         streamName,
         schema,
         jqFilter
       })
-    })
-  }
+    )
+  })
 }
 
 function validateStream (opts: {
@@ -91,7 +88,7 @@ function validateStream (opts: {
   streamName: string,
   schema: SelfDescribingSchema,
   jqFilter: string
-}) {
+}): Promise<*> {
   const {
     stream,
     streamName,
@@ -103,22 +100,23 @@ function validateStream (opts: {
 
   const jq = new JQTransform(jqFilter)
 
-  stream.pipe(jq)
-    .on('data', jsonString => {
-      const obj = JSON.parse(jsonString)
-      const result = validate(schema, obj)
-      if (!result.success) {
-        console.error(`${result.error.message}.\nFailed object:\n${jsonString}`)
-        process.exit(1)
-      }
-      count += 1
-    })
-    .on('error', err => {
-      console.error(`Error reading from ${streamName}: `, err.message)
-      process.exit(1)
-    })
-    .on('end', () => {
-      console.log(`${pluralizeCount(count, 'statement')} validated successfully`)
-    })
+  return new Promise((resolve, reject) => {
+    stream.pipe(jq)
+      .on('data', jsonString => {
+        const obj = JSON.parse(jsonString)
+        const result = validate(schema, obj)
+        if (!result.success) {
+          return reject(new Error(`${result.error.message}.\nFailed object:\n${jsonString}`))
+        }
+        count += 1
+      })
+      .on('error', err => {
+        return reject(new Error(`Error reading from ${streamName}: ${err.message}`))
+      })
+      .on('end', () => {
+        console.log(`${pluralizeCount(count, 'statement')} validated successfully`)
+        resolve()
+      })
+  })
 }
 

@@ -1,6 +1,7 @@
 // @flow
 
 const RestClient = require('../../api/RestClient')
+const { subcommand } = require('../util')
 
 module.exports = {
   command: 'publishRaw <namespace> <statementBodyId>',
@@ -8,14 +9,10 @@ module.exports = {
     'already been stored in the node.  `statementBodyId` should be the multihash ' +
     'identifier of the statement body.\n',
 
-  handler: (opts: {namespace: string, apiUrl: string, statementBodyId: string}) => {
-    const {namespace, apiUrl, statementBodyId} = opts
-    const client = new RestClient({apiUrl})
+  handler: subcommand((opts: {client: RestClient, namespace: string, statementBodyId: string}) => {
+    const {client, namespace, statementBodyId} = opts
 
-    client.publish({namespace}, {object: statementBodyId})
-      .then(
-        console.log,
-        err => console.error(err.message)
-      )
-  }
+    return client.publish({namespace}, {object: statementBodyId})
+      .then(console.log)
+  })
 }

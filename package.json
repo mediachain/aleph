@@ -58,6 +58,7 @@
     "pull-stream": "3.5.0",
     "thenify": "https://registry.npmjs.org/thenify/-/thenify-3.2.1.tgz",
     "thenify-all": "^1.6.0",
+    "tunnel-ssh": "^4.1.1",
     "varint": "5.0.0",
     "yargs": "^6.3.0"
   },

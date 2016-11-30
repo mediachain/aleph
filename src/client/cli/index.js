@@ -11,8 +11,13 @@ yargs
     description: 'Root URL of the REST API for a mediachain node',
     default: 'http://localhost:9002'
   })
+  .option('sshConfig', {
+    description: 'Path to a configuration file for SSH tunnelling, e.g. the credentials file created by Mediachain Deploy'
+  })
   .global('apiUrl')
+  .global('sshConfig')
   .commandDir('commands')
   .strict()
   .wrap(yargs.terminalWidth())
   .argv
+
