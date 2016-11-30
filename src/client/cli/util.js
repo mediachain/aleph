@@ -111,11 +111,13 @@ function subcommand<T: SubcommandGlobalOptions> (handler: (argv: T) => Promise<*
       ? deployCredsToTunnelConfig(deployCredentialsFile)
       : null
 
-    let sshTunnelPromise = Promise.resolve()
+    let sshTunnelPromise
     let sshTunnel = null
     if (sshTunnelConfig != null) {
       sshTunnelPromise = setupSSHTunnel(sshTunnelConfig)
         .then(tunnel => { sshTunnel = tunnel })
+    } else {
+      sshTunnelPromise = Promise.resolve()
     }
 
     function closeTunnel () {
