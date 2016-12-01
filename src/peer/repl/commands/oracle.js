@@ -21,6 +21,12 @@ module.exports = {
         // can use http://eth3.augur.net:8545 testnet public node
         'default': 'http://localhost:8545'
       })
+      .option('namespace', {
+        'alias': 'ns',
+        'type': 'string',
+        'describe': 'which namespace to act as oracle for',
+        'demand': true
+      })
       .help()
   },
   handler: (opts: {dir?: string, remotePeer?: string, identityPath: string, rpc: string}) => {
@@ -56,8 +62,9 @@ module.exports = {
             console.error(`Unable to connect to ethereum RPC:`, rpc)
             process.exit(-1)
           } else {
-            // listener entrypoint here
             console.log(`Connected to ethereum RPC:`, rpc)
+            // ope.watch(orderPlacedHandler)
+            // oce.watch(orderCompletedHandler)
           }
         }).catch(err => {
           console.log(err)
@@ -70,4 +77,19 @@ function initEth(rpc: string): Web3 {
   const web3 = new Web3()
   web3.setProvider(new web3.providers.HttpProvider(rpc));
   return web3
+}
+
+function orderPlacedHandler(err, event) {
+  // listen for OrderPlaced event, call completeOrder
+
+  // registration (write)
+  // token.completeOrder(config.namespace, thing,
+  // config.namespaceOwner, {from: account});
+
+  // lookup (read)
+  // token.completeOrder(thing.id, buyer,
+  // thing.owner, {from: account});
+}
+
+function orderCompletedHandler(err, event){
 }
