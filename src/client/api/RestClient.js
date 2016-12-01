@@ -2,6 +2,7 @@
 
 const fetch: (url: string, opts?: Object) => Promise<FetchResponse> = require('node-fetch')
 const ndjson = require('ndjson')
+const byline = require('byline')
 const serialize = require('../../metadata/serialize')
 
 import type { Transform as TransformStream, Duplex as DuplexStream } from 'stream'
@@ -208,6 +209,17 @@ class RestClient {
           return bytes
         }
       })
+  }
+
+  getDatastoreKeys (): Promise<Array<string>> {
+    return this.getRequest('data/keys')
+      .then(r => r.text())
+      .then(s => s.split('\n').filter(line => line.length > 0))
+  }
+
+  getDatastoreKeyStream (): Promise<TransformStream> {
+    return this.getRequest('data/keys')
+      .then(r => byline(r.body))
   }
 
   garbageCollectDatastore (): Promise<number> {
