@@ -210,7 +210,7 @@ class RestClient {
       })
   }
 
-  garbageCollect (): Promise<number> {
+  garbageCollectDatastore (): Promise<number> {
     return this.postRequest('data/gc', '', false)
       .then(r => r.text())
       .then(Number.parseInt)
