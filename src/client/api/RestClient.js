@@ -210,6 +210,24 @@ class RestClient {
       })
   }
 
+  garbageCollect (): Promise<number> {
+    return this.postRequest('data/gc', '', false)
+      .then(r => r.text())
+      .then(Number.parseInt)
+  }
+
+  compactDatastore (): Promise<boolean> {
+    return this.postRequest('data/compact', '', false)
+      .then(r => r.text())
+      .then(s => s.trim() === 'OK')
+  }
+
+  syncDatastore (): Promise<boolean> {
+    return this.postRequest('data/sync', '', false)
+      .then(r => r.text())
+      .then(s => s.trim() === 'OK')
+  }
+
   listPeers (): Promise<Array<string>> {
     return this.getRequest('dir/list')
       .then(r => r.text())
