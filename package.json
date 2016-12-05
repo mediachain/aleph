@@ -7,7 +7,7 @@
     "build-jq": "node scripts/build-jq.js",
     "postinstall": "npm run build-jq",
     "test": "mocha --compilers js:babel-register ./test",
-    "build": "mkdir -p ./lib && babel --copy-files src -d lib",
+    "build": "mkdirp ./lib && babel --copy-files src -d lib",
     "check": "standard && flow",
     "cli": "npm run build >/dev/null && node ./lib/client/cli/index.js",
     "prepublish": "npm run build"
