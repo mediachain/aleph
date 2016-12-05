@@ -313,6 +313,13 @@ class RestClient {
       .then(addrs => addrs.filter(s => s.length > 0))
   }
 
+  netLookup (peerId: string): Promise<Array<string>> {
+    return this.getRequest(`net/lookup/${peerId}`)
+      .then(r => r.text())
+      .then(s => s.split('\n'))
+      .then(a => a.filter(s => s.length > 0))
+  }
+
   shutdown (): Promise<boolean> {
     return this.postRequest('shutdown', '', false)
       .then(() => true)

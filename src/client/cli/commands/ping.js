@@ -6,7 +6,7 @@ const { subcommand } = require('../util')
 module.exports = {
   command: 'ping <peerId>',
   describe: 'Ping a remote peer, identified by `peerId`. ' +
-  'The local node must be configured to use a directory server.\n',
+  'Will attempt to lookup the peer with a configured directory server or DHT.\n',
   handler: subcommand((opts: {peerId: string, client: RestClient}) => {
     const {peerId, client} = opts
     console.log('Pinging peer: ', peerId)
