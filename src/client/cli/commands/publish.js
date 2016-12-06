@@ -93,7 +93,7 @@ module.exports = {
         })
         .then((schema) => {
           try {
-            schema = validateSelfDescribingSchema(schema)
+            return validateSelfDescribingSchema(schema)
           } catch (err) {
             throw new Error(
               `Schema with object id ${schemaReference} is not a valid self-describing schema: ${err.message}`
@@ -160,13 +160,13 @@ function publishStream (opts: {
           wki = parsed.wki
           obj = parsed.obj
         } catch (err) {
-          throw new Error(`Error parsing jq output: ${err}\njq output: ${jsonString}`)
+          return reject(new Error(`Error parsing jq output: ${err}\njq output: ${jsonString}`))
         }
 
         if (schema != null && !skipSchemaValidation) {
           const result = validate(schema, obj)
           if (!result.success) {
-            throw new Error(`Record failed validation: ${result.error.message}. Failed object: ${JSON.stringify(obj, null, 2)}`)
+            return reject(new Error(`Record failed validation: ${result.error.message}. Failed object: ${JSON.stringify(obj, null, 2)}`))
           }
         }
 
