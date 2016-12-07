@@ -189,9 +189,9 @@ function publishStream (opts: {
           if (isSelfDescribingRecord(obj)) {
             const ref = objectPath.get(obj, 'schema', '/')
             if (ref !== schemaReference) {
-              throw new Error(
+              return reject(new Error(
                 `Record contains reference to a different schema (${ref}) than the one specified ${schemaReference}`
-              )
+              ))
             }
           } else {
             obj = {
