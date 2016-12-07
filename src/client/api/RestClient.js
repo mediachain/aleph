@@ -119,8 +119,7 @@ class RestClient {
     }
 
     return this.postRequest(path, statementNDJSON, false)
-      .then(r => r.text())
-      .then(text => text.split('\n').filter(text => text.length > 0))
+      .then(parseStringArrayResponse)
   }
 
   statement (statementId: string): Promise<StatementMsg> {
@@ -144,32 +143,17 @@ class RestClient {
 
   merge (queryString: string, remotePeer: string): Promise<{statementCount: number, objectCount: number}> {
     return this.postRequest(`merge/${remotePeer}`, queryString, false)
-      .then(r => r.text())
-      .then(resp => {
-        const counts = resp.split('\n')
-          .filter(line => line.length > 0)
-          .map(line => Number.parseInt(line))
-        const [statementCount, objectCount] = counts
-        return {statementCount, objectCount}
-      })
+      .then(parseMergeResponse)
   }
 
   push (queryString: string, remotePeer: string): Promise<{statementCount: number, objectCount: number}> {
     return this.postRequest(`push/${remotePeer}`, queryString, false)
-      .then(r => r.text())
-      .then(resp => {
-        const counts = resp.split('\n')
-          .filter(line => line.length > 0)
-          .map(line => Number.parseInt(line))
-        const [statementCount, objectCount] = counts
-        return {statementCount, objectCount}
-      })
+      .then(parseMergeResponse)
   }
 
   delete (queryString: string): Promise<number> {
     return this.postRequest('delete', queryString, false)
-      .then(r => r.text())
-      .then(Number.parseInt)
+      .then(parseIntResponse)
   }
 
   putData (...objects: Array<Object | Buffer>): Promise<Array<string>> {
@@ -191,11 +175,7 @@ class RestClient {
         .join('\n')
 
     return this.postRequest('data/put', body, false)
-      .then(r => r.text())
-      .then(response => response
-        .split('\n')
-        .filter(str => str.length > 0)
-      )
+      .then(parseStringArrayResponse)
   }
 
   getData (objectId: string): Promise<Object | Buffer> {
@@ -213,8 +193,7 @@ class RestClient {
 
   getDatastoreKeys (): Promise<Array<string>> {
     return this.getRequest('data/keys')
-      .then(r => r.text())
-      .then(s => s.split('\n').filter(line => line.length > 0))
+      .then(parseStringArrayResponse)
   }
 
   getDatastoreKeyStream (): Promise<TransformStream> {
@@ -224,26 +203,22 @@ class RestClient {
 
   garbageCollectDatastore (): Promise<number> {
     return this.postRequest('data/gc', '', false)
-      .then(r => r.text())
-      .then(Number.parseInt)
+      .then(parseIntResponse)
   }
 
   compactDatastore (): Promise<boolean> {
     return this.postRequest('data/compact', '', false)
-      .then(r => r.text())
-      .then(s => s.trim() === 'OK')
+      .then(parseBoolResponse)
   }
 
   syncDatastore (): Promise<boolean> {
     return this.postRequest('data/sync', '', false)
-      .then(r => r.text())
-      .then(s => s.trim() === 'OK')
+      .then(parseBoolResponse)
   }
 
   listPeers (): Promise<Array<string>> {
     return this.getRequest('dir/list')
-      .then(r => r.text())
-      .then(s => s.split('\n').filter(line => line.length > 0))
+      .then(parseStringArrayResponse)
   }
 
   getAuthorizations (): Promise<Object> {
@@ -253,8 +228,7 @@ class RestClient {
 
   authorize (peerId: string, namespaces: Array<string>): Promise<boolean> {
     return this.postRequest(`auth/${peerId}`, namespaces.join(','), false)
-      .then(r => r.text())
-      .then(s => s.trim() === 'OK')
+      .then(parseBoolResponse)
   }
 
   revokeAuthorization (peerId: string): Promise<boolean> {
@@ -263,19 +237,19 @@ class RestClient {
 
   getStatus (): Promise<NodeStatus> {
     return this.getRequest('status')
-      .then(r => r.text())
+      .then(trimTextResponse)
       .then(validateStatus)
   }
 
   setStatus (status: NodeStatus): Promise<NodeStatus> {
     return this.postRequest(`status/${status}`, '', false)
-      .then(r => r.text())
+      .then(trimTextResponse)
       .then(validateStatus)
   }
 
   getDirectoryId (): Promise<string> {
     return this.getRequest('config/dir')
-      .then(r => r.text())
+      .then(trimTextResponse)
   }
 
   setDirectoryId (id: string): Promise<boolean> {
@@ -285,39 +259,32 @@ class RestClient {
 
   getInfo (): Promise<string> {
     return this.getRequest('config/info')
-      .then(r => r.text())
-      .then(r => r.trim())
+      .then(trimTextResponse)
   }
 
   setInfo (info: string): Promise<string> {
     return this.postRequest('config/info', info, false)
-      .then(r => r.text())
+      .then(trimTextResponse)
   }
 
   getNATConfig (): Promise<string> {
     return this.getRequest('config/nat')
-      .then(r => r.text())
-      .then(s => s.trim())
+      .then(trimTextResponse)
   }
 
   setNATConfig (config: string): Promise<boolean> {
     return this.postRequest('config/nat', config, false)
-      .then(r => r.text())
-      .then(s => s.trim() === 'OK')
+      .then(parseBoolResponse)
   }
 
   getNetAddresses (): Promise<Array<string>> {
     return this.getRequest('net/addr')
-      .then(r => r.text())
-      .then(s => s.split('\n'))
-      .then(addrs => addrs.filter(s => s.length > 0))
+      .then(parseStringArrayResponse)
   }
 
   netLookup (peerId: string): Promise<Array<string>> {
     return this.getRequest(`net/lookup/${peerId}`)
-      .then(r => r.text())
-      .then(s => s.split('\n'))
-      .then(a => a.filter(s => s.length > 0))
+      .then(parseStringArrayResponse)
   }
 
   shutdown (): Promise<boolean> {
@@ -341,6 +308,42 @@ function validateStatus (status: string): NodeStatus {
       return status
   }
   throw new Error(`Unknown status: "${status}"`)
+}
+
+function trimTextResponse (response: FetchResponse): Promise<string> {
+  return response.text()
+    .then(s => s.trim())
+}
+
+function parseStringArrayResponse (response: FetchResponse): Promise<Array<string>> {
+  return trimTextResponse(response)
+    .then(body => body.split('\n').filter(s => s.length > 0))
+}
+
+function parseBoolResponse (response: FetchResponse): Promise<boolean> {
+  return trimTextResponse(response)
+    .then(s => s === 'OK')
+}
+
+function parseIntResponse (response: FetchResponse): Promise<number> {
+  return trimTextResponse(response)
+    .then(s => Number.parseInt(s))
+}
+
+function parseIntArrayResponse (response: FetchResponse): Promise<Array<number>> {
+  return parseStringArrayResponse(response)
+    .then(strings => strings.map(s => Number.parseInt(s)))
+}
+
+function parseMergeResponse (response: FetchResponse): Promise<{objectCount: number, statementCount: number}> {
+  return parseIntArrayResponse(response)
+    .then(counts => {
+      const [statementCount, objectCount] = counts
+      return {
+        statementCount,
+        objectCount
+      }
+    })
 }
 
 module.exports = RestClient
