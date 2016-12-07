@@ -13,6 +13,8 @@ Aleph is part of the [mediachain](http://mediachain.io) project and is an integr
 Aleph provides two main components. First is a client for the HTTP API exposed by
 [concat][concat], the reference go peer implementation. Second is a lightweight peer in its own right.
 
+For system-wide Mediachain documentation see https://mediachain.github.io/mediachain-docs.
+
 ## Installation
 
 Aleph requires node 6 or greater, and has primarily been tested with 6.5 and above.
