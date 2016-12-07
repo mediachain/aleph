@@ -277,8 +277,18 @@ class RestClient {
       .then(parseBoolResponse)
   }
 
-  getNetAddresses (): Promise<Array<string>> {
+  getNetAddresses (peerId: ?string = null): Promise<Array<string>> {
+    if (peerId != null) {
+      return this.getRequest(`net/addr/${peerId}`)
+        .then(parseStringArrayResponse)
+    }
+
     return this.getRequest('net/addr')
+      .then(parseStringArrayResponse)
+  }
+
+  getNetConnections (): Promise<Array<string>> {
+    return this.getRequest('net/conns')
       .then(parseStringArrayResponse)
   }
 
