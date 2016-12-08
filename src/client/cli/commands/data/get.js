@@ -4,8 +4,8 @@ const RestClient = require('../../../api/RestClient')
 const { printJSON, subcommand } = require('../../util')
 
 module.exports = {
-  command: 'get <objectId>',
-  description: 'Request the object with `objectId` from the local node and print to the console.\n',
+  command: 'get <objectIds..>',
+  description: 'Request one or more `objectIds` from the local node and print to the console.\n',
   builder: {
     color: {
       type: 'boolean',
@@ -21,18 +21,24 @@ module.exports = {
     }
   },
 
-  handler: subcommand((opts: {client: RestClient, objectId: string, color: ?boolean, pretty: boolean}) => {
-    const {client, objectId, color, pretty} = opts
-
-    return client.getData(objectId)
+  handler: subcommand((opts: {client: RestClient, objectIds: Array<string>, color: ?boolean, pretty: boolean}) => {
+    const {client, objectIds, color, pretty} = opts
+    const printObject = objectPrinter(color, pretty)
+    return client.batchGetDataStream(objectIds)
       .then(
-        obj => {
-          if (obj instanceof Buffer) {
-            console.log(obj.toString('base64'))
-          } else {
-            printJSON(obj, {color, pretty})
-          }
-        }
+        stream => new Promise((resolve, reject) => {
+          stream.on('data', printObject)
+          stream.on('error', reject)
+          stream.on('end', resolve)
+        })
       )
   })
+}
+
+const objectPrinter = (color: ?boolean, pretty: boolean) => (obj: Buffer | Object) => {
+  if (obj instanceof Buffer) {
+    console.log(obj.toString('base64'))
+  } else {
+    printJSON(obj, {color, pretty})
+  }
 }
