@@ -10,7 +10,6 @@ RUN apk add --no-cache make gcc g++ python
 
 # npm install
 COPY ./package.json .
-COPY ./npm-shrinkwrap.json .
 RUN npm install
 
 # copy sources
