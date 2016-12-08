@@ -1536,6 +1536,11 @@
       "from": "map-obj@>=1.0.1 <2.0.0",
       "resolved": "https://registry.npmjs.org/map-obj/-/map-obj-1.0.1.tgz"
     },
+    "map-stream": {
+      "version": "0.0.6",
+      "from": "map-stream@latest",
+      "resolved": "https://registry.npmjs.org/map-stream/-/map-stream-0.0.6.tgz"
+    },
     "meow": {
       "version": "3.7.0",
       "from": "meow@>=3.3.0 <4.0.0",
