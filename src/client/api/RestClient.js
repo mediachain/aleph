@@ -177,6 +177,14 @@ class RestClient {
     return this.getRequest(`data/get/${objectId}`)
       .then(r => r.json())
       .then(parseDataObjectResponse)
+      .then(obj => {
+        if (obj == null) {
+          // shouldn't happen, because mcnode will return a 404.
+          // but we need to check the null from parseDataObjectResponse to make flow happy
+          throw new Error(`Object not found for key ${objectId}`)
+        }
+        return obj
+      })
   }
 
   batchGetDataStream (objectIds: Array<string>): Promise<TransformStream> {
@@ -365,10 +373,14 @@ function parseMergeResponse (response: FetchResponse): Promise<{objectCount: num
     })
 }
 
-function parseDataObjectResponse (obj: Object): Buffer | Object {
+function parseDataObjectResponse (obj: Object): ?Buffer | ?Object {
   if (obj.error !== undefined) {
-    throw new Error(obj.error)
+    return new Error(obj.error)
   }
+  if (obj.data == null) {
+    return null
+  }
+
   const data = Buffer.from(obj.data, 'base64')
   try {
     return serialize.decode(data)

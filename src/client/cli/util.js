@@ -8,8 +8,8 @@ const childProcess = require('child_process')
 const sshTunnel = require('tunnel-ssh')
 const { RestClient } = require('../api')
 
-function printJSON (obj: Object,
-                    options: {color?: ?boolean, pretty?: boolean} = {}) {
+function formatJSON (obj: ?mixed,
+                    options: {color?: ?boolean, pretty?: boolean} = {}): string {
   const compactOutput = options.pretty === false
 
   let useColor = false
@@ -20,8 +20,7 @@ function printJSON (obj: Object,
 
   if (!useColor && compactOutput) {
     // skip jq if we don't want color or pretty printing
-    console.log(JSON.stringify(obj))
-    return
+    return JSON.stringify(obj) + '\n'
   }
 
   const jqOpts = [(useColor ? '-C' : '-M'), '-a', '.']
@@ -29,8 +28,12 @@ function printJSON (obj: Object,
     jqOpts.unshift('-c')
   }
 
-  const output = childProcess.execFileSync(JQ_PATH, jqOpts, {input: JSON.stringify(obj), encoding: 'utf-8'})
-  process.stdout.write(output)
+  return childProcess.execFileSync(JQ_PATH, jqOpts, {input: JSON.stringify(obj), encoding: 'utf-8'}).toString()
+}
+
+function printJSON (obj: ?mixed,
+                    options: {color?: ?boolean, pretty?: boolean} = {}) {
+  process.stdout.write(formatJSON(obj, options))
 }
 
 function pluralizeCount (count: number, word: string): string {
@@ -137,6 +140,7 @@ function subcommand<T: SubcommandGlobalOptions> (handler: (argv: T) => Promise<*
 }
 
 module.exports = {
+  formatJSON,
   printJSON,
   pluralizeCount,
   isB58Multihash,
