@@ -41,6 +41,7 @@
     "libp2p-websockets": "0.9.1",
     "lodash": "^4.17.1",
     "mafmt": "^2.1.2",
+    "map-stream": "0.0.6",
     "mkdirp": "https://registry.npmjs.org/mkdirp/-/mkdirp-0.5.1.tgz",
     "multiaddr": "2.1.1",
     "multihashes": "^0.3.0",

@@ -3,9 +3,10 @@
 const fetch: (url: string, opts?: Object) => Promise<FetchResponse> = require('node-fetch')
 const ndjson = require('ndjson')
 const byline = require('byline')
+const mapStream = require('map-stream')
 const serialize = require('../../metadata/serialize')
 
-import type { Transform as TransformStream, Duplex as DuplexStream } from 'stream'
+import type { Transform as TransformStream, Duplex as DuplexStream, Readable as ReadableStream } from 'stream'
 import type { StatementMsg, SimpleStatementMsg } from '../../protobuf/types'
 export type NodeStatus = 'online' | 'offline' | 'public'
 
@@ -32,13 +33,7 @@ class NDJsonResponse {
   }
 
   values (): Promise<Array<Object>> {
-    return new Promise((resolve, reject) => {
-      const vals = []
-      const stream = this.stream()
-      stream.on('data', val => { vals.push(val) })
-      stream.on('error', reject)
-      stream.on('finish', () => { resolve(vals) })
-    })
+    return collectStream(this.stream())
   }
 }
 
@@ -181,14 +176,36 @@ class RestClient {
   getData (objectId: string): Promise<Object | Buffer> {
     return this.getRequest(`data/get/${objectId}`)
       .then(r => r.json())
-      .then(o => Buffer.from(o.data, 'base64'))
-      .then(bytes => {
-        try {
-          return serialize.decode(bytes)
-        } catch (err) {
-          return bytes
+      .then(parseDataObjectResponse)
+      .then(obj => {
+        if (obj == null) {
+          // shouldn't happen, because mcnode will return a 404.
+          // but we need to check the null from parseDataObjectResponse to make flow happy
+          throw new Error(`Object not found for key ${objectId}`)
         }
+        return obj
       })
+  }
+
+  batchGetDataStream (objectIds: Array<string>): Promise<TransformStream> {
+    return this.postRequest('data/get', objectIds.join('\n'), false)
+      .then(r => new NDJsonResponse(r).stream())
+      .then((stream: DuplexStream) => {
+        const outputStream = mapStream((obj: Object, callback: Function) => {
+          try {
+            callback(null, parseDataObjectResponse(obj))
+          } catch (err) {
+            callback(err)
+          }
+        })
+        stream.pipe(outputStream)
+        return outputStream
+      })
+  }
+
+  batchGetData (objectIds: Array<string>): Promise<Array<Object | Buffer>> {
+    return this.batchGetDataStream(objectIds)
+      .then(collectStream)
   }
 
   getDatastoreKeys (): Promise<Array<string>> {
@@ -354,6 +371,31 @@ function parseMergeResponse (response: FetchResponse): Promise<{objectCount: num
         objectCount
       }
     })
+}
+
+function parseDataObjectResponse (obj: Object): ?Buffer | ?Object {
+  if (obj.error !== undefined) {
+    return new Error(obj.error)
+  }
+  if (obj.data == null) {
+    return null
+  }
+
+  const data = Buffer.from(obj.data, 'base64')
+  try {
+    return serialize.decode(data)
+  } catch (err) {
+    return data
+  }
+}
+
+function collectStream<T> (stream: ReadableStream): Promise<Array<T>> {
+  return new Promise((resolve, reject) => {
+    const vals = []
+    stream.on('data', val => { vals.push(val) })
+    stream.on('error', reject)
+    stream.on('end', () => { resolve(vals) })
+  })
 }
 
 module.exports = RestClient
