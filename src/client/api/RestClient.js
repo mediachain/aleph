@@ -237,9 +237,9 @@ class RestClient {
     let path = 'dir/list'
     if (namespace != null) {
       path = path + '/' + namespace
-    }
-    if (includeSelf) {
-      path = path + '/all'
+      if (includeSelf) {
+        path = path + '/all'
+      }
     }
     return this.getRequest(path)
       .then(parseStringArrayResponse)
