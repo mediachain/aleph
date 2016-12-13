@@ -238,6 +238,11 @@ class RestClient {
       .then(parseStringArrayResponse)
   }
 
+  listNamespaces (): Promise<Array<string>> {
+    return this.getRequest('dir/listns')
+      .then(parseStringArrayResponse)
+  }
+
   getAuthorizations (): Promise<Object> {
     return this.getRequest('auth')
       .then(r => r.json())
