@@ -3,6 +3,8 @@
 const RestClient = require('../../api/RestClient')
 const { subcommand } = require('../util')
 
+type Opts = {client: RestClient, info: boolean, namespace?: string, includeSelf: boolean}
+
 module.exports = {
   command: 'listPeers',
   builder: {
@@ -26,12 +28,17 @@ module.exports = {
   },
   description: `Fetch a list of remote peers from the directory server. The local node must be ` +
     `configured to use a directory server.\n`,
-  handler: subcommand((opts: {client: RestClient, info: boolean, namespace?: string, includeSelf: boolean}) => {
-    const {client, info, namespace, includeSelf} = opts
+  handler: subcommand((opts: Opts) => {
+    const {client, info, namespace} = opts
+    let {includeSelf} = opts
+    if (namespace == null) {
+      includeSelf = false
+    }
+
     return client.listPeers(namespace, includeSelf).then(
       peers => {
         if (info) {
-          return fetchInfos(client, peers)
+          return fetchInfos(peers, opts)
         } else {
           peers.forEach(p => console.log(p))
         }
@@ -40,21 +47,39 @@ module.exports = {
   })
 }
 
-function fetchInfos (client: RestClient, peerIds: Array<string>): Promise<*> {
-  const promises: Array<Promise<*>> = []
-  for (const peer of peerIds) {
-    promises.push(
-      client.id(peer)
-        .then(ids => {
-          let msg = 'No info published'
-          if (ids.info != null && ids.info.length > 0) {
-            msg = ids.info
-          }
-          return peer + ` -- ${msg}`
-        })
-        .catch(err => `${peer} -- Unable to fetch info: ${err.message}`)
-        .then(console.log)
-    )
+function printInfo (ids: Object, isSelf: boolean = false) {
+  let msg = 'No info published'
+  if (ids.info != null && ids.info.length > 0) {
+    msg = ids.info
   }
-  return Promise.all(promises)
+  const selfMsg = isSelf ? '(self) ' : ''
+  console.log(`${ids.peer} ${selfMsg}-- ${msg}`)
+}
+
+function fetchInfos (peerIds: Array<string>, opts: Opts): Promise<*> {
+  const {client, includeSelf} = opts
+  const promises: Array<Promise<*>> = []
+  let selfInfoPromise: Promise<?Object> = includeSelf
+    ? client.id()
+    : Promise.resolve(null)
+
+  return selfInfoPromise.then(selfInfo => {
+    for (const peer of peerIds) {
+      if (selfInfo != null && peer === selfInfo.peer) {
+        const s = selfInfo // make flow happy by assigning to non-null var before entering new scope
+        promises.push(
+          Promise.resolve().then(() => {
+            printInfo(s, true)
+          })
+        )
+      } else {
+        promises.push(
+          client.id(peer)
+            .then(printInfo)
+            .catch(err => { console.log(`${peer} -- Unable to fetch info: ${err.message}`) })
+        )
+      }
+    }
+    return Promise.all(promises)
+  })
 }
