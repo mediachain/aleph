@@ -7,8 +7,14 @@ export type PeerInfoMsg = {
   addr: Array<Buffer>
 }
 
+export type PublisherInfoMsg = {
+  id: string,
+  namespaces: Array<string>
+}
+
 export type RegisterPeerMsg = {
-  info: PeerInfoMsg
+  info: PeerInfoMsg,
+  publisher?: PublisherInfoMsg
 }
 
 export type LookupPeerRequestMsg = {
@@ -20,6 +26,7 @@ export type LookupPeerResponseMsg = {
 }
 
 export type ListPeersRequestMsg = {
+  namespace?: string
 }
 
 export type ListPeersResponseMsg = {
