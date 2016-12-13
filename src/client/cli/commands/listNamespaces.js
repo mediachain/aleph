@@ -10,7 +10,7 @@ module.exports = {
     const {client} = opts
     return client.listNamespaces().then(
       namespaces => {
-        namespaces.forEach(ns => console.log(ns))
+        namespaces.sort().forEach(ns => console.log(ns))
       }
     )
   })
