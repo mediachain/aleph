@@ -7,6 +7,7 @@ const protobuf = require('protocol-buffers')
 import type {
   ProtoCodec,
   PeerInfoMsg,
+  PublisherInfoMsg,
   RegisterPeerMsg,
   LookupPeerRequestMsg,
   LookupPeerResponseMsg,
@@ -44,6 +45,7 @@ import type {
 type AllProtos = {
   dir: {
     PeerInfo: ProtoCodec<PeerInfoMsg>,
+    PublisherInfo: ProtoCodec<PublisherInfoMsg>,
     RegisterPeer: ProtoCodec<RegisterPeerMsg>,
     LookupPeerRequest: ProtoCodec<LookupPeerRequestMsg>,
     LookupPeerResponse: ProtoCodec<LookupPeerResponseMsg>,
@@ -105,6 +107,7 @@ function loadProtos (): AllProtos {
   return {
     dir: {
       PeerInfo: pb.PeerInfo,
+      PublisherInfo: pb.PublisherInfo,
       RegisterPeer: pb.RegisterPeer,
       LookupPeerRequest: pb.LookupPeerRequest,
       LookupPeerResponse: pb.LookupPeerResponse,

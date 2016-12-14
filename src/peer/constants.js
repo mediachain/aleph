@@ -12,6 +12,7 @@ const PROTOCOLS = {
   },
   dir: {
     list: '/mediachain/dir/list',
+    listns: '/mediachain/dir/listns',
     lookup: '/mediachain/dir/lookup',
     register: '/mediachain/dir/register'
   }

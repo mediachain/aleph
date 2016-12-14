@@ -233,8 +233,20 @@ class RestClient {
       .then(parseBoolResponse)
   }
 
-  listPeers (): Promise<Array<string>> {
-    return this.getRequest('dir/list')
+  listPeers (namespace?: ?string, includeSelf: boolean = false): Promise<Array<string>> {
+    let path = 'dir/list'
+    if (namespace != null) {
+      path = path + '/' + namespace
+      if (includeSelf) {
+        path = path + '/all'
+      }
+    }
+    return this.getRequest(path)
+      .then(parseStringArrayResponse)
+  }
+
+  listNamespaces (): Promise<Array<string>> {
+    return this.getRequest('dir/listns')
       .then(parseStringArrayResponse)
   }
 
