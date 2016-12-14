@@ -6,7 +6,7 @@ const { subcommand } = require('../util')
 type Opts = {client: RestClient, info: boolean, namespace?: string, includeSelf: boolean}
 
 module.exports = {
-  command: 'listPeers',
+  command: 'listPeers [namespace]',
   builder: {
     info: {
       type: 'boolean',
@@ -14,20 +14,16 @@ module.exports = {
       default: false,
       description: 'Also fetch the "info" string for each peer.  This requires an extra network request per-peer.\n'
     },
-    namespace: {
-      type: 'string',
-      description: 'If given, only return peers that have published to the given namespace. ' +
-       `Can use wildcards, e.g. 'images.*'\n`
-    },
     includeSelf: {
       type: 'boolean',
       alias: 'all',
-      description: 'Include the local node in namespace listings.  Has no effect if --namespace is not present.\n',
+      description: 'Include the local node in namespace listings.  Has no effect if namespace is not given.\n',
       default: false
     }
   },
-  description: `Fetch a list of remote peers from the directory server. The local node must be ` +
-    `configured to use a directory server.\n`,
+  description: 'Fetch a list of remote peers from a directory server or the DHT. ' +
+    'If the `namespace` argument is given, only peers that have published to the given namespace will be returned. ' +
+    'Namespace listings require the node to be configured to use a directory server.\n',
   handler: subcommand((opts: Opts) => {
     const {client, info, namespace} = opts
     let {includeSelf} = opts
