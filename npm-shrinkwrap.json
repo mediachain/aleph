@@ -585,9 +585,9 @@
       "resolved": "https://registry.npmjs.org/dateformat/-/dateformat-1.0.12.tgz"
     },
     "debug": {
-      "version": "2.4.1",
+      "version": "2.4.2",
       "from": "debug@>=2.3.2 <3.0.0",
-      "resolved": "https://registry.npmjs.org/debug/-/debug-2.4.1.tgz"
+      "resolved": "https://registry.npmjs.org/debug/-/debug-2.4.2.tgz"
     },
     "debug-log": {
       "version": "1.0.1",
