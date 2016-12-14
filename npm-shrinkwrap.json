@@ -147,9 +147,9 @@
       "resolved": "https://registry.npmjs.org/bn.js/-/bn.js-4.11.6.tgz"
     },
     "borc": {
-      "version": "2.0.0",
-      "from": "borc@>=2.0.0 <3.0.0",
-      "resolved": "https://registry.npmjs.org/borc/-/borc-2.0.0.tgz",
+      "version": "2.0.1",
+      "from": "borc@2.0.1",
+      "resolved": "https://registry.npmjs.org/borc/-/borc-2.0.1.tgz",
       "dependencies": {
         "commander": {
           "version": "2.9.0",

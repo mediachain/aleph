@@ -29,7 +29,7 @@
   "dependencies": {
     "ajv": "^4.9.2",
     "bin-build": "^2.2.0",
-    "borc": "^2.0.0",
+    "borc": "^2.0.1",
     "byline": "^5.0.0",
     "digest-stream": "^1.0.1",
     "duplex-child-process": "0.0.5",
