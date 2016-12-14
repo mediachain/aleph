@@ -9,7 +9,6 @@ module.exports = {
   'Will first try the directory if one is configured, otherwise will fallback to DHT lookup.\n',
   handler: subcommand((opts: {peerId: string, client: RestClient}) => {
     const {peerId, client} = opts
-    console.log('Looking up peer: ', peerId)
 
     return client.netLookup(peerId)
       .then(
