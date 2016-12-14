@@ -94,7 +94,8 @@ function prepareSSHConfig (config: Object | string): Object {
 
 type GlobalOptions = {
   apiUrl: string,
-  sshConfig?: string | Object
+  sshConfig?: string | Object,
+  timeout: number
 }
 
 type SubcommandGlobalOptions = { // eslint-disable-line no-unused-vars
@@ -103,8 +104,8 @@ type SubcommandGlobalOptions = { // eslint-disable-line no-unused-vars
 
 function subcommand<T: SubcommandGlobalOptions> (handler: (argv: T) => Promise<*>): (argv: GlobalOptions) => void {
   return (argv: GlobalOptions) => {
-    const {apiUrl, sshConfig} = argv
-    const client = new RestClient({apiUrl})
+    const {apiUrl, sshConfig, timeout} = argv
+    const client = new RestClient({apiUrl, requestTimeout: timeout})
 
     const sshTunnelConfig = (sshConfig != null)
       ? prepareSSHConfig(sshConfig)
