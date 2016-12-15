@@ -1,7 +1,7 @@
 // @flow
 
 import type {RestClient} from '../../../api'
-const {subcommand} = require('../../util')
+const {subcommand, println} = require('../../util')
 
 module.exports = {
   command: 'compact',
@@ -10,7 +10,7 @@ module.exports = {
     const {client} = opts
     return client.compactDatastore()
       .then(() => {
-        console.log('Compaction successful')
+        println('Compaction successful')
       })
   })
 }

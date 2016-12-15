@@ -1,7 +1,7 @@
 // @flow
 
 const RestClient = require('../../../api/RestClient')
-const { subcommand } = require('../../util')
+const { subcommand, println } = require('../../util')
 
 module.exports = {
   command: 'dir [dirId]',
@@ -11,11 +11,11 @@ module.exports = {
     if (dirId) {
       return client.setDirectoryId(dirId)
         .then(() => {
-          console.log(`set directory to ${dirId}`)
+          println(`set directory to ${dirId}`)
         })
     } else {
       return client.getDirectoryId()
-        .then(console.log)
+        .then(println)
     }
   })
 }

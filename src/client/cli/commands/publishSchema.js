@@ -1,7 +1,7 @@
 // @flow
 
 const RestClient = require('../../api/RestClient')
-const { subcommand } = require('../util')
+const { subcommand, println } = require('../util')
 const { loadSelfDescribingSchema, schemaDescriptionToWKI } = require('../../../metadata/schema')
 
 const SCHEMA_NAMESPACE = 'mediachain.schemas'
@@ -27,9 +27,9 @@ module.exports = {
       .then(([objectId]) =>
         client.publish({namespace}, {object: objectId, refs: [wki]})
           .then(([statementId]) => {
-            console.log(`Published schema with wki = ${wki} to namespace ${namespace}`)
-            console.log(`Object ID: ${objectId}`)
-            console.log(`Statement ID: ${statementId}`)
+            println(`Published schema with wki = ${wki} to namespace ${namespace}`)
+            println(`Object ID: ${objectId}`)
+            println(`Statement ID: ${statementId}`)
           }))
   })
 }

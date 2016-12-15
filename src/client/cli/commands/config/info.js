@@ -1,7 +1,7 @@
 // @flow
 
 const RestClient = require('../../../api/RestClient')
-const { subcommand } = require('../../util')
+const { subcommand, println } = require('../../util')
 
 module.exports = {
   command: 'info [peerInfo]',
@@ -11,11 +11,11 @@ module.exports = {
     if (peerInfo) {
       return client.setInfo(peerInfo)
         .then(() => {
-          console.log(`set peer info to "${peerInfo}"`)
+          println(`set peer info to "${peerInfo}"`)
         })
     } else {
       return client.getInfo()
-        .then(console.log)
+        .then(println)
     }
   })
 }

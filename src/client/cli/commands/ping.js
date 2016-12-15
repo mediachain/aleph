@@ -1,7 +1,7 @@
 // @flow
 
 const RestClient = require('../../api/RestClient')
-const { subcommand } = require('../util')
+const { subcommand, println } = require('../util')
 
 module.exports = {
   command: 'ping <peerId>',
@@ -9,11 +9,11 @@ module.exports = {
   'Will attempt to lookup the peer with a configured directory server or DHT.\n',
   handler: subcommand((opts: {peerId: string, client: RestClient}) => {
     const {peerId, client} = opts
-    console.log('Pinging peer: ', peerId)
+    println('Pinging peer: ', peerId)
 
     return client.ping(peerId)
       .then(
-        success => console.log('Ping OK'),
+        success => println('Ping OK'),
         err => { throw new Error(`Error pinging: ${err.message}`) }
       )
   })

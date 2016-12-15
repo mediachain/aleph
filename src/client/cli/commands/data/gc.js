@@ -1,7 +1,7 @@
 // @flow
 
 import type {RestClient} from '../../../api'
-const {subcommand, pluralizeCount} = require('../../util')
+const {subcommand, pluralizeCount, println} = require('../../util')
 
 module.exports = {
   command: 'gc',
@@ -10,7 +10,7 @@ module.exports = {
     const {client} = opts
     return client.garbageCollectDatastore()
       .then(count => {
-        console.log(`Garbage collected ${pluralizeCount(count, 'object')}`)
+        println(`Garbage collected ${pluralizeCount(count, 'object')}`)
       })
   })
 }

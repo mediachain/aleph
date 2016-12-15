@@ -3,7 +3,7 @@
 const fs = require('fs')
 const ndjson = require('ndjson')
 const RestClient = require('../../../api/RestClient')
-const { subcommand } = require('../../util')
+const { subcommand, println } = require('../../util')
 import type { Readable } from 'stream'
 
 const BATCH_SIZE = 1000
@@ -56,7 +56,7 @@ module.exports = {
 function putItems (client: RestClient, items: Array<Object>): Promise<*> {
   return client.putData(...items).then(
     hashes => {
-      hashes.forEach(h => console.log(h))
+      hashes.forEach(h => println(h))
     }
   )
 }
