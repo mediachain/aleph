@@ -70,20 +70,12 @@ function ensureAll (obj: Object, keys: Array<string>, description: string = 'obj
   }
 }
 
-function ensureAny (obj: Object, keys: Array<string>, description: string = 'object') {
-  for (const key of keys) {
-    if (obj[key] !== undefined) return
-  }
-  throw new Error(`${description} must have one of the following fields: ${keys.join(', ')}`)
-}
-
 function prepareSSHConfig (config: Object | string): Object {
   if (typeof config === 'string') {
     config = JSON.parse(fs.readFileSync(config, 'utf8'))
   }
 
   ensureAll(config, ['host', 'username'], 'SSH configuration')
-  ensureAny(config, ['password', 'privateKey'], 'SSH configuration')
 
   const defaultOpts = {
     dstPort: 9002,
