@@ -4,7 +4,7 @@ const fs = require('fs')
 const { JQTransform } = require('../../../metadata/jqStream')
 const objectPath = require('object-path')
 const RestClient = require('../../api/RestClient')
-const { subcommand } = require('../util')
+const { println, subcommand } = require('../util')
 const { validate, validateSelfDescribingSchema, isSelfDescribingRecord } = require('../../../metadata/schema')
 import type { Readable } from 'stream'
 import type { SelfDescribingSchema } from '../../../metadata/schema'
@@ -146,13 +146,50 @@ function publishStream (opts: {
 
   let statementBodies: Array<Object> = []
   let statements: Array<Object> = []
-  const publishPromises: Array<Promise<*>> = []
   const jq = new JQTransform(jqFilter)
-
   let wki: string
   let obj: Object
 
+  // We want to know when all of our batches have been published,
+  // so we can complete the subcommand handler and exit the process.
+  // Rather than use Promise.all(), which requires us to keep
+  // (potentially) thousands of Promise objects around, we add
+  // Promises for in-flight batches to this map, keyed by a
+  // unique id.  Then we remove them when the batch completes.
+  const pendingBatches: Map<string, Promise<void>> = new Map()
+  let batchCounter = 0
+  function addBatchPromise (batchPromise: Promise<void>) {
+    const batchId = 'batch-' + batchCounter.toString()
+    batchCounter++
+    pendingBatches.set(batchId, batchPromise
+      .then(() => {
+        pendingBatches.delete(batchId)
+      })
+    )
+  }
+
+  // Called when the input stream completes, after all batch
+  // promises have been added.  Will resolve when all pending
+  // batch promises have resolved
+  function waitForCompletion (): Promise<void> {
+    return new Promise((resolve) => {
+      function check () {
+        if (pendingBatches.size === 0) return resolve()
+        setTimeout(check, 100)
+      }
+
+      check()
+    })
+  }
+
   return new Promise((resolve, reject) => {
+    // cleanup before rejecting the promise on failure
+    function publishFailed (err: Error) {
+      stream.unpipe()
+      jq.kill()
+      reject(err)
+    }
+
     stream.pipe(jq)
       .on('data', jsonString => {
         try {
@@ -160,13 +197,13 @@ function publishStream (opts: {
           wki = parsed.wki
           obj = parsed.obj
         } catch (err) {
-          return reject(new Error(`Error parsing jq output: ${err}\njq output: ${jsonString}`))
+          return publishFailed(new Error(`Error parsing jq output: ${err}\njq output: ${jsonString}`))
         }
 
         if (schema != null && !skipSchemaValidation) {
           const result = validate(schema, obj)
           if (!result.success) {
-            return reject(new Error(`Record failed validation: ${result.error.message}. Failed object: ${JSON.stringify(obj, null, 2)}`))
+            return publishFailed(new Error(`Record failed validation: ${result.error.message}. Failed object: ${JSON.stringify(obj, null, 2)}`))
           }
         }
 
@@ -189,7 +226,7 @@ function publishStream (opts: {
           if (isSelfDescribingRecord(obj)) {
             const ref = objectPath.get(obj, 'schema', '/')
             if (ref !== schemaReference) {
-              return reject(new Error(
+              return publishFailed(new Error(
                 `Record contains reference to a different schema (${ref}) than the one specified ${schemaReference}`
               ))
             }
@@ -202,7 +239,7 @@ function publishStream (opts: {
         }
 
         if (dryRun) {
-          console.log(`refs: ${JSON.stringify(refs)}, tags: ${JSON.stringify(tags)}, deps: ${JSON.stringify(deps)}`)
+          println(`refs: ${JSON.stringify(refs)}, tags: ${JSON.stringify(tags)}, deps: ${JSON.stringify(deps)}`)
           return
         }
 
@@ -212,8 +249,9 @@ function publishStream (opts: {
         statements.push(stmt)
 
         if (statementBodies.length >= batchSize) {
-          publishPromises.push(
+          addBatchPromise(
             publishBatch(client, publishOpts, statementBodies, statements)
+              .catch(publishFailed)
           )
           statementBodies = []
           statements = []
@@ -221,21 +259,21 @@ function publishStream (opts: {
       })
       .on('end', () => {
         if (statementBodies.length > 0) {
-          publishPromises.push(
+          addBatchPromise(
             publishBatch(client, publishOpts, statementBodies, statements)
+              .catch(publishFailed)
           )
         }
-        Promise.all(publishPromises)
+        waitForCompletion()
           .then(() => {
             if (!dryRun) {
-              console.log('All statements published successfully')
+              println('All statements published successfully')
             }
             resolve()
           })
-          .catch(reject)
       })
       .on('error', err => {
-        reject(new Error(`Error reading from ${streamName}: ${err.message}`))
+        publishFailed(new Error(`Error reading from ${streamName}: ${err.message}`))
       })
   })
 }
@@ -269,17 +307,16 @@ function composeJQFilters (contentFilter: string, idFilter: string): string {
 function printBatchResults (bodyHashes: Array<string>, statementIds: Array<string>, statements: Array<Object>,
                             compoundSize: number) {
   for (let i = 0; i < statementIds.length; i++) {
-    const objectRefs = bodyHashes.slice(i, i + compoundSize)
-    const stmts = statements.slice(i, i + compoundSize)
-    const bodies = stmts.map((s, idx) => ({
-      object: objectRefs[idx],
-      refs: s.refs,
-      tags: s.tags,
-      deps: s.deps
-    }))
+    println(`\nstatement id: ${statementIds[i]}`)
+    const statementInfos = []
 
-    console.log(`\nstatement id: ${statementIds[i]}`)
-    console.log(bodies)
+    for (let j = i; j < i + compoundSize; j++) {
+      const object = bodyHashes[j]
+      const {refs, tags, deps} = statements[j]
+      statementInfos.push({object, refs, tags, deps})
+    }
+
+    println(JSON.stringify(statementInfos, null, 2))
   }
 }
 

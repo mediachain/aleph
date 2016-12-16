@@ -1,7 +1,7 @@
 // @flow
 
 const RestClient = require('../../../api/RestClient')
-const { subcommand } = require('../../util')
+const { subcommand, println } = require('../../util')
 
 module.exports = {
   command: 'nat [natConfig]',
@@ -11,14 +11,14 @@ module.exports = {
     if (natConfig) {
       return client.setNATConfig(natConfig)
         .then(() => {
-          console.log(`set NAT configuration to "${natConfig}"`)
+          println(`set NAT configuration to "${natConfig}"`)
         })
         .catch(err => {
           throw new Error(`Error setting NAT configuration: ${err.message}`)
         })
     } else {
       return client.getNATConfig()
-        .then(console.log)
+        .then(println)
     }
   })
 }

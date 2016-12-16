@@ -1,7 +1,7 @@
 // @flow
 
 const RestClient = require('../../api/RestClient')
-const { subcommand } = require('../util')
+const { subcommand, println } = require('../util')
 
 module.exports = {
   command: 'lookupPeer <peerId>',
@@ -13,7 +13,7 @@ module.exports = {
     return client.netLookup(peerId)
       .then(
         addrs => {
-          addrs.forEach(a => { console.log(a) })
+          addrs.forEach(a => { println(a) })
         },
         err => { throw new Error(`Error during peer lookup: ${err.message}`) }
       )

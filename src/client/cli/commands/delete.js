@@ -1,7 +1,7 @@
 // @flow
 
 const RestClient = require('../../api/RestClient')
-const { subcommand, pluralizeCount } = require('../util')
+const { subcommand, pluralizeCount, println } = require('../util')
 
 module.exports = {
   command: 'delete <queryString>',
@@ -11,7 +11,7 @@ module.exports = {
 
     return client.delete(queryString)
       .then(count => {
-        console.log(`Deleted ${pluralizeCount(count, 'statement')}`)
+        println(`Deleted ${pluralizeCount(count, 'statement')}`)
       })
   })
 }

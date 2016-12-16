@@ -1,7 +1,7 @@
 // @flow
 
 const RestClient = require('../../api/RestClient')
-const { subcommand } = require('../util')
+const { subcommand, println } = require('../util')
 
 module.exports = {
   command: 'netConnections',
@@ -13,12 +13,12 @@ module.exports = {
       .then(
         addresses => {
           if (addresses.length < 1) {
-            console.log(
+            println(
               'No active network connections.  Is the node online?'
             )
           } else {
             addresses.forEach(addr => {
-              console.log(addr)
+              println(addr)
             })
           }
         })

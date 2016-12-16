@@ -1,7 +1,7 @@
 // @flow
 
 import type {RestClient} from '../../../api'
-const {subcommand} = require('../../util')
+const {subcommand, println} = require('../../util')
 
 module.exports = {
   command: 'keys',
@@ -10,7 +10,7 @@ module.exports = {
     const {client} = opts
     return client.getDatastoreKeyStream()
       .then(stream => new Promise((resolve, reject) => {
-        stream.on('data', data => { console.log(data.toString()) })
+        stream.on('data', data => { println(data.toString()) })
         stream.on('error', reject)
         stream.on('end', () => resolve())
       }))
