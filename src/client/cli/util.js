@@ -86,7 +86,8 @@ function prepareSSHConfig (config: Object | string): Object {
   ensureAny(config, ['password', 'privateKey'], 'SSH configuration')
 
   const defaultOpts = {
-    dstPort: '9002',
+    dstPort: 9002,
+    localPort: 0,
     localHost: 'localhost',
     keepAlive: true
   }
@@ -106,8 +107,8 @@ type SubcommandGlobalOptions = { // eslint-disable-line no-unused-vars
 
 function subcommand<T: SubcommandGlobalOptions> (handler: (argv: T) => Promise<*>): (argv: GlobalOptions) => void {
   return (argv: GlobalOptions) => {
-    const {apiUrl, sshConfig, timeout} = argv
-    const client = new RestClient({apiUrl, requestTimeout: timeout})
+    const {sshConfig, timeout} = argv
+    let {apiUrl} = argv
 
     const sshTunnelConfig = (sshConfig != null)
       ? prepareSSHConfig(sshConfig)
@@ -117,7 +118,11 @@ function subcommand<T: SubcommandGlobalOptions> (handler: (argv: T) => Promise<*
     let sshTunnel = null
     if (sshTunnelConfig != null) {
       sshTunnelPromise = setupSSHTunnel(sshTunnelConfig)
-        .then(tunnel => { sshTunnel = tunnel })
+        .then(tunnel => {
+          sshTunnel = tunnel
+          const addr = sshTunnel.address()
+          apiUrl = `http://${addr.address}:${addr.port}`
+        })
     } else {
       sshTunnelPromise = Promise.resolve()
     }
@@ -128,11 +133,12 @@ function subcommand<T: SubcommandGlobalOptions> (handler: (argv: T) => Promise<*
       }
     }
 
-    // Using lodash as a kind of flow "escape valve", since it's being stubborn
-    const subcommandOptions: T = set(clone(argv), 'client', client)
-
     sshTunnelPromise
-      .then(() => handler(subcommandOptions))
+      .then(() => {
+        const client = new RestClient({apiUrl, requestTimeout: timeout})
+        return set(clone(argv), 'client', client)
+      })
+      .then(subcommandOptions => handler(subcommandOptions))
       .then(closeTunnel)
       .catch(err => {
         closeTunnel()
