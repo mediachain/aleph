@@ -70,23 +70,16 @@ function ensureAll (obj: Object, keys: Array<string>, description: string = 'obj
   }
 }
 
-function ensureAny (obj: Object, keys: Array<string>, description: string = 'object') {
-  for (const key of keys) {
-    if (obj[key] !== undefined) return
-  }
-  throw new Error(`${description} must have one of the following fields: ${keys.join(', ')}`)
-}
-
 function prepareSSHConfig (config: Object | string): Object {
   if (typeof config === 'string') {
     config = JSON.parse(fs.readFileSync(config, 'utf8'))
   }
 
   ensureAll(config, ['host', 'username'], 'SSH configuration')
-  ensureAny(config, ['password', 'privateKey'], 'SSH configuration')
 
   const defaultOpts = {
-    dstPort: '9002',
+    dstPort: 9002,
+    localPort: 0,
     localHost: 'localhost',
     keepAlive: true
   }
@@ -106,8 +99,8 @@ type SubcommandGlobalOptions = { // eslint-disable-line no-unused-vars
 
 function subcommand<T: SubcommandGlobalOptions> (handler: (argv: T) => Promise<*>): (argv: GlobalOptions) => void {
   return (argv: GlobalOptions) => {
-    const {apiUrl, sshConfig, timeout} = argv
-    const client = new RestClient({apiUrl, requestTimeout: timeout})
+    const {sshConfig, timeout} = argv
+    let {apiUrl} = argv
 
     const sshTunnelConfig = (sshConfig != null)
       ? prepareSSHConfig(sshConfig)
@@ -117,7 +110,17 @@ function subcommand<T: SubcommandGlobalOptions> (handler: (argv: T) => Promise<*
     let sshTunnel = null
     if (sshTunnelConfig != null) {
       sshTunnelPromise = setupSSHTunnel(sshTunnelConfig)
-        .then(tunnel => { sshTunnel = tunnel })
+        .then(tunnel => {
+          tunnel.on('error', err => {
+            console.error(`SSH Error: ${err.message}`)
+            tunnel.close()
+            process.exit(1)
+          })
+          const addr = tunnel.address()
+
+          sshTunnel = tunnel
+          apiUrl = `http://${addr.address}:${addr.port}`
+        })
     } else {
       sshTunnelPromise = Promise.resolve()
     }
@@ -128,11 +131,12 @@ function subcommand<T: SubcommandGlobalOptions> (handler: (argv: T) => Promise<*
       }
     }
 
-    // Using lodash as a kind of flow "escape valve", since it's being stubborn
-    const subcommandOptions: T = set(clone(argv), 'client', client)
-
     sshTunnelPromise
-      .then(() => handler(subcommandOptions))
+      .then(() => {
+        const client = new RestClient({apiUrl, requestTimeout: timeout})
+        return set(clone(argv), 'client', client)
+      })
+      .then(subcommandOptions => handler(subcommandOptions))
       .then(closeTunnel)
       .catch(err => {
         closeTunnel()
