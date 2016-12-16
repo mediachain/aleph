@@ -1,21 +1,22 @@
 // @flow
 
 const RestClient = require('../../../api/RestClient')
-const { subcommand, println } = require('../../util')
+const { subcommand, println, pluralizeCount } = require('../../util')
 
 module.exports = {
-  command: 'dir [dirId]',
-  description: 'Get or set the directory server id.\n',
-  handler: subcommand((opts: {client: RestClient, dirId?: string}) => {
-    const {client, dirId} = opts
-    if (dirId) {
-      return client.setDirectoryId(dirId)
+  command: 'dir [dirIds..]',
+  description: 'Get or set the directory servers.\n',
+  handler: subcommand((opts: {client: RestClient, dirIds: Array<string>}) => {
+    const {client, dirIds} = opts
+    if (dirIds.length > 0) {
+      return client.setDirectoryIds(...dirIds)
         .then(() => {
-          println(`set directory to ${dirId}`)
+          println(`Set ${pluralizeCount(dirIds.length, 'directory server')}:`)
+          dirIds.forEach(println)
         })
     } else {
-      return client.getDirectoryId()
-        .then(println)
+      return client.getDirectoryIds()
+        .then(ids => ids.forEach(println))
     }
   })
 }

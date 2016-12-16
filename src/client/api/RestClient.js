@@ -276,13 +276,13 @@ class RestClient {
       .then(validateStatus)
   }
 
-  getDirectoryId (): Promise<string> {
+  getDirectoryIds (): Promise<Array<string>> {
     return this.getRequest('config/dir')
-      .then(trimTextResponse)
+      .then(parseStringArrayResponse)
   }
 
-  setDirectoryId (id: string): Promise<boolean> {
-    return this.postRequest('config/dir', id, false)
+  setDirectoryIds (...ids: Array<string>): Promise<boolean> {
+    return this.postRequest('config/dir', ids.join('\n'), false)
       .then(() => true)
   }
 
