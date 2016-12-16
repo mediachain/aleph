@@ -111,8 +111,14 @@ function subcommand<T: SubcommandGlobalOptions> (handler: (argv: T) => Promise<*
     if (sshTunnelConfig != null) {
       sshTunnelPromise = setupSSHTunnel(sshTunnelConfig)
         .then(tunnel => {
+          tunnel.on('error', err => {
+            console.error(`SSH Error: ${err.message}`)
+            tunnel.close()
+            process.exit(1)
+          })
+          const addr = tunnel.address()
+
           sshTunnel = tunnel
-          const addr = sshTunnel.address()
           apiUrl = `http://${addr.address}:${addr.port}`
         })
     } else {
