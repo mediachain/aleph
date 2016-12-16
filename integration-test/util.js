@@ -61,7 +61,7 @@ function concatNodeClient (): Promise<RestClient> {
 function setConcatNodeDirectoryInfo (): Promise<*> {
   return Promise.all([concatNodeClient(), directoryMultiaddr(), directoryPeerId()])
     .then(([client, dirAddr, dirId]) => {
-      return client.setDirectoryId(dirAddr.toString() + '/' + dirId.toB58String())
+      return client.setDirectoryIds(dirAddr.toString() + '/p2p/' + dirId.toB58String())
     })
 }
 
