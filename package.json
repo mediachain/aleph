@@ -67,7 +67,7 @@
   "devDependencies": {
     "babel-cli": "6.18.0",
     "babel-eslint": "^7.1.0",
-    "babel-plugin-transform-flow-strip-types": "6.18.0",
+    "babel-plugin-transform-flow-strip-types": "6.21.0",
     "babel-register": "6.18.0",
     "eslint-plugin-flowtype": "2.29.1",
     "interface-connection": "^0.3.0",
