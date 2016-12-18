@@ -35,7 +35,7 @@
     "duplex-child-process": "0.0.5",
     "libp2p-crypto": "0.7.5",
     "libp2p-secio": "0.6.4",
-    "libp2p-spdy": "0.10.0",
+    "libp2p-spdy": "0.10.1",
     "libp2p-swarm": "0.26.2",
     "libp2p-tcp": "^0.9.1",
     "libp2p-websockets": "0.9.1",
