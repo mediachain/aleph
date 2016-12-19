@@ -1,3 +1,18 @@
+## 2016-12-19: aleph-v1.4
+
+mcclient:
+
+- Support for concat 1.4 directory extensions, with namespace listings [PR #128](https://github.com/mediachain/aleph/pull/128)
+    - `mcclient listNamespaces` command to list all public namespaces
+    - `mcclient listPeers` command now allows optional `namespace` argument, to list all peers that have published to a given namespace
+- Support for getting/setting multiple directory servers [PR #135](https://github.com/mediachain/aleph/pull/135)
+- Support for batch data object retrieval API endpoint [PR #123](https://github.com/mediachain/aleph/pull/123)
+- Added global `--timeout` flag to override default 15s request timeout [PR #129](https://github.com/mediachain/aleph/pull/129)
+- Much faster (~ 1.8x) CBOR conversions thanks to [borc](https://github.com/dignifiedquire/borc) module [PR #131](https://github.com/mediachain/aleph/pull/131)
+- Fixed memory leak that could cause x`mcclient publish` to fail on very large ingestions [PR #134](https://github.com/mediachain/aleph/pull/134)
+- Automatic SSH tunneling no longer conflicts with local `mcnode`, uses random free port for tunnel [PR #136](https://github.com/mediachain/aleph/pull/136)
+- Added debug commands to list libp2p connections and known addresses for peers [PR #122](https://github.com/mediachain/aleph/pull/122)
+
 ## 2016-12-05: aleph-v1.3
 
 mcclient:
