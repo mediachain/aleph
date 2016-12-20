@@ -10,7 +10,7 @@ import type { Transform as TransformStream, Duplex as DuplexStream, Readable as 
 import type { StatementMsg, SimpleStatementMsg } from '../../protobuf/types'
 export type NodeStatus = 'online' | 'offline' | 'public'
 
-const DEFAULT_REQUEST_TIMEOUT = 15000
+const DEFAULT_REQUEST_TIMEOUT = 0
 
 type FetchResponse = {
   text: () => Promise<string>,

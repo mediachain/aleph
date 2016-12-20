@@ -14,12 +14,6 @@ yargs
   .option('sshConfig', {
     description: 'Path to a configuration file for SSH tunnelling, e.g. the credentials file created by Mediachain Deploy'
   })
-  .option('timeout', {
-    type: 'number',
-    description: `Timeout (in seconds), to use for requests to the mediachain node's API.`,
-    default: 15,
-    coerce: seconds => Math.floor(seconds * 1000) // convert to milliseconds for easier consumption
-  })
   .global('apiUrl')
   .global('sshConfig')
   .global('timeout')
