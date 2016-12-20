@@ -1,3 +1,4 @@
+const { zip } = require('lodash')
 const P2PNode = require('./libp2p_node')
 const PeerId = require('peer-id')
 const PeerInfo = require('peer-info')
@@ -8,6 +9,7 @@ const pull = require('pull-stream')
 const paramap = require('pull-paramap')
 const { DEFAULT_LISTEN_ADDR, PROTOCOLS } = require('./constants')
 const { inflateMultiaddr } = require('./identity')
+const { Datastore } = require('./datastore')
 const {
   protoStreamEncode,
   protoStreamDecode,
@@ -23,18 +25,21 @@ const {
 import type { QueryResultMsg, QueryResultValueMsg, DataResultMsg, DataObjectMsg, NodeInfoMsg } from '../protobuf/types'
 import type { Connection } from 'interface-connection'
 import type { PullStreamSource } from './util'
+import type { DatastoreOptions } from './datastore'
 
 export type MediachainNodeOptions = {
   peerId: PeerId,
   dirInfo?: PeerInfo,
   listenAddresses?: Array<Multiaddr | string>,
-  infoMessage?: string
+  infoMessage?: string,
+  datastoreOptions?: DatastoreOptions
 }
 
 const DEFAULT_INFO_MESSAGE = '(aleph)'
 
 class MediachainNode {
   p2p: P2PNode
+  datastore: Datastore
   directory: ?PeerInfo
   infoMessage: string
 
@@ -47,12 +52,15 @@ class MediachainNode {
       peerInfo.multiaddr.add(Multiaddr(addr))
     })
 
+    this.datastore = new Datastore(options.datastoreOptions)
+
     this.infoMessage = options.infoMessage || DEFAULT_INFO_MESSAGE
 
     this.p2p = new P2PNode({peerInfo})
     this.directory = dirInfo
     this.p2p.handle(PROTOCOLS.node.ping, this.pingHandler.bind(this))
     this.p2p.handle(PROTOCOLS.node.id, this.idHandler.bind(this))
+    this.p2p.handle(PROTOCOLS.node.data, this.dataHandler.bind(this))
   }
 
   start (): Promise<void> {
@@ -270,8 +278,57 @@ class MediachainNode {
     throw new Error('Local statement db not implemented!')
   }
 
-  data (keys: Array<string>): Array<DataResultMsg> {
-    throw new Error('Local datastore not implemented!')
+  putData (...vals: Array<Object | Buffer>): Promise<Array<string>> {
+    return Promise.all(
+      vals.map(val => this.datastore.put(val))
+    )
+  }
+
+  data (...keys: Array<string>): Promise<Array<DataObjectMsg>> {
+    const valuePromises = keys.map(k => this.datastore.get(k, {returnRawBuffer: true}))
+    return Promise.all(valuePromises)
+      .then(vals => {
+        const kvs = zip(keys, vals)
+        return kvs.map(([key, data]) => ({
+          key,
+          data
+        }))
+      })
+  }
+
+  dataHandler (protocol: string, conn: Connection) {
+    pull(
+      // read data request from stream and decode
+      conn,
+      protoStreamDecode(pb.node.DataRequest),
+
+      // make sure we close the stream when the node stops
+      this.p2p.newAbortable(),
+
+      // convert each request into a stream of keys, followed by a StreamEnd message object
+      pull.map(req => [...req.keys, {end: {}}]),
+      pull.flatten(),
+
+      // fetch values from the datastore, returning them in the same order as the input
+      paramap((keyOrEnd: string | Object, callback) => {
+        if (typeof keyOrEnd === 'object' && keyOrEnd.end !== undefined) {
+          return callback(null, keyOrEnd)
+        }
+
+        const key: string = keyOrEnd
+        this.datastore.get(key, {returnRawBuffer: true})
+          .catch(err => {
+            callback(null, {error: {error: err.message}})
+          })
+          .then(data => {
+            callback(null, {data: {key, data}})
+          })
+      }),
+
+      // encode to DataResult protobuf and send on the wire
+      protoStreamEncode(pb.node.DataResult),
+      conn
+    )
   }
 
   remoteQueryWithDataStream (peer: PeerInfo | PeerId | string, queryString: string): Promise<PullStreamSource> {
