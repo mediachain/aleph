@@ -5,6 +5,7 @@
 [include]
 
 [libs]
+<PROJECT_ROOT>/flow-typed/.*
 
 [options]
 suppress_comment= \\(.\\|\n\\)*\\$FlowIssue
