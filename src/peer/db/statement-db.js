@@ -71,11 +71,42 @@ class StatementDB {
       db.table('Statement')
         .first('data')
         .where('id', id)
-    ).then(row => {
-      const {data} = row
-      return pb.stmt.Statement.decode(data)
-    })
+    ).then(decodeStatementRow)
   }
+
+  getByWKI (wki: string): Promise<Array<StatementMsg>> {
+    return this.sqlDB().then(db =>
+      db.table('Statement')
+        .join('Refs', 'Statement.id', 'Refs.id')
+        .select('Statement.data')
+        .where('Refs.wki', wki)
+    ).then(rows => rows.map(decodeStatementRow))
+  }
+
+  getByNamespace (ns: string): Promise<Array<StatementMsg>> {
+    return this.sqlDB().then(db =>
+      db.table('Statement')
+        .join('Envelope', 'Statement.id', 'Envelope.id')
+        .select('Statement.data')
+        .whereRaw(namespaceCriteria('Envelope.namespace', ns))
+    ).then(rows => rows.map(decodeStatementRow))
+  }
+}
+
+function decodeStatementRow (row: {data: Buffer}): StatementMsg {
+  return pb.stmt.Statement.decode(row.data)
+}
+
+function namespaceCriteria (field: string, ns: string): string {
+  if (ns === '*') {
+    return `${field} != ''`
+  }
+  const starIndex = ns.indexOf('*')
+  if (starIndex < 0) {
+    return `${field} = '${ns}'`
+  }
+  const prefix = ns.substr(0, starIndex - 1)
+  return `${field} LIKE '%${prefix}%%'`
 }
 
 // TODO: move these helpers elsewhere
