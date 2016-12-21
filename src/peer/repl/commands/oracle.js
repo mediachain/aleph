@@ -3,7 +3,7 @@
 const os = require('os')
 const { bootstrap } = require('../util')
 const Web3 = require('web3');
-const SimpleWrite = require('../../contracts/simplewrite/build/contracts/SimpleWrite.sol.js')
+const SimpleWrite = require('../../../contracts/simplewrite/build/contracts/SimpleWrite.sol.js')
 
 module.exports = {
   command: 'oracle',
@@ -57,12 +57,11 @@ module.exports = {
         }
 
         init.then(() => {
-          let provider = new web3.providers.HttpProvider(rpc)
-          let web3 = new Web3()
-          web3.setProvider(provider)
-          let simpleWrite = new SimpleWrite()
-          simplewrite.setProvider(provider)
-          let we = s.Write()
+          const web3 = new Web3()
+          web3.setProvider(new web3.providers.HttpProvider(rpc))
+          const simpleWrite = new SimpleWrite(10000)
+          simplewrite.setProvider(web3.currentProvider)
+          const we = s.Write()
 
           if(!web3.isConnected()){
             // TODO: may need to sleep here?
@@ -70,7 +69,7 @@ module.exports = {
             process.exit(-1)
           } else {
             console.log(`Connected to ethereum RPC:`, rpc)
-            sw.watch(orderPlacedHandler)
+            we.watch(orderPlacedHandler)
             // oce.watch(orderCompletedHandler)
           }
         }).catch(err => {
