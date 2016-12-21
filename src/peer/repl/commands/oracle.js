@@ -3,6 +3,7 @@
 const os = require('os')
 const { bootstrap } = require('../util')
 const Web3 = require('web3');
+const SimpleWrite = require('../../contracts/simplewrite/build/contracts/SimpleWrite.sol.js')
 
 module.exports = {
   command: 'oracle',
@@ -56,14 +57,20 @@ module.exports = {
         }
 
         init.then(() => {
-          let web3 = initEth(rpc)
+          let provider = new web3.providers.HttpProvider(rpc)
+          let web3 = new Web3()
+          web3.setProvider(provider)
+          let simpleWrite = new SimpleWrite()
+          simplewrite.setProvider(provider)
+          let we = s.Write()
+
           if(!web3.isConnected()){
             // TODO: may need to sleep here?
             console.error(`Unable to connect to ethereum RPC:`, rpc)
             process.exit(-1)
           } else {
             console.log(`Connected to ethereum RPC:`, rpc)
-            // ope.watch(orderPlacedHandler)
+            sw.watch(orderPlacedHandler)
             // oce.watch(orderCompletedHandler)
           }
         }).catch(err => {
@@ -73,23 +80,10 @@ module.exports = {
   }
 }
 
-function initEth(rpc: string): Web3 {
-  const web3 = new Web3()
-  web3.setProvider(new web3.providers.HttpProvider(rpc));
-  return web3
-}
-
 function orderPlacedHandler(err, event) {
-  // listen for OrderPlaced event, call completeOrder
-
-  // registration (write)
-  // token.completeOrder(config.namespace, thing,
-  // config.namespaceOwner, {from: account});
-
-  // lookup (read)
-  // token.completeOrder(thing.id, buyer,
-  // thing.owner, {from: account});
-}
-
-function orderCompletedHandler(err, event){
+  if(err){
+    console.error(err)
+  } else {
+    console.log(event)
+  }
 }
