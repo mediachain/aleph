@@ -17,7 +17,7 @@ const DefaultOptions: StatementDBOptions = {
 }
 
 class StatementDB {
-  _db: Knex$Knex
+  _db: Object
   _migrated: boolean = false
 
   constructor (options: StatementDBOptions = DefaultOptions) {
@@ -37,7 +37,7 @@ class StatementDB {
    * the db.
    * @returns {Knex$Knex}
    */
-  sqlDB (): Promise<Knex$Knex> {
+  sqlDB (): Promise<Object> {
     if (this._migrated) return Promise.resolve(this._db)
 
     return this._db.migrate.latest({directory: MIGRATIONS_DIR})
@@ -48,7 +48,7 @@ class StatementDB {
   }
 
   put (stmt: StatementMsg): Promise<void> {
-    return this.sqlDB().then((db: Knex$Knex) => {
+    return this.sqlDB().then(db => {
       const data = pb.stmt.Statement.encode(stmt)
       const {id, namespace, publisher, timestamp} = stmt
       const refs = Array.from(statementRefs(stmt))
