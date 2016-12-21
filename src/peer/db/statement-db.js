@@ -64,6 +64,17 @@ class StatementDB {
       )
     })
   }
+
+  get (id: string): Promise<StatementMsg> {
+    return this.sqlDB().then(db =>
+      db.table('Statement')
+        .first('data')
+        .where('id', id)
+    ).then(row => {
+      const {data} = row
+      return pb.stmt.Statement.decode(data)
+    })
+  }
 }
 
 // TODO: move these helpers elsewhere
