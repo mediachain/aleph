@@ -1,0 +1,26 @@
+{
+  "name": "simplewrite",
+  "version": "0.0.1",
+  "description": "Simple mediachain writer contract",
+  "main": "truffle.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "truffle test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mediachain/aleph.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "borc": "^2.0.1",
+    "web3": "^0.16.0",
+    "zeppelin-solidity": "0.0.11"
+  },
+  "devDependencies": {
+    "truffle": "^3.0.0-9"
+  }
+}
