@@ -101,9 +101,24 @@ declare class Knex$QueryBuilder mixins Promise {
   returning(columns: string[]): this;
 }
 
+declare type Knex$MigrationConfig = {
+  directory?: string,
+  extension?: string,
+  tableName?: string,
+  disableTransactions?: boolean
+}
+
+declare class Knex$Migrate {
+  make (config?: Knex$MigrationConfig): Promise<void>;
+  latest (config?: Knex$MigrationConfig): Promise<void>;
+  rollback (config?: Knex$MigrationConfig): Promise<void>;
+  currentVersion (config?: Knex$MigrationConfig): Promise<string>;
+}
+
 declare class Knex$Knex mixins Knex$QueryBuilder, Promise {
   static (config: Knex$Config): Knex$Knex;
   static QueryBuilder: typeof Knex$QueryBuilder;
+  migrate: Knex$Migrate;
   (tableName: string): Knex$QueryBuilder;
   raw(sqlString: string): any;
   client: any;
@@ -139,7 +154,7 @@ declare type Knex$SqliteConfig = {
 }
 declare type Knex$Config = Knex$PostgresConfig | Knex$MysqlConfig | Knex$SqliteConfig;
 
-declare module 'knex' {
+declare module 'Knex' {
   declare type Error = {
     name: string,
     length: number,
