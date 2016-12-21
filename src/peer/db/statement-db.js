@@ -36,7 +36,7 @@ class StatementDB {
    * Use this instead of directly accessing the `_db` instance,
    * to ensure that the db migrations are run before accessing
    * the db.
-   * @returns {Knex$Knex}
+   * @returns {*}
    */
   sqlDB (): Promise<Object> {
     if (this._migrated) return Promise.resolve(this._db)
