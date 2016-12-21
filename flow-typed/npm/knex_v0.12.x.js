@@ -91,6 +91,8 @@ declare class Knex$QueryBuilder mixins Promise {
   avgDistinct(column?: string): this;
   pluck(column: string): this;
   first(): this;
+  into(table: string): this;
+  table(table: string): this;
   from(table: string): this;
   from(builder: Knex$QueryBuilderFn|Knex$Knex|Knex$QueryBuilder): this;
 
@@ -123,7 +125,7 @@ declare class Knex$Knex mixins Knex$QueryBuilder, Promise {
   raw(sqlString: string): any;
   client: any;
   destroy(): Promise<void>;
-
+  transaction(trx: (Knex$Transaction) => any): any;
 }
 
 declare type Knex$PostgresConfig = {

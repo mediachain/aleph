@@ -135,10 +135,12 @@ export type StatementBodyMsg = { simple: SimpleStatementMsg } |
     { archive: ArchiveStatementMsg }
 
 export type StatementMsg = {
-  id?: string,
-  publisher?: string,
-  namespace?: string,
+  id: string,
+  publisher: string,
+  namespace: string,
   body: StatementBodyMsg,
+  timestamp: number,
+  signature: Buffer,
 };
 
 export type ProtoCodec<T> = { encode: (obj: T) => Buffer, decode: (buf: Buffer) => T }
