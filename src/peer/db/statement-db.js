@@ -18,7 +18,7 @@ const DefaultOptions: StatementDBOptions = {
 
 class StatementDB {
   _db: Object
-  _migrated: boolean = false
+  _migrated: boolean
 
   constructor (options: StatementDBOptions = DefaultOptions) {
     this._db = Knex({
@@ -28,6 +28,7 @@ class StatementDB {
       },
       useNullAsDefault: true
     })
+    this._migrated = false
   }
 
   /**
