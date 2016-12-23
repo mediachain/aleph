@@ -28,7 +28,6 @@ import type { Connection } from 'interface-connection'
 import type { PullStreamSource } from './util'
 import type { DatastoreOptions } from './datastore'
 import type { StatementDBOptions } from './db/statement-db'
-import type { PublisherId } from './identity'
 
 export type MediachainNodeOptions = {
   peerId: PeerId,
