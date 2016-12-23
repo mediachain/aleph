@@ -7,12 +7,14 @@ const Crypto = require('libp2p-crypto')
 const Multiaddr = require('multiaddr')
 const b58 = require('bs58')
 
-const KEY_TYPE = 'RSA'
-const KEY_BITS = 2048
+const NODE_KEY_TYPE = 'RSA'
+const NODE_KEY_BITS = 2048
+const PUBLISHER_KEY_TYPE = 'Ed25519'
+const PUBLISHER_KEY_BITS = 512
 const IPFS_CODE = 421
 
 function generateIdentity (): Promise<PeerId> {
-  return PeerId.create({bits: KEY_BITS})
+  return PeerId.create({bits: NODE_KEY_BITS})
 }
 
 function saveIdentity (peerId: PeerId, filePath: string) {
@@ -20,7 +22,7 @@ function saveIdentity (peerId: PeerId, filePath: string) {
     throw new Error('PeerID has no private key, cannot persist')
   }
 
-  const privKeyBytes = Crypto.marshalPrivateKey(peerId.privKey, KEY_TYPE)
+  const privKeyBytes = Crypto.marshalPrivateKey(peerId.privKey, NODE_KEY_TYPE)
   fs.writeFileSync(filePath, privKeyBytes)
 }
 
@@ -106,8 +108,6 @@ export type PublisherId = {
 }
 /* eslint-enable no-undef */
 
-const PUBLISHER_KEY_TYPE = 'RSA' // change to Ed25519 once PR is merged
-const PUBLISHER_KEY_BITS = 1024 // change to 512
 function generatePublisherId (): Promise<PublisherId> {
   return new Promise((resolve, reject) => {
     Crypto.generateKeyPair(PUBLISHER_KEY_TYPE, PUBLISHER_KEY_BITS,
