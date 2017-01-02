@@ -66,7 +66,7 @@ describe('Push', () => {
     console.log('test statement ids: ', statementIds)
     return alephNode.start()
       .then(() => concatNodePeerInfo())
-      .then(pInfo => alephNode.pushByStatementId(pInfo, statementIds))
+      .then(pInfo => alephNode.pushStatementsById(pInfo, statementIds))
       .then(result => {
         assert(result != null)
       })
