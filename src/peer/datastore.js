@@ -2,6 +2,7 @@
 
 const { clone } = require('lodash')
 const Levelup = require('levelup')
+const uuid = require('node-uuid')
 const serialize = require('../metadata/serialize')
 const Multihashing = require('multihashing')
 const Multihash = require('multihashes')
@@ -17,6 +18,7 @@ const DefaultOptions: DatastoreOptions = {
 
 class Datastore {
   db: Levelup
+  location: string
 
   constructor (options: ?DatastoreOptions = null) {
     if (options == null) {
@@ -37,10 +39,11 @@ class Datastore {
 
     levelOpts.valueEncoding = valueCodec
     const location = (options.location == null || options.location === '')
-      ? '/aleph/data-' + Math.random().toString()
+      ? '/aleph/data-' + uuid.v4()
       : options.location
 
     this.db = Levelup(location, levelOpts)
+    this.location = location
   }
 
   put (value: Buffer | Object): Promise<string> {
@@ -52,7 +55,7 @@ class Datastore {
     const key = Multihash.toB58String(mh)
 
     return new Promise((resolve, reject) => {
-      this.db.put(key, value, {}, (err) => {
+      this.db.put(key, value, {sync: true}, (err) => {
         if (err) return reject(err)
         resolve(key)
       })
@@ -62,7 +65,10 @@ class Datastore {
   get (key: string, opts: {returnRawBuffer?: boolean} = {}): Promise<Object | string> {
     return new Promise((resolve, reject) => {
       this.db.get(key, (err, val) => {
-        if (err) return reject(err)
+        if (err) {
+          console.error(`datastore (${this.location}) get error: `, err)
+          return reject(err)
+        }
 
         if (opts.returnRawBuffer === true) {
           return resolve(val)

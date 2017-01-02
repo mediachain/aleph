@@ -2,16 +2,16 @@
 
 const assert = require('assert')
 const { before, describe, it } = require('mocha')
-const { loadTestNodeIds, makeNode } = require('./util')
+const { makeNode } = require('./util')
 
 describe('Node Info', function () {
   const infoMessage = 'tests are great!'
 
   let p1, p2
-  before(() => loadTestNodeIds().then(nodeIds => {
-    p1 = makeNode({peerId: nodeIds.pop()})
-    p2 = makeNode({peerId: nodeIds.pop(), infoMessage})
-  }))
+  before(() => Promise.all([
+    makeNode().then(_p1 => { p1 = _p1 }),
+    makeNode({infoMessage}).then(_p2 => { p2 = _p2 })
+  ]))
 
   it('retrieves the ids and info message from another node', () => {
     return Promise.all([p1.start(), p2.start()])  // start both peers

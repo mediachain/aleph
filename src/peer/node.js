@@ -57,7 +57,11 @@ class MediachainNode {
       peerInfo.multiaddr.add(Multiaddr(addr))
     })
 
-    this.datastore = new Datastore(options.datastoreOptions)
+    const datastoreOptions = (options.datastoreOptions != null)
+      ? options.datastoreOptions
+      : { backend: 'memory', location: '/aleph/data-' + peerId.toB58String() }
+
+    this.datastore = new Datastore(datastoreOptions)
     this.db = new StatementDB(options.statementDBOptions)
 
     this.infoMessage = options.infoMessage || DEFAULT_INFO_MESSAGE
