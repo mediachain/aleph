@@ -419,7 +419,7 @@ function pushStatementsToConn (statements: Array<Object>, conn: Connection): Pul
 
   // state variables
   let requestSent = false
-  let sentEndMessage = false
+  let endMessageSent = false
   let handshakeReceived = locks.createCondVariable(false)
 
   // a pull-stream source that sends three kinds of messages, depending on the current state:
@@ -442,18 +442,18 @@ function pushStatementsToConn (statements: Array<Object>, conn: Connection): Pul
     handshakeReceived.wait(
       val => val === true,
       () => {
-        // if we're out of statements, and haven't already done so send the final PushValue "end" message
-        // to signal the end of the stream
-        if (!sentEndMessage && statements.length < 1) {
-          sentEndMessage = true
-          const msg = { end: {} }
+        // if we have statements, pop one from the head of the array and send it, wrapped in a PushValue
+        if (statements.length > 0) {
+          const stmt = statements.pop()
+          const msg = { stmt }
           return callback(null, pb.node.PushValue.encode(msg))
         }
 
-        // if we have statements, pop one from the head of the array and send it, wrapped in a PushValue
-        const stmt = statements.pop()
-        if (stmt != null) {
-          const msg = { stmt }
+        // if we're out of statements, and haven't already done so, send the final PushValue "end" message
+        // to signal the end of the stream
+        if (!endMessageSent) {
+          endMessageSent = true
+          const msg = { end: {} }
           return callback(null, pb.node.PushValue.encode(msg))
         }
       }
