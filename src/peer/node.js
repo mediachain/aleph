@@ -308,7 +308,6 @@ class MediachainNode {
       // read data request from stream and decode
       conn,
       protoStreamDecode(pb.node.DataRequest),
-      pull.through(req => console.log('data request: ', req)),
       // make sure we close the stream when the node stops
       this.p2p.newAbortable(),
 
@@ -332,7 +331,6 @@ class MediachainNode {
           })
       }),
 
-      pull.through(resp => console.log('sending data response: ', resp)),
       // encode to DataResult protobuf and send on the wire
       protoStreamEncode(pb.node.DataResult),
       conn
@@ -435,7 +433,6 @@ function pushStatementsToConn (statements: Array<Object>, conn: Connection): Pul
     // first, send the initial request
     if (!requestSent) {
       requestSent = true
-      console.log('sending push request: ', req)
       return callback(null, pb.node.PushRequest.encode(req))
     }
 
@@ -450,7 +447,6 @@ function pushStatementsToConn (statements: Array<Object>, conn: Connection): Pul
         if (!sentEndMessage && statements.length < 1) {
           sentEndMessage = true
           const msg = { end: {} }
-          console.log('sending push end message: ', msg)
           return callback(null, pb.node.PushValue.encode(msg))
         }
 
@@ -458,7 +454,6 @@ function pushStatementsToConn (statements: Array<Object>, conn: Connection): Pul
         const stmt = statements.pop()
         if (stmt != null) {
           const msg = { stmt }
-          console.log('sending push value message: ', msg)
           return callback(null, pb.node.PushValue.encode(msg))
         }
       }
@@ -475,7 +470,6 @@ function pushStatementsToConn (statements: Array<Object>, conn: Connection): Pul
       // read the initial PushResponse message from the peer
       if (!handshakeReceived.get()) {
         const handshake = pb.node.PushResponse.decode(data)
-        console.log('got push handshake: ', handshake)
 
         // if we got a rejection, close the stream with an error, passing along the message from the peer
         if (handshake.reject !== undefined) {
@@ -505,7 +499,6 @@ function pushStatementsToConn (statements: Array<Object>, conn: Connection): Pul
     conn,
     lp.decode(),
     reader,
-    pull.through(resp => console.log('push response: ', resp))
   )
 }
 

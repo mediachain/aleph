@@ -63,7 +63,6 @@ describe('Push', () => {
   )
 
   it('pushes data to a concat node', () => {
-    console.log('test statement ids: ', statementIds)
     return alephNode.start()
       .then(() => concatNodePeerInfo())
       .then(pInfo => alephNode.pushStatementsById(pInfo, statementIds))
