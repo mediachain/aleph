@@ -51,13 +51,13 @@ describe('Push', () => {
   let statementIds
 
   before(() => loadTestNodeIds().then(nodeIds => {
-      const peerId = nodeIds.pop()
-      alephPeerIdB58 = peerId.toB58String()
-      alephNode = new AlephNode({peerId})
-    })
+    const peerId = nodeIds.pop()
+    alephPeerIdB58 = peerId.toB58String()
+    alephNode = new AlephNode({peerId})
+  })
     .then(() => generatePublisherId())
     .then(publisherId => seedStatementsToAleph(publisherId, alephNode))
-    .then(_statementIds => statementIds = _statementIds)
+    .then(_statementIds => { statementIds = _statementIds })
     .then(() => concatNodeClient())
     .then(concat => concat.authorize(alephPeerIdB58, ['scratch.*']))
   )
