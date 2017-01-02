@@ -8,12 +8,11 @@ const Multihash = require('multihashes')
 
 export type DatastoreOptions = {
   backend: 'memory', // just in-memory for now, expand to e.g. rocksdb
-  location: string
+  location?: string
 }
 
 const DefaultOptions: DatastoreOptions = {
-  backend: 'memory',
-  location: '/aleph/data'
+  backend: 'memory'
 }
 
 class Datastore {
@@ -37,7 +36,11 @@ class Datastore {
     }
 
     levelOpts.valueEncoding = valueCodec
-    this.db = Levelup(levelOpts)
+    const location = (options.location == null || options.location === '')
+      ? '/aleph/data-' + Math.random().toString()
+      : options.location
+
+    this.db = Levelup(location, levelOpts)
   }
 
   put (value: Buffer | Object): Promise<string> {
