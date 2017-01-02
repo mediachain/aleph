@@ -379,14 +379,10 @@ class MediachainNode {
 
   pushStatements (peer: PeerInfo | PeerId | string, statements: Array<StatementMsg>): Promise<PushEndMsg> {
     return this.openConnection(peer, PROTOCOLS.node.push)
-      .then(conn =>
-        pullToPromise(
-          pushStatementsToConn(statements, conn)
-        )
-      )
+      .then(conn => pushStatementsToConn(statements, conn))
   }
 
-  pushStatementsById (peer: PeerInfo | PeerId | string, statementIds: Array<string>): Promise<*> {
+  pushStatementsById (peer: PeerInfo | PeerId | string, statementIds: Array<string>): Promise<PushEndMsg> {
     return Promise.all(statementIds.map(id => this.db.get(id)))
       .then(statements => this.pushStatements(peer, statements))
   }

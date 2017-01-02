@@ -1,12 +1,12 @@
 // @flow
 
-const pull = require('pull-stream')
 const lp = require('pull-length-prefixed')
 const locks = require('locks')
 const pb = require('../protobuf')
+const { pullToPromise } = require('./util')
 
 import type { Connection } from 'interface-connection'
-import type { PullStreamSource } from './util'
+import type { StatementMsg, PushEndMsg } from '../protobuf/types'
 
 /**
  * "Driver" function for pushing statements to a remote peer.
@@ -24,7 +24,7 @@ import type { PullStreamSource } from './util'
  * @param conn - an open libp2p Connection to the remote peer's /mediachain/node/push handler
  * @returns {*}
  */
-function pushStatementsToConn (statements: Array<Object>, conn: Connection): PullStreamSource<*> {
+function pushStatementsToConn (statements: Array<StatementMsg>, conn: Connection): Promise<PushEndMsg> {
   // build the PushRequest message
   const namespaces: Set<string> = new Set()
   for (const stmt of statements) {
@@ -109,17 +109,20 @@ function pushStatementsToConn (statements: Array<Object>, conn: Connection): Pul
     })
   }
 
-  // return a pull-stream source that's composed of our writer -> conn -> reader pipeline.
+  // create a pull-stream source that's composed of our writer -> conn -> reader pipeline.
   // the lp.encode() and lp.decode() functions are used to segment the length-prefixed messages
   // from the raw byte stream exposed by the connection.  This is handled automatically by the
   // protoStreamEncode / Decode helpers, but we can't use those here since we need to produce / accept
   // multiple message types in each handler.
-  return pull(
+  //
+  // Since the stream only returns a single value (or error), we use the pullToPromise helper to
+  // grab the result and deliver it as a Promise, thus escaping the wilds of pull-stream land
+  return pullToPromise(
     writer,
     lp.encode(),
     conn,
     lp.decode(),
-    reader,
+    reader
   )
 }
 
