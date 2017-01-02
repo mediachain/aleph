@@ -69,6 +69,9 @@ describe('Push', () => {
       .then(pInfo => alephNode.pushStatementsById(pInfo, statementIds))
       .then(result => {
         assert(result != null)
+        assert.equal(result.statements, seedObjects.length, 'peer did not accept all statements')
+        assert.equal(result.objects, seedObjects.length, 'peer did not accept all objects')
+        assert.equal(result.error, '', 'peer returned an error')
       })
   })
 })
