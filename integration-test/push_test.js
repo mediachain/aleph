@@ -8,65 +8,23 @@ const { getTestNodeId } = require('../test/util')
 const { MediachainNode: AlephNode } = require('../src/peer/node')
 const { concatNodeClient, concatNodePeerInfo } = require('./util')
 const { generatePublisherId } = require('../src/peer/identity')
-const { signStatement } = require('../src/metadata/signatures')
-
-import type { PublisherId } from '../src/peer/identity'
 
 const seedObjects = [
   {id: 'foo:1', foo: 'bar'},
   {id: 'foo:2', foo: 'baz'}
 ]
 
-// TODO: write "publish" method for aleph nodes, use instead of this hack
-function seedStatementsToAleph (publisherId: PublisherId, alephNode: AlephNode): Promise<*> {
-  return alephNode.putData(...seedObjects)
-    .then(keys => Promise.all(keys.map((key, idx) => {
-      const alephId = alephNode.peerInfo.id.toB58String()
-      const timestamp = Date.now()
-      const statementId = `${alephId}:${timestamp}:${idx}`
-      const stmt = {
-        id: statementId,
-        publisher: publisherId.id58,
-        namespace: 'scratch.test',
-        body: {
-          simple: {
-            object: key,
-            refs: [`foo:${idx}`],
-            deps: [],
-            tags: []
-          }
-        },
-        timestamp,
-        signature: Buffer.from('')
-      }
-      return signStatement(stmt, publisherId)
-        .then(signed => alephNode.db.put(signed))
-        .then(() => statementId)
-    })))
+function seedStatementsToAleph (alephNode: AlephNode): Promise<Array<string>> {
+  return Promise.all(
+    seedObjects.map(obj =>
+      alephNode.ingestSimpleStatement('scratch.test', obj, { refs: [obj.id] })
+    )
+  )
 }
 
-function seedUnauthorizedStatement (publisherId: PublisherId, alephNode: AlephNode): Promise<*> {
-  const alephId = alephNode.peerInfo.id.toB58String()
-  const timestamp = Date.now()
-  const statementId = `${alephId}:${timestamp}:1234`
-  const stmt = {
-    id: statementId,
-    publisher: publisherId.id58,
-    namespace: 'members-only.test',
-    body: {
-      simple: {
-        object: 'QmREZU7Pqv3ezGWnXQiHXCm2uipjdHkuXWRygx5gMt4Bwq',
-        refs: [`foo:1`],
-        deps: [],
-        tags: []
-      }
-    },
-    timestamp,
-    signature: Buffer.from('')
-  }
-  return signStatement(stmt, publisherId)
-    .then(signed => alephNode.db.put(signed))
-    .then(() => statementId)
+function seedUnauthorizedStatement (alephNode: AlephNode): Promise<string> {
+  const obj = {letMeIn: 'please'}
+  return alephNode.ingestSimpleStatement('members.only', obj, { refs: ['foo'] })
 }
 
 describe('Push', () => {
@@ -76,19 +34,23 @@ describe('Push', () => {
   let statementIds
   let unauthorizedStatementId
 
-  before(() => getTestNodeId().then(nodeId => {
-    const peerId = nodeId
-    alephPeerIdB58 = peerId.toB58String()
-    alephNode = new AlephNode({peerId})
-  })
-    .then(() => generatePublisherId())
+  before(() => generatePublisherId()
     .then(_publisherId => { publisherId = _publisherId })
-    .then(() => seedStatementsToAleph(publisherId, alephNode))
+    .then(() => getTestNodeId())
+    .then(nodeId => {
+      const peerId = nodeId
+      alephPeerIdB58 = peerId.toB58String()
+      alephNode = new AlephNode({peerId, publisherId})
+    })
+    .then(() => seedStatementsToAleph(alephNode))
     .then(_statementIds => { statementIds = _statementIds })
-    .then(() => seedUnauthorizedStatement(publisherId, alephNode))
+    .then(() => seedUnauthorizedStatement(alephNode))
     .then(_stmtId => { unauthorizedStatementId = _stmtId })
     .then(() => concatNodeClient())
     .then(concat => concat.authorize(alephPeerIdB58, ['scratch.*']))
+    .catch(err => {
+      console.error('error during push setup:', err)
+    })
   )
 
   it('pushes data to a concat node', () => {
