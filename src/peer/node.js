@@ -23,7 +23,7 @@ const {
   expandQueryResult
 } = require('./util')
 
-import type { QueryResultMsg, QueryResultValueMsg, DataResultMsg, DataObjectMsg, NodeInfoMsg } from '../protobuf/types'
+import type { QueryResultMsg, QueryResultValueMsg, DataResultMsg, DataObjectMsg, NodeInfoMsg, PushValueMsg } from '../protobuf/types'
 import type { Connection } from 'interface-connection'
 import type { PullStreamSource } from './util'
 import type { DatastoreOptions } from './datastore'
@@ -43,6 +43,7 @@ const DEFAULT_INFO_MESSAGE = '(aleph)'
 class MediachainNode {
   p2p: P2PNode
   datastore: Datastore
+  db: StatementDB
   directory: ?PeerInfo
   infoMessage: string
 
@@ -305,7 +306,7 @@ class MediachainNode {
       // read data request from stream and decode
       conn,
       protoStreamDecode(pb.node.DataRequest),
-
+      pull.through(req => console.log('data request: ', req)),
       // make sure we close the stream when the node stops
       this.p2p.newAbortable(),
 
@@ -329,6 +330,7 @@ class MediachainNode {
           })
       }),
 
+      pull.through(resp => console.log('sending data response: ', resp)),
       // encode to DataResult protobuf and send on the wire
       protoStreamEncode(pb.node.DataResult),
       conn
@@ -377,42 +379,88 @@ class MediachainNode {
   }
 
   pushByStatementId (peer: PeerInfo | PeerId | string, statementIds: Array<string>): Promise<*> {
-    return Promise.all(statementIds.map(id => this.db.getByWKI(id)))
+    return Promise.all(statementIds.map(id => this.db.get(id)))
       .then(statements => {
         const namespaces: Set<string> = new Set()
         for (const stmt of statements) {
           namespaces.add(stmt.namespace)
         }
 
-        const req = {namespaces: Array.from(namespaces)}
-
-        return this.openConnection(peer, PROTOCOLS.node.push).then(conn =>
-          pullToPromise(
-            // send the push request to the remote node
-            pull.values([req]),
-            protoStreamEncode(pb.node.PushRequest),
-            conn,
-
-            // if we received a rejection, end the stream with an error
-            // otherwise, map the statements into a stream of PushValue messages,
-            // followed by a StreamEnd message.
-            pull.asyncMap((response, callback) => {
-              if (response.reject !== undefined) {
-                return callback(new Error(response.reject.error))
-              }
-              const pushValues = statements.map(stmt => ({ stmt }))
-              return callback(null, [ ...pushValues, { end: {} } ])
-            }),
-            pull.flatten(),
-            conn,
-
-            // when the other end has received all statements (or ended with an error),
-            // it will send a PushEnd message
-            protoStreamDecode(pb.node.PushEnd)
+        return this.openConnection(peer, PROTOCOLS.node.push)
+          .then(conn =>
+            pullToPromise(
+              statementPushHandler(statements, namespaces, conn)
+            )
           )
-        )
       })
   }
+}
+
+function statementPushHandler (statements: Array<Object>, namespaces: Set<string>, conn: Connection): PullStreamSource<*> {
+  const req = {namespaces: Array.from(namespaces)}
+  const lp = require('pull-length-prefixed')
+  const locks = require('locks')
+
+  let requestSent = false
+  let sentEndMessage = false
+  let handshakeReceived = locks.createCondVariable(false)
+
+  const source = (end, callback) => {
+    if (end) return callback(end)
+    if (!requestSent) {
+      requestSent = true
+      console.log('sending push request: ', req)
+      return callback(null, pb.node.PushRequest.encode(req))
+    }
+
+    handshakeReceived.wait(
+      val => val === true,
+      () => {
+        if (!sentEndMessage && statements.length < 1) {
+          sentEndMessage = true
+          const msg = { end: {} }
+          console.log('sending push end message: ', msg)
+          return callback(null, pb.node.PushValue.encode(msg))
+        }
+        const stmt = statements.pop()
+        if (stmt != null) {
+          const msg = { stmt }
+          console.log('sending push value message: ', msg)
+          return callback(null, pb.node.PushValue.encode(msg))
+        }
+      }
+    )
+
+  }
+
+  const through = read => (end, callback) => {
+    read(end, (end, data) => {
+      if (end) return callback(end)
+
+      if (!handshakeReceived.get()) {
+        const handshake = pb.node.PushResponse.decode(data)
+        console.log('got push handshake: ', handshake)
+        if (handshake.reject !== undefined) {
+          return callback(new Error(handshake.reject.error))
+        }
+        handshakeReceived.set(true)
+
+        read(null, (end, data) => {
+          const pushEnd = pb.node.PushEnd.decode(data)
+          return callback(null, pushEnd)
+        })
+      }
+    })
+  }
+
+  return pull(
+    source,
+    lp.encode(),
+    conn,
+    lp.decode(),
+    through,
+    pull.through(resp => console.log('push response: ', resp))
+  )
 }
 
 class RemoteNode {

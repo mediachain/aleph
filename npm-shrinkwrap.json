@@ -24,9 +24,9 @@
       "resolved": "https://registry.npmjs.org/acorn/-/acorn-1.2.2.tgz"
     },
     "ajv": {
-      "version": "4.10.0",
+      "version": "4.10.1",
       "from": "ajv@>=4.9.2 <5.0.0",
-      "resolved": "https://registry.npmjs.org/ajv/-/ajv-4.10.0.tgz"
+      "resolved": "https://registry.npmjs.org/ajv/-/ajv-4.10.1.tgz"
     },
     "amdefine": {
       "version": "1.0.1",
@@ -135,21 +135,14 @@
       "resolved": "https://registry.npmjs.org/bin-build/-/bin-build-2.2.0.tgz"
     },
     "bl": {
-      "version": "1.1.2",
+      "version": "1.2.0",
       "from": "bl@>=1.0.0 <2.0.0",
-      "resolved": "https://registry.npmjs.org/bl/-/bl-1.1.2.tgz",
-      "dependencies": {
-        "readable-stream": {
-          "version": "2.0.6",
-          "from": "readable-stream@>=2.0.5 <2.1.0",
-          "resolved": "https://registry.npmjs.org/readable-stream/-/readable-stream-2.0.6.tgz"
-        }
-      }
+      "resolved": "https://registry.npmjs.org/bl/-/bl-1.2.0.tgz"
     },
     "bluebird": {
-      "version": "3.4.6",
+      "version": "3.4.7",
       "from": "bluebird@>=3.4.6 <4.0.0",
-      "resolved": "https://registry.npmjs.org/bluebird/-/bluebird-3.4.6.tgz"
+      "resolved": "https://registry.npmjs.org/bluebird/-/bluebird-3.4.7.tgz"
     },
     "bn.js": {
       "version": "4.11.6",
@@ -1803,9 +1796,10 @@
       }
     },
     "nan": {
-      "version": "2.4.0",
+      "version": "2.5.0",
       "from": "nan@>=2.4.0 <3.0.0",
-      "resolved": "https://registry.npmjs.org/nan/-/nan-2.4.0.tgz"
+      "resolved": "https://registry.npmjs.org/nan/-/nan-2.5.0.tgz",
+      "optional": true
     },
     "ndjson": {
       "version": "1.5.0",
@@ -1836,7 +1830,7 @@
     },
     "node-webcrypto-ossl": {
       "version": "1.0.15",
-      "from": "node-webcrypto-ossl@>=1.0.13 <2.0.0",
+      "from": "node-webcrypto-ossl@>=1.0.15 <2.0.0",
       "resolved": "https://registry.npmjs.org/node-webcrypto-ossl/-/node-webcrypto-ossl-1.0.15.tgz",
       "optional": true
     },
@@ -2411,6 +2405,11 @@
       "from": "sqlite3@>=3.1.8 <4.0.0",
       "resolved": "https://registry.npmjs.org/sqlite3/-/sqlite3-3.1.8.tgz",
       "dependencies": {
+        "nan": {
+          "version": "2.4.0",
+          "from": "nan@>=2.4.0 <2.5.0",
+          "resolved": "https://registry.npmjs.org/nan/-/nan-2.4.0.tgz"
+        },
         "node-pre-gyp": {
           "version": "0.6.31",
           "from": "node-pre-gyp@~0.6.31",
