@@ -38,9 +38,7 @@ class Datastore {
     }
 
     levelOpts.valueEncoding = valueCodec
-    const location = (options.location == null || options.location === '')
-      ? '/aleph/data-' + uuid.v4()
-      : options.location
+    const location = options.location || '/aleph/data-' + uuid.v4()
 
     this.db = Levelup(location, levelOpts)
     this.location = location
