@@ -2,9 +2,11 @@
 
 const path = require('path')
 const Knex = require('knex')
+const locks = require('locks')
 const pb = require('../../protobuf')
 
 import type { StatementMsg, SimpleStatementMsg, EnvelopeStatementMsg, CompoundStatementMsg } from '../../protobuf/types'
+import type { Mutex } from 'locks'
 
 const MIGRATIONS_DIR = path.join(__dirname, 'migrations')
 
@@ -19,8 +21,11 @@ const DefaultOptions: StatementDBOptions = {
 class StatementDB {
   _db: Object
   _migrated: boolean
+  _migrationLock: Mutex
 
-  constructor (options: StatementDBOptions = DefaultOptions) {
+  constructor (options: ?StatementDBOptions = DefaultOptions) {
+    if (options == null) options = DefaultOptions
+
     this._db = Knex({
       client: 'sqlite3',
       connection: {
@@ -29,6 +34,7 @@ class StatementDB {
       useNullAsDefault: true
     })
     this._migrated = false
+    this._migrationLock = locks.createMutex()
   }
 
   /**
@@ -41,11 +47,15 @@ class StatementDB {
   sqlDB (): Promise<Object> {
     if (this._migrated) return Promise.resolve(this._db)
 
-    return this._db.migrate.latest({directory: MIGRATIONS_DIR})
-      .then(() => {
-        this._migrated = true
-        return this._db
-      })
+    return new Promise(resolve => this._migrationLock.lock(() => {
+      if (this._migrated) return resolve(this._db)
+      this._db.migrate.latest({directory: MIGRATIONS_DIR})
+        .then(() => {
+          this._migrated = true
+          this._migrationLock.unlock()
+          resolve(this._db)
+        })
+    }))
   }
 
   put (stmt: StatementMsg): Promise<void> {
