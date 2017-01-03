@@ -141,8 +141,7 @@ function statementRefs (stmt: StatementMsg): Set<string> {
   if (stmt.body.envelope !== undefined) {
     return envelopeStmtRefs((stmt.body.envelope: any))
   }
-  // should be unreachable
-  return new Set()
+  throw new Error('Invalid statement type (expected simple, compound, or envelope)')
 }
 
 function simpleStmtRefs (stmt: SimpleStatementMsg): Set<string> {
