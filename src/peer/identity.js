@@ -5,6 +5,7 @@ const PeerId = thenifyAll(require('peer-id'), {}, ['createFromPrivKey', 'create'
 const PeerInfo = require('peer-info')
 const Crypto = require('libp2p-crypto')
 const Multiaddr = require('multiaddr')
+const b58 = require('bs58')
 
 const KEY_TYPE = 'RSA'  // change to ECC when possible
 const KEY_BITS = 2048
@@ -85,10 +86,42 @@ function inflateMultiaddr (multiaddrString: string): PeerInfo {
   return peerInfo
 }
 
+interface PrivateSigningKey {
+  sign (message: Buffer, callback: (err: ?Error, sig: Buffer) => void)
+  public: PublicSigningKey
+  bytes: buffer
+}
+
+interface PublicSigningKey {
+  verify (message: Buffer, signature: buffer, callback: (err: ?Error, valid: boolean) => void)
+  bytes: Buffer
+}
+
+export type PublisherId = {
+  id58: string,
+  privateKey: PrivateSigningKey
+}
+
+const PUBLISHER_KEY_TYPE = 'RSA' // change to Ed25519 once PR is merged
+const PUBLISHER_KEY_BITS = 1024 // change to 512
+function generatePublisherId (): Promise<PublisherId> {
+  return new Promise((resolve, reject) => {
+    Crypto.generateKeyPair(PUBLISHER_KEY_TYPE, PUBLISHER_KEY_BITS, (err: ?Error, privateKey: PrivateSigningKey) => {
+      if (err) return reject(err)
+      const id58 = b58.encode(privateKey.public.bytes)
+      resolve({
+        id58,
+        privateKey
+      })
+    })
+  })
+}
+
 module.exports = {
   generateIdentity,
   saveIdentity,
   loadIdentity,
   loadOrGenerateIdentity,
-  inflateMultiaddr
+  inflateMultiaddr,
+  generatePublisherId
 }
