@@ -14,7 +14,7 @@ git stash -q --keep-index
 STASH_REF_AFTER=$(git rev-parse --verify -q refs/stash 2>/dev/null)
 
 # run standard (code style enforcer), flow, and tests
-npm run check && npm run test
+npm run check && npm run test && npm shrinkwrap
 
 RESULT=$?
 

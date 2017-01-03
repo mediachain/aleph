@@ -275,7 +275,7 @@ class MediachainNode {
 
   // local queries (NOT IMPLEMENTED -- NO LOCAL STORE)
   query (queryString: string): Promise<Array<QueryResultMsg>> {
-    throw new Error('Local statement db not implemented!')
+    throw new Error('Local statement _db not implemented!')
   }
 
   putData (...vals: Array<Object | Buffer>): Promise<Array<string>> {
