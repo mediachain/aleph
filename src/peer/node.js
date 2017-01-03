@@ -10,6 +10,7 @@ const paramap = require('pull-paramap')
 const { DEFAULT_LISTEN_ADDR, PROTOCOLS } = require('./constants')
 const { inflateMultiaddr } = require('./identity')
 const { Datastore } = require('./datastore')
+const { StatementDB } = require('./db/statement-db')
 const {
   protoStreamEncode,
   protoStreamDecode,
@@ -26,13 +27,15 @@ import type { QueryResultMsg, QueryResultValueMsg, DataResultMsg, DataObjectMsg,
 import type { Connection } from 'interface-connection'
 import type { PullStreamSource } from './util'
 import type { DatastoreOptions } from './datastore'
+import type { StatementDBOptions } from './db/statement-db'
 
 export type MediachainNodeOptions = {
   peerId: PeerId,
   dirInfo?: PeerInfo,
   listenAddresses?: Array<Multiaddr | string>,
   infoMessage?: string,
-  datastoreOptions?: DatastoreOptions
+  datastoreOptions?: DatastoreOptions,
+  statementDBOptions?: StatementDBOptions,
 }
 
 const DEFAULT_INFO_MESSAGE = '(aleph)'
@@ -53,6 +56,7 @@ class MediachainNode {
     })
 
     this.datastore = new Datastore(options.datastoreOptions)
+    this.db = new StatementDB(options.statementDBOptions)
 
     this.infoMessage = options.infoMessage || DEFAULT_INFO_MESSAGE
 
@@ -370,6 +374,44 @@ class MediachainNode {
       .then((dataResults: Array<DataObjectMsg>) =>
         expandQueryResult(result, dataResults)
       )
+  }
+
+  pushByStatementId (peer: PeerInfo | PeerId | string, statementIds: Array<string>): Promise<*> {
+    return Promise.all(statementIds.map(id => this.db.getByWKI(id)))
+      .then(statements => {
+        const namespaces: Set<string> = new Set()
+        for (const stmt of statements) {
+          namespaces.add(stmt.namespace)
+        }
+
+        const req = {namespaces: Array.from(namespaces)}
+
+        return this.openConnection(peer, PROTOCOLS.node.push).then(conn =>
+          pullToPromise(
+            // send the push request to the remote node
+            pull.values([ req ]),
+            protoStreamEncode(pb.node.PushRequest),
+            conn,
+
+            // if we received a rejection, end the stream with an error
+            // otherwise, map the statements into a stream of PushValue messages,
+            // followed by a StreamEnd message.
+            pull.asyncMap((response, callback) => {
+              if (response.reject !== undefined) {
+                return callback(new Error(response.reject.error))
+              }
+              const pushValues = statements.map(stmt => ({ stmt }))
+              return callback(null, [ ...pushValues, { end: {} } ])
+            }),
+            pull.flatten(),
+            conn,
+
+            // when the other end has received all statements (or ended with an error),
+            // it will send a PushEnd message
+            protoStreamDecode(pb.node.PushEnd)
+          )
+        )
+      })
   }
 }
 
