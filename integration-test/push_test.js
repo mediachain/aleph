@@ -48,9 +48,6 @@ describe('Push', () => {
     .then(_stmtId => { unauthorizedStatementId = _stmtId })
     .then(() => concatNodeClient())
     .then(concat => concat.authorize(alephPeerIdB58, ['scratch.*']))
-    .catch(err => {
-      console.error('error during push setup:', err)
-    })
   )
 
   it('pushes data to a concat node', () => {
