@@ -22,7 +22,9 @@ const {
   objectIdsForQueryResult,
   expandQueryResult
 } = require('./util')
+const { promiseHash } = require('../common/util')
 const { pushStatementsToConn } = require('./push')
+const { mergeFromStreams } = require('./merge')
 const { signStatement } = require('../metadata/signatures')
 
 import type { QueryResultMsg, QueryResultValueMsg, DataResultMsg, DataObjectMsg, NodeInfoMsg, StatementMsg, StatementBodyMsg, PushEndMsg } from '../protobuf/types'
@@ -31,6 +33,7 @@ import type { PullStreamSource } from './util'
 import type { DatastoreOptions } from './datastore'
 import type { StatementDBOptions } from './db/statement-db'
 import type { PublisherId } from './identity'
+import type { MergeResult } from './merge'
 
 export type MediachainNodeOptions = {
   peerId: PeerId,
@@ -405,6 +408,14 @@ class MediachainNode {
       .then((dataResults: Array<DataObjectMsg>) =>
         expandQueryResult(result, dataResults)
       )
+  }
+
+  merge (peer: PeerInfo | PeerId | string, queryString: string): Promise<MergeResult> {
+    return promiseHash({
+      queryStream: this.remoteQueryStream(peer, queryString),
+      dataConn: this.openConnection(peer, PROTOCOLS.node.data)
+    })
+      .then(({queryStream, dataConn}) => mergeFromStreams(this, queryStream, dataConn))
   }
 
   pushStatements (peer: PeerInfo | PeerId | string, statements: Array<StatementMsg>): Promise<PushEndMsg> {

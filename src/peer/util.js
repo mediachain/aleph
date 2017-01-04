@@ -9,7 +9,7 @@ const {decode} = require('../metadata/serialize')
 const _ = require('lodash')
 const { flatMap } = require('../common/util')
 
-import type { PeerInfoMsg, LookupPeerResponseMsg, ProtoCodec, QueryResultMsg, QueryResultValueMsg, SimpleValueMsg, DataResultMsg, DataObjectMsg, StatementMsg, StatementBodyMsg, SimpleStatementMsg } from '../protobuf/types'  // eslint-disable-line no-unused-vars
+import type { PeerInfoMsg, LookupPeerResponseMsg, ProtoCodec, QueryResultMsg, QueryResultValueMsg, SimpleValueMsg, DataResultMsg, DataObjectMsg, StatementMsg, StatementBodyMsg, SimpleStatementMsg, CompoundStatementMsg } from '../protobuf/types'  // eslint-disable-line no-unused-vars
 
 // Flow signatures for pull-streams
 export type PullStreamCallback<T> = (end: ?mixed, value?: ?T) => void
@@ -166,7 +166,7 @@ const resultStreamThrough: MediachainStreamThrough<*> = (read) => {
   }
 }
 
-function objectIdsForQueryResult (result: QueryResultValueMsg): Array<string> {
+function valuesFromQueryResult (result: QueryResultValueMsg): Array<SimpleValueMsg> {
   let values: Array<SimpleValueMsg> = []
 
   const simpleResultValue: ?SimpleValueMsg = _.get(result, 'simple')
@@ -179,24 +179,31 @@ function objectIdsForQueryResult (result: QueryResultValueMsg): Array<string> {
       values = compoundResultBodies.map(b => b.value)
     }
   }
+  return values
+}
 
-  const statementBodies: Array<StatementBodyMsg> = values
+function statementsFromQueryResult (result: QueryResultValueMsg): Array<StatementMsg> {
+  return valuesFromQueryResult(result)
     .map(v => _.get(v, 'stmt'))
     .filter(stmt => stmt != null)
-    .map((stmt: StatementMsg) => stmt.body)
+}
 
-  const simpleStatements: Array<SimpleStatementMsg> =
-    flatMap(statementBodies, s => {
-      const stmt: ?SimpleStatementMsg = _.get(s, 'simple')
-      if (stmt != null) return [stmt]
-
-      const compoundStatements: Array<SimpleStatementMsg> =
-        _.get(s, 'compound.body')
-      if (compoundStatements != null) return compoundStatements
-      return []
-    })
-
+function objectIdsFromStatement (stmt: StatementMsg): Array<string> {
+  let simpleStatements: Array<SimpleStatementMsg> = []
+  if (stmt.body.simple !== undefined) {
+    const simpleStmt: SimpleStatementMsg = (stmt.body.simple: any)
+    simpleStatements = [simpleStmt]
+  }
+  if (stmt.body.compound !== undefined) {
+    const compoundStmt: CompoundStatementMsg = (stmt.body.compound: any)
+    simpleStatements = compoundStmt.body
+  }
   return simpleStatements.map(s => s.object)
+}
+
+function objectIdsForQueryResult (result: QueryResultValueMsg): Array<string> {
+  const statements = statementsFromQueryResult(result)
+  return flatMap(statements, objectIdsFromStatement)
 }
 
 function expandQueryResult (result: QueryResultValueMsg, dataObjects: Array<DataObjectMsg>): Object {
@@ -241,6 +248,8 @@ module.exports = {
   pullToPromise,
   pullRepeatedly,
   resultStreamThrough,
+  statementsFromQueryResult,
+  objectIdsFromStatement,
   objectIdsForQueryResult,
   expandQueryResult
 }

@@ -123,12 +123,12 @@ function generatePublisherId (): Promise<PublisherId> {
   })
 }
 
-function publisherKeyFromB58String (key58: string): PublicSigningKey {
-  const bytes = b58.decode(key58)
+function publisherKeyFromB58String (key58: string): PublicSigningKey { // eslint-disable-line no-undef
+  const bytes = Buffer.from(b58.decode(key58))
   return Crypto.unmarshalPublicKey(bytes)
 }
 
-function publisherKeyToB58String (key: PublicSigningKey): string {
+function publisherKeyToB58String (key: PublicSigningKey): string { // eslint-disable-line no-undef
   return b58MultihashForBuffer(key.bytes)
 }
 
