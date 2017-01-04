@@ -3,7 +3,7 @@
 
 const assert = require('assert')
 const { describe, it, before } = require('mocha')
-const { PromiseHash } = require('../src/common/util')
+const { promiseHash } = require('../src/common/util')
 
 const { getTestNodeId } = require('../test/util')
 const { MediachainNode: AlephNode } = require('../src/peer/node')
@@ -96,7 +96,7 @@ describe('Push', () => {
   it('returns counts + error message for partially successful push', () => {
     const numValid = 10
     return alephNode.start()
-      .then(() => PromiseHash({
+      .then(() => promiseHash({
         pInfo: concatNodePeerInfo(),
         statements: preparePartiallyValidStatements(alephNode, numValid)
       }))

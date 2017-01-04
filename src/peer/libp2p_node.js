@@ -13,7 +13,7 @@ const multiaddr = require('multiaddr')
 const Ping = require('libp2p-ping')
 const mafmt = require('mafmt')
 const Abortable = require('pull-abortable')
-const { promiseTimeout } = require('./util')
+const { promiseTimeout } = require('../common/util')
 
 import type { Connection } from 'interface-connection'
 
