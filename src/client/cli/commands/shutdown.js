@@ -1,7 +1,7 @@
 // @flow
 
 const RestClient = require('../../api/RestClient')
-const { subcommand } = require('../util')
+const { subcommand, println } = require('../util')
 
 module.exports = {
   command: 'shutdown',
@@ -9,7 +9,7 @@ module.exports = {
   handler: subcommand((opts: {client: RestClient}) => {
     const {client} = opts
     return client.shutdown().then(
-      console.log('Node shutdown successfully')
+      println('Node shutdown successfully')
     )
   })
 }

@@ -1,7 +1,7 @@
 // @flow
 
 const RestClient = require('../../api/RestClient')
-const {subcommand} = require('../util')
+const {subcommand, println} = require('../util')
 
 module.exports = {
   command: 'id [peerId]',
@@ -16,7 +16,7 @@ module.exports = {
 
 function printIds (opts: {peer: string, publisher: string, info: string}) {
   const {peer, publisher, info} = opts
-  console.log(`Peer ID: ${peer}`)
-  console.log(`Publisher ID: ${publisher}`)
-  console.log(`Info: ${info}`)
+  println(`Peer ID: ${peer}`)
+  println(`Publisher ID: ${publisher}`)
+  println(`Info: ${info}`)
 }

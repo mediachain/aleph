@@ -1,7 +1,7 @@
 // @flow
 
 const RestClient = require('../../api/RestClient')
-const { subcommand } = require('../util')
+const { subcommand, println } = require('../util')
 import type { NodeStatus } from '../../api/RestClient'
 
 module.exports = {
@@ -13,7 +13,7 @@ module.exports = {
     const {client, newStatus} = opts
 
     if (!newStatus) {
-      return client.getStatus().then(console.log)
+      return client.getStatus().then(println)
     }
 
     let status: NodeStatus
@@ -30,7 +30,7 @@ module.exports = {
     }
     return client.setStatus(status)
       .then(returnedStatus => {
-        console.log(`status set to ${returnedStatus}`)
+        println(`status set to ${returnedStatus}`)
       })
   })
 }

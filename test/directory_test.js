@@ -4,21 +4,19 @@ const assert = require('assert')
 const { describe, it, before, afterEach } = require('mocha')
 const eventually = require('mocha-eventually')
 
-const { loadTestNodeIds, makeNode, makeDirectory } = require('./util')
+const { makeNode, makeDirectory } = require('./util')
 
 describe('Directory Node', function () {
   let dir, node, nodeIdB58
 
-  before(() => {
-    return loadTestNodeIds().then(nodeIds => {
-      const dirId = nodeIds.pop()
-      const nodeId = nodeIds.pop()
-      nodeIdB58 = nodeId.toB58String()
-      dir = makeDirectory({peerId: dirId})
-      node = makeNode({peerId: nodeId, dirInfo: dir.peerInfo})
-      return Promise.all([dir.start(), node.start()])
+  before(() => makeDirectory().then(_dir => { dir = _dir })
+    .then(() => makeNode({dirInfo: dir.peerInfo}))
+    .then(_node => {
+      node = _node
+      nodeIdB58 = node.peerInfo.id.toB58String()
     })
-  })
+    .then(() => Promise.all([node.start(), dir.start()]))
+  )
 
   afterEach(() => {
     dir.registeredPeers.removeByB58String(nodeIdB58)

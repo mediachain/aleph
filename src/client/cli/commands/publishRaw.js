@@ -1,7 +1,7 @@
 // @flow
 
 const RestClient = require('../../api/RestClient')
-const { subcommand } = require('../util')
+const { subcommand, println } = require('../util')
 
 module.exports = {
   command: 'publishRaw <namespace> <statementBodyId>',
@@ -13,6 +13,6 @@ module.exports = {
     const {client, namespace, statementBodyId} = opts
 
     return client.publish({namespace}, {object: statementBodyId})
-      .then(console.log)
+      .then(objectIds => objectIds.forEach(println))
   })
 }

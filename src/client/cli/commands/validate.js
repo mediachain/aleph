@@ -5,7 +5,7 @@ const path = require('path')
 const RestClient = require('../../api/RestClient')
 const { JQTransform } = require('../../../metadata/jqStream')
 const { validate, loadSelfDescribingSchema, validateSelfDescribingSchema } = require('../../../metadata/schema')
-const { subcommand, pluralizeCount, isB58Multihash } = require('../util')
+const { subcommand, pluralizeCount, isB58Multihash, println } = require('../util')
 import type { Readable } from 'stream'
 import type { SelfDescribingSchema } from '../../../metadata/schema'
 
@@ -114,7 +114,7 @@ function validateStream (opts: {
         return reject(new Error(`Error reading from ${streamName}: ${err.message}`))
       })
       .on('end', () => {
-        console.log(`${pluralizeCount(count, 'statement')} validated successfully`)
+        println(`${pluralizeCount(count, 'statement')} validated successfully`)
         resolve()
       })
   })

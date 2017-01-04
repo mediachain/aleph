@@ -1,7 +1,7 @@
 // @flow
 
 const RestClient = require('../../api/RestClient')
-const { subcommand, pluralizeCount } = require('../util')
+const { subcommand, pluralizeCount, println } = require('../util')
 
 module.exports = {
   command: 'merge <remotePeer> <queryString>',
@@ -12,7 +12,7 @@ module.exports = {
 
     return client.merge(queryString, remotePeer)
       .then(({statementCount, objectCount}) => {
-        console.log(
+        println(
           `merged ${pluralizeCount(statementCount, 'statement')} and ${pluralizeCount(objectCount, 'object')}`
         )
       })

@@ -1,7 +1,7 @@
 // @flow
 
 const RestClient = require('../../api/RestClient')
-const { subcommand } = require('../util')
+const { subcommand, println } = require('../util')
 
 type Opts = {client: RestClient, info: boolean, namespace?: string, includeSelf: boolean}
 
@@ -36,7 +36,7 @@ module.exports = {
         if (info) {
           return fetchInfos(peers, opts)
         } else {
-          peers.forEach(p => console.log(p))
+          peers.forEach(p => println(p))
         }
       }
     )
@@ -49,7 +49,7 @@ function printInfo (ids: Object, isSelf: boolean = false) {
     msg = ids.info
   }
   const selfMsg = isSelf ? '(self) ' : ''
-  console.log(`${ids.peer} ${selfMsg}-- ${msg}`)
+  println(`${ids.peer} ${selfMsg}-- ${msg}`)
 }
 
 function fetchInfos (peerIds: Array<string>, opts: Opts): Promise<*> {
@@ -72,7 +72,7 @@ function fetchInfos (peerIds: Array<string>, opts: Opts): Promise<*> {
         promises.push(
           client.id(peer)
             .then(printInfo)
-            .catch(err => { console.log(`${peer} -- Unable to fetch info: ${err.message}`) })
+            .catch(err => { println(`${peer} -- Unable to fetch info: ${err.message}`) })
         )
       }
     }

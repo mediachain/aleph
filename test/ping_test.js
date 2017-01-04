@@ -2,18 +2,21 @@
 
 const assert = require('assert')
 const { before, describe, it } = require('mocha')
-const { loadTestNodeIds, makeNode } = require('./util')
+const { getTestNodeId, makeNode } = require('./util')
 const PeerInfo = require('peer-info')
 const Multiaddr = require('multiaddr')
 
 describe('Ping', function () {
   let p1, p2, invalidPeer
-  before(() => loadTestNodeIds().then(nodeIds => {
-    p1 = makeNode({peerId: nodeIds.pop()})
-    p2 = makeNode({peerId: nodeIds.pop()})
-    invalidPeer = PeerInfo(nodeIds.pop())
-    invalidPeer.multiaddr.add(Multiaddr('/ip4/1.2.3.4/tcp/4321'))
-  }))
+
+  before(() => Promise.all([
+    makeNode().then(_p1 => { p1 = _p1 }),
+    makeNode().then(_p2 => { p2 = _p2 }),
+    getTestNodeId().then(id => {
+      invalidPeer = PeerInfo(id)
+      invalidPeer.multiaddr.add(Multiaddr('/ip4/1.2.3.4/tcp/4321'))
+    })
+  ]))
 
   it('pings another node directly by PeerInfo', () => {
     return Promise.all([p1.start(), p2.start()])  // start both peers

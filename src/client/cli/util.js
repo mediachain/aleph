@@ -7,6 +7,8 @@ const { JQ_PATH } = require('../../metadata/jqStream')
 const childProcess = require('child_process')
 const sshTunnel = require('tunnel-ssh')
 const { RestClient } = require('../api')
+import type { Writable } from 'stream'
+import type { WriteStream } from 'tty'
 
 function formatJSON (obj: ?mixed,
                     options: {color?: ?boolean, pretty?: boolean} = {}): string {
@@ -68,23 +70,16 @@ function ensureAll (obj: Object, keys: Array<string>, description: string = 'obj
   }
 }
 
-function ensureAny (obj: Object, keys: Array<string>, description: string = 'object') {
-  for (const key of keys) {
-    if (obj[key] !== undefined) return
-  }
-  throw new Error(`${description} must have one of the following fields: ${keys.join(', ')}`)
-}
-
 function prepareSSHConfig (config: Object | string): Object {
   if (typeof config === 'string') {
     config = JSON.parse(fs.readFileSync(config, 'utf8'))
   }
 
   ensureAll(config, ['host', 'username'], 'SSH configuration')
-  ensureAny(config, ['password', 'privateKey'], 'SSH configuration')
 
   const defaultOpts = {
-    dstPort: '9002',
+    dstPort: 9002,
+    localPort: 0,
     localHost: 'localhost',
     keepAlive: true
   }
@@ -104,8 +99,8 @@ type SubcommandGlobalOptions = { // eslint-disable-line no-unused-vars
 
 function subcommand<T: SubcommandGlobalOptions> (handler: (argv: T) => Promise<*>): (argv: GlobalOptions) => void {
   return (argv: GlobalOptions) => {
-    const {apiUrl, sshConfig, timeout} = argv
-    const client = new RestClient({apiUrl, requestTimeout: timeout})
+    const {sshConfig, timeout} = argv
+    let {apiUrl} = argv
 
     const sshTunnelConfig = (sshConfig != null)
       ? prepareSSHConfig(sshConfig)
@@ -115,7 +110,17 @@ function subcommand<T: SubcommandGlobalOptions> (handler: (argv: T) => Promise<*
     let sshTunnel = null
     if (sshTunnelConfig != null) {
       sshTunnelPromise = setupSSHTunnel(sshTunnelConfig)
-        .then(tunnel => { sshTunnel = tunnel })
+        .then(tunnel => {
+          tunnel.on('error', err => {
+            console.error(`SSH Error: ${err.message}`)
+            tunnel.close()
+            process.exit(1)
+          })
+          const addr = tunnel.address()
+
+          sshTunnel = tunnel
+          apiUrl = `http://${addr.address}:${addr.port}`
+        })
     } else {
       sshTunnelPromise = Promise.resolve()
     }
@@ -126,11 +131,12 @@ function subcommand<T: SubcommandGlobalOptions> (handler: (argv: T) => Promise<*
       }
     }
 
-    // Using lodash as a kind of flow "escape valve", since it's being stubborn
-    const subcommandOptions: T = set(clone(argv), 'client', client)
-
     sshTunnelPromise
-      .then(() => handler(subcommandOptions))
+      .then(() => {
+        const client = new RestClient({apiUrl, requestTimeout: timeout})
+        return set(clone(argv), 'client', client)
+      })
+      .then(subcommandOptions => handler(subcommandOptions))
       .then(closeTunnel)
       .catch(err => {
         closeTunnel()
@@ -140,7 +146,39 @@ function subcommand<T: SubcommandGlobalOptions> (handler: (argv: T) => Promise<*
   }
 }
 
+/**
+ * Print `output` to the `destination` stream and append a newline.
+ * @param output
+ * @param destination
+ */
+function writeln (output: string, destination: Writable | WriteStream) {
+  destination.write(output + '\n')
+}
+
+/**
+ * Print `output` to stdout and append a newline.
+ * Always use this instead of console.log for non-debug output!
+ * console.log keeps a strong reference to whatever you pass in,
+ * which can result in memory leaks for long-running processes.
+ * @param output
+ */
+function println (output: string) {
+  writeln(output, process.stdout)
+}
+
+/**
+ * Print `output` to stderr and append a newline.
+ * Use if you don't want console.error to keep a strong reference
+ * to whatever you pass in.
+ * @param output
+ */
+function printlnErr (output: string) {
+  writeln(output, process.stderr)
+}
+
 module.exports = {
+  println,
+  printlnErr,
   formatJSON,
   printJSON,
   pluralizeCount,

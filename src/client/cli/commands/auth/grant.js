@@ -1,7 +1,7 @@
 // @flow
 
 const RestClient = require('../../../api/RestClient')
-const { subcommand, printJSON } = require('../../util')
+const { subcommand, printJSON, println } = require('../../util')
 
 module.exports = {
   command: 'grant <peerId> <namespaces..>',
@@ -16,7 +16,7 @@ module.exports = {
     return client.authorize(peerId, namespaces)
       .then(() => client.getAuthorizations())
       .then(auths => {
-        console.log(`Granted authorizations for peer ${peerId}:`)
+        println(`Granted authorizations for peer ${peerId}:`)
         printJSON(auths[peerId])
       })
   })

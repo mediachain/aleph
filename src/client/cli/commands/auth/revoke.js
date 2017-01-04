@@ -1,7 +1,7 @@
 // @flow
 
 const RestClient = require('../../../api/RestClient')
-const { subcommand } = require('../../util')
+const { subcommand, println } = require('../../util')
 
 module.exports = {
   command: 'revoke <peerId>',
@@ -10,6 +10,6 @@ module.exports = {
     const {apiUrl, peerId} = opts
     const client = new RestClient({apiUrl})
     return client.revokeAuthorization(peerId)
-      .then(() => { console.log(`Revoked authorization for ${peerId}.`) })
+      .then(() => { println(`Revoked authorization for ${peerId}.`) })
   })
 }

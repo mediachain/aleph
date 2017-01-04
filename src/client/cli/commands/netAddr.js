@@ -1,7 +1,7 @@
 // @flow
 
 const RestClient = require('../../api/RestClient')
-const { subcommand } = require('../util')
+const { subcommand, println } = require('../util')
 
 module.exports = {
   command: 'netAddr [peerId]',
@@ -15,15 +15,15 @@ module.exports = {
         addresses => {
           if (addresses.length < 1) {
             if (peerId != null) {
-              console.warn(`No known addresses for peer ${peerId}`)
+              println(`No known addresses for peer ${peerId}`)
             } else {
-              console.warn(
+              println(
                 'Local node does not have an address. Make sure status is set to "online" or "public"'
               )
             }
           } else {
             addresses.forEach(addr => {
-              console.log(addr)
+              println(addr)
             })
           }
         })

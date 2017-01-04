@@ -4,23 +4,23 @@
 const assert = require('assert')
 const { before, describe, it } = require('mocha')
 
-const { loadTestNodeIds } = require('../test/util')
+const { getTestNodeId } = require('../test/util')
 const { MediachainNode: AlephNode } = require('../src/peer/node')
 const { setConcatNodeStatus, concatNodePeerInfo, setConcatNodeInfoMessage } = require('./util')
 
 describe('Node Info', () => {
-  let nodeIds = []
+  let nodeId
   const infoMessage = `I'm a concat test node`
 
   before(() => {
     return Promise.all([
-      loadTestNodeIds().then(res => { nodeIds = res }),
+      getTestNodeId().then(id => { nodeId = id }),
       setConcatNodeInfoMessage(infoMessage)
     ])
   })
 
   it('retrieves the node ids and info message from a concat node', () => {
-    const alephPeer = new AlephNode({peerId: nodeIds.pop()})
+    const alephPeer = new AlephNode({peerId: nodeId})
     return alephPeer.start()
       .then(() => setConcatNodeStatus('online'))
       .then(() => concatNodePeerInfo())

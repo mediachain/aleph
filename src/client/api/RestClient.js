@@ -10,7 +10,7 @@ import type { Transform as TransformStream, Duplex as DuplexStream, Readable as 
 import type { StatementMsg, SimpleStatementMsg } from '../../protobuf/types'
 export type NodeStatus = 'online' | 'offline' | 'public'
 
-const DEFAULT_REQUEST_TIMEOUT = 15000
+const DEFAULT_REQUEST_TIMEOUT = 0
 
 type FetchResponse = {
   text: () => Promise<string>,
@@ -276,13 +276,13 @@ class RestClient {
       .then(validateStatus)
   }
 
-  getDirectoryId (): Promise<string> {
+  getDirectoryIds (): Promise<Array<string>> {
     return this.getRequest('config/dir')
-      .then(trimTextResponse)
+      .then(parseStringArrayResponse)
   }
 
-  setDirectoryId (id: string): Promise<boolean> {
-    return this.postRequest('config/dir', id, false)
+  setDirectoryIds (...ids: Array<string>): Promise<boolean> {
+    return this.postRequest('config/dir', ids.join('\n'), false)
       .then(() => true)
   }
 

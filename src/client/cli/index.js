@@ -17,7 +17,8 @@ yargs
   .option('timeout', {
     type: 'number',
     description: `Timeout (in seconds), to use for requests to the mediachain node's API.`,
-    default: 15,
+    default: 0,
+    defaultDescription: '0 (no timeout)',
     coerce: seconds => Math.floor(seconds * 1000) // convert to milliseconds for easier consumption
   })
   .global('apiUrl')
