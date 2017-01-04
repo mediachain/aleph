@@ -10,6 +10,7 @@ const paramap = require('pull-paramap')
 const { DEFAULT_LISTEN_ADDR, PROTOCOLS } = require('./constants')
 const { inflateMultiaddr } = require('./identity')
 const { Datastore } = require('./datastore')
+const { StatementDB } = require('./db/statement-db')
 const {
   protoStreamEncode,
   protoStreamDecode,
@@ -21,18 +22,24 @@ const {
   objectIdsForQueryResult,
   expandQueryResult
 } = require('./util')
+const { pushStatementsToConn } = require('./push')
+const { signStatement } = require('../metadata/signatures')
 
-import type { QueryResultMsg, QueryResultValueMsg, DataResultMsg, DataObjectMsg, NodeInfoMsg } from '../protobuf/types'
+import type { QueryResultMsg, QueryResultValueMsg, DataResultMsg, DataObjectMsg, NodeInfoMsg, StatementMsg, StatementBodyMsg, PushEndMsg } from '../protobuf/types'
 import type { Connection } from 'interface-connection'
 import type { PullStreamSource } from './util'
 import type { DatastoreOptions } from './datastore'
+import type { StatementDBOptions } from './db/statement-db'
+import type { PublisherId } from './identity'
 
 export type MediachainNodeOptions = {
   peerId: PeerId,
+  publisherId: ?PublisherId,
   dirInfo?: PeerInfo,
   listenAddresses?: Array<Multiaddr | string>,
   infoMessage?: string,
-  datastoreOptions?: DatastoreOptions
+  datastoreOptions?: DatastoreOptions,
+  statementDBOptions?: StatementDBOptions,
 }
 
 const DEFAULT_INFO_MESSAGE = '(aleph)'
@@ -40,11 +47,14 @@ const DEFAULT_INFO_MESSAGE = '(aleph)'
 class MediachainNode {
   p2p: P2PNode
   datastore: Datastore
+  db: StatementDB
   directory: ?PeerInfo
   infoMessage: string
+  publisherId: ?PublisherId
+  _statementCounter: number
 
   constructor (options: MediachainNodeOptions) {
-    let {peerId, dirInfo, listenAddresses} = options
+    let {peerId, publisherId, dirInfo, listenAddresses} = options
     if (listenAddresses == null) listenAddresses = [DEFAULT_LISTEN_ADDR]
 
     const peerInfo = new PeerInfo(peerId)
@@ -52,7 +62,13 @@ class MediachainNode {
       peerInfo.multiaddr.add(Multiaddr(addr))
     })
 
-    this.datastore = new Datastore(options.datastoreOptions)
+    const datastoreOptions = (options.datastoreOptions != null)
+      ? options.datastoreOptions
+      : { backend: 'memory', location: '/aleph/data-' + peerId.toB58String() }
+
+    this.publisherId = publisherId
+    this.datastore = new Datastore(datastoreOptions)
+    this.db = new StatementDB(options.statementDBOptions)
 
     this.infoMessage = options.infoMessage || DEFAULT_INFO_MESSAGE
 
@@ -61,6 +77,7 @@ class MediachainNode {
     this.p2p.handle(PROTOCOLS.node.ping, this.pingHandler.bind(this))
     this.p2p.handle(PROTOCOLS.node.id, this.idHandler.bind(this))
     this.p2p.handle(PROTOCOLS.node.data, this.dataHandler.bind(this))
+    this._statementCounter = 0
   }
 
   start (): Promise<void> {
@@ -73,6 +90,10 @@ class MediachainNode {
 
   get peerInfo (): PeerInfo {
     return this.p2p.peerInfo
+  }
+
+  get statementCounter (): number {
+    return this._statementCounter++
   }
 
   setDirectory (dirInfo: PeerInfo | string) {
@@ -138,6 +159,7 @@ class MediachainNode {
     }
 
     if (this.directory == null) {
+      // TODO: support DHT lookups
       return Promise.reject(new Error('No known directory server, cannot lookup'))
     }
 
@@ -273,9 +295,9 @@ class MediachainNode {
       ))
   }
 
-  // local queries (NOT IMPLEMENTED -- NO LOCAL STORE)
+  // local queries (MCQL parser NOT IMPLEMENTED)
   query (queryString: string): Promise<Array<QueryResultMsg>> {
-    throw new Error('Local statement _db not implemented!')
+    throw new Error('Local MCQL queries are not implemented!')
   }
 
   putData (...vals: Array<Object | Buffer>): Promise<Array<string>> {
@@ -301,7 +323,6 @@ class MediachainNode {
       // read data request from stream and decode
       conn,
       protoStreamDecode(pb.node.DataRequest),
-
       // make sure we close the stream when the node stops
       this.p2p.newAbortable(),
 
@@ -370,6 +391,54 @@ class MediachainNode {
       .then((dataResults: Array<DataObjectMsg>) =>
         expandQueryResult(result, dataResults)
       )
+  }
+
+  pushStatements (peer: PeerInfo | PeerId | string, statements: Array<StatementMsg>): Promise<PushEndMsg> {
+    return this.openConnection(peer, PROTOCOLS.node.push)
+      .then(conn => pushStatementsToConn(statements, conn))
+  }
+
+  pushStatementsById (peer: PeerInfo | PeerId | string, statementIds: Array<string>): Promise<PushEndMsg> {
+    return Promise.all(statementIds.map(id => this.db.get(id)))
+      .then(statements => this.pushStatements(peer, statements))
+  }
+
+  makeStatement (namespace: string, statementBody: StatementBodyMsg): Promise<StatementMsg> {
+    if (this.publisherId == null) {
+      return Promise.reject('Node does not have a publisher id, cannot create statements')
+    }
+
+    const timestamp = Date.now()
+    const counter = this.statementCounter.toString()
+    const statementId = [this.publisherId.id58, timestamp.toString(), counter].join(':')
+    const stmt = {
+      id: statementId,
+      publisher: this.publisherId.id58,
+      namespace,
+      timestamp,
+      body: statementBody,
+      signature: Buffer.from('')
+    }
+    return signStatement(stmt, this.publisherId)
+  }
+
+  ingestSimpleStatement (namespace: string, object: Object, meta: {
+    refs: Array<string>,
+    deps?: Array<string>,
+    tags?: Array<string>
+  })
+  : Promise<string> {
+    const {refs, deps, tags} = Object.assign({deps: [], tags: []}, meta)
+    return this.putData(object)
+      .then(([objectHash]) => ({
+        object: objectHash,
+        refs,
+        deps,
+        tags
+      }))
+      .then(statementBody => this.makeStatement(namespace, {simple: statementBody}))
+      .then(stmt => this.db.put(stmt)
+        .then(() => stmt.id))
   }
 }
 

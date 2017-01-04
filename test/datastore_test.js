@@ -2,7 +2,7 @@
 
 const assert = require('assert')
 const { before, describe, it } = require('mocha')
-const { loadTestNodeIds, makeNode } = require('./util')
+const { makeNode } = require('./util')
 const { zip } = require('lodash')
 const { encode } = require('../src/metadata/serialize')
 
@@ -16,20 +16,17 @@ describe('Datastore', function () {
 
   let expectedMessages = []
   let expectedKeys = []
-  before(() => loadTestNodeIds().then(nodeIds => {
-    p1 = makeNode({peerId: nodeIds.pop()})
-    p2 = makeNode({peerId: nodeIds.pop()})
-
-    return p1.putData(...SEED_OBJECTS)
-      .then(keys => {
-        expectedKeys = keys
-        const kvs = zip(keys, SEED_OBJECTS.map(encode))
-        expectedMessages = kvs.map(([key, data]) => ({
-          key,
-          data
-        }))
-      })
-  }))
+  before(() => makeNode().then(_p1 => { p1 = _p1 })
+    .then(() => makeNode().then(_p2 => { p2 = _p2 }))
+    .then(() => p1.putData(...SEED_OBJECTS))
+    .then(keys => {
+      expectedKeys = keys
+      const kvs = zip(keys, SEED_OBJECTS.map(encode))
+      expectedMessages = kvs.map(([key, data]) => ({
+        key,
+        data
+      }))
+    }))
 
   it(`fetches data from another node's datastore`, () => {
     return Promise.all([p1.start(), p2.start()])  // start both peers

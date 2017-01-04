@@ -1261,8 +1261,8 @@
     },
     "libp2p-crypto": {
       "version": "0.7.5",
-      "from": "libp2p-crypto@0.7.5",
-      "resolved": "https://registry.npmjs.org/libp2p-crypto/-/libp2p-crypto-0.7.5.tgz",
+      "from": "git://github.com/libp2p/js-libp2p-crypto.git#c45bdf602e765411d9d5fc2fddd45b31830f08e8",
+      "resolved": "git://github.com/libp2p/js-libp2p-crypto.git#c45bdf602e765411d9d5fc2fddd45b31830f08e8",
       "dependencies": {
         "protocol-buffers": {
           "version": "3.2.1",
@@ -1313,7 +1313,7 @@
     },
     "locks": {
       "version": "0.2.2",
-      "from": "locks@latest",
+      "from": "locks@>=0.2.2 <0.3.0",
       "resolved": "https://registry.npmjs.org/locks/-/locks-0.2.2.tgz"
     },
     "lodash": {
@@ -1781,12 +1781,12 @@
     },
     "node-uuid": {
       "version": "1.4.7",
-      "from": "node-uuid@>=1.4.7 <2.0.0",
+      "from": "https://registry.npmjs.org/node-uuid/-/node-uuid-1.4.7.tgz",
       "resolved": "https://registry.npmjs.org/node-uuid/-/node-uuid-1.4.7.tgz"
     },
     "node-webcrypto-ossl": {
       "version": "1.0.16",
-      "from": "node-webcrypto-ossl@>=1.0.13 <2.0.0",
+      "from": "node-webcrypto-ossl@>=1.0.15 <2.0.0",
       "resolved": "https://registry.npmjs.org/node-webcrypto-ossl/-/node-webcrypto-ossl-1.0.16.tgz",
       "optional": true
     },
@@ -3425,6 +3425,11 @@
           "resolved": "https://registry.npmjs.org/ms/-/ms-0.7.1.tgz"
         }
       }
+    },
+    "tweetnacl": {
+      "version": "0.14.5",
+      "from": "tweetnacl@>=0.14.5 <0.15.0",
+      "resolved": "https://registry.npmjs.org/tweetnacl/-/tweetnacl-0.14.5.tgz"
     },
     "typedarray": {
       "version": "0.0.6",

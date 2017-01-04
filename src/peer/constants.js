@@ -8,7 +8,8 @@ const PROTOCOLS = {
     id: '/mediachain/node/id',
     ping: '/mediachain/node/ping',
     query: '/mediachain/node/query',
-    data: '/mediachain/node/data'
+    data: '/mediachain/node/data',
+    push: '/mediachain/node/push'
   },
   dir: {
     list: '/mediachain/dir/list',

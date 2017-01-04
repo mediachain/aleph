@@ -10,7 +10,7 @@ const {
   protoStreamDecode,
   protoStreamEncode
 } = require('../src/peer/util')
-const { loadTestNodeIds, makeNode } = require('./util')
+const { makeNode } = require('./util')
 
 import type Node from '../src/peer/node'
 import type { QueryResultMsg } from '../src/protobuf/types'
@@ -31,14 +31,9 @@ function startNodes (...nodes: Array<Node>): Promise<*> {
 }
 
 describe('Remote Query', () => {
-  let local, remoteIds
+  let local
 
-  before(() => {
-    return loadTestNodeIds().then(nodeIds => {
-      local = makeNode({peerId: nodeIds.pop()})
-      remoteIds = nodeIds
-    })
-  })
+  before(() => makeNode().then(peer => { local = peer }))
 
   it('decodes all query result types correctly', function () {
     this.timeout(3000)
@@ -56,11 +51,15 @@ describe('Remote Query', () => {
 
     // the stream doesn't deliver the "end" response, it just ends the stream
     const expected = responses.slice(0, responses.length - 1)
-    // mock remote
-    const remote = makeNode({peerId: remoteIds.pop()})
-    remote.p2p.handle(PROTOCOLS.node.query, queryHandler(responses))
 
-    return startNodes(local, remote) // start both peers
+    let remote
+
+    return makeNode()
+      .then(node => {
+        remote = node
+        remote.p2p.handle(PROTOCOLS.node.query, queryHandler(responses))
+      })
+      .then(() => startNodes(local, remote)) // start both peers
       .then(() => local.remoteQueryStream(remote.p2p.peerInfo, 'SELECT * FROM foo.bar'))
       .then(resultStream =>
         new Promise(resolve => {
@@ -84,13 +83,16 @@ describe('Remote Query', () => {
       {value: {simple: {intValue: 123}}},
       {error: {error: errorMessage}}
     ]
-    // mock remote
-    const remote = makeNode({peerId: remoteIds.pop()})
-    remote.p2p.handle(PROTOCOLS.node.query, queryHandler(responses))
 
     const expected = responses.slice(0, responses.length - 1)
 
-    return startNodes(local, remote)
+    let remote
+    return makeNode()
+      .then(node => {
+        remote = node
+        remote.p2p.handle(PROTOCOLS.node.query, queryHandler(responses))
+      })
+      .then(() => startNodes(local, remote))
       .then(() => local.remoteQueryStream(remote.p2p.peerInfo, 'SELECT * FROM foo.bar'))
       .then(resultStream => new Promise(resolve => {
         pull(

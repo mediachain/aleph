@@ -5,30 +5,45 @@ const Directory = require('../src/peer/directory')
 const config = require('./config')
 const thenify = require('thenify')
 const PeerId = require('peer-id')
+const path = require('path')
 
-import type { MediachainNodeOptions } from '../src/peer/node'
-import type { DirectoryNodeOptions } from '../src/peer/directory'
+const createFromJSON = thenify(PeerId.createFromJSON)
+const nodeIdObjects = require('./resources/test_node_ids.json')
+const testNodeIds = Promise.all(nodeIdObjects.map(id => createFromJSON(id)))
 
-function loadTestNodeIds (): Promise<Array<PeerId>> {
-  const ids = require('./resources/test_node_ids.json')
-  const createFromJSON = thenify(PeerId.createFromJSON)
-  return Promise.all(ids.map((el, pos, array) => createFromJSON(el)))
+function getTestNodeId (): Promise<PeerId> {
+  return testNodeIds.then(ids => {
+    const id = ids.pop()
+    if (id == null) {
+      throw new Error(
+      'Out of pre-generated test ids! You should make some more and put them in ' +
+      path.join(__dirname, 'resources', 'test_node_ids.json')
+    )
+    }
+    return id
+  })
 }
 
-function makeNode (options: MediachainNodeOptions): Node {
-  const node = new Node(options)
-  node.p2p.setSecureIOEnabled(config.secureIOEnabled)
-  return node
+function makeNode (options: Object = {}): Promise<Node> {
+  return getTestNodeId().then(peerId => {
+    const nodeOptions = Object.assign({peerId}, options)
+    const node = new Node(nodeOptions)
+    node.p2p.setSecureIOEnabled(config.secureIOEnabled)
+    return node
+  })
 }
 
-function makeDirectory (options: DirectoryNodeOptions): Directory {
-  const dir = new Directory(options)
-  dir.p2p.setSecureIOEnabled(config.secureIOEnabled)
-  return dir
+function makeDirectory (options: Object): Promise<Directory> {
+  return getTestNodeId().then(peerId => {
+    const dirOptions = Object.assign({peerId}, options)
+    const dir = new Directory(dirOptions)
+    dir.p2p.setSecureIOEnabled(config.secureIOEnabled)
+    return dir
+  })
 }
 
 module.exports = {
-  loadTestNodeIds,
+  getTestNodeId,
   makeNode,
   makeDirectory
 }
