@@ -3,6 +3,7 @@
 
 const assert = require('assert')
 const { describe, it, before } = require('mocha')
+const { PromiseHash } = require('../src/common/util')
 
 const { getTestNodeId } = require('../test/util')
 const { MediachainNode: AlephNode } = require('../src/peer/node')
@@ -25,6 +26,26 @@ function seedStatementsToAleph (alephNode: AlephNode): Promise<Array<string>> {
 function seedUnauthorizedStatement (alephNode: AlephNode): Promise<string> {
   const obj = {letMeIn: 'please'}
   return alephNode.ingestSimpleStatement('members.only', obj, { refs: ['foo'] })
+}
+
+function preparePartiallyValidStatements (alephNode: AlephNode, numValid: number): Promise<Array<Object>> {
+  return alephNode.putData({hello: 'world'})
+    .then(([object]) => {
+      const promises = []
+      for (let i = 0; i < numValid; i++) {
+        promises.push(alephNode.makeStatement('scratch.test', {simple: {
+          object,
+          refs: [`test:${i.toString()}`],
+          deps: [],
+          tags: []
+        }}))
+      }
+      // add a statement with an invalid object reference
+      promises.push(alephNode.makeStatement('scratch.test', {simple: {
+        object: 'QmNLftPEMzsadpbTsGaVP3haETYJb4GfnCgQiaFj5Red9G', refs: [], deps: [], tags: []
+      }}))
+      return Promise.all(promises)
+    })
 }
 
 describe('Push', () => {
@@ -69,6 +90,24 @@ describe('Push', () => {
       .catch(err => {
         assert(err != null)
         assert(err.message.toLowerCase().includes('auth'))
+      })
+  })
+
+  it('returns counts + error message for partially successful push', () => {
+    const numValid = 10
+    return alephNode.start()
+      .then(() => PromiseHash({
+        pInfo: concatNodePeerInfo(),
+        statements: preparePartiallyValidStatements(alephNode, numValid)
+      }))
+      .then(({pInfo, statements}) => alephNode.pushStatements(pInfo, statements))
+      .then(result => {
+        // concat will accept the statement with the missing object, since it's structurally valid.
+        // but it will end the push operation with an error.
+        const expectedStatements = numValid + 1
+        assert(result != null)
+        assert.equal(result.statements, expectedStatements, 'peer did not accept valid statements')
+        assert(typeof result.error === 'string', 'peer did not return an error message')
       })
   })
 })
