@@ -122,11 +122,38 @@ function generatePublisherId (): Promise<PublisherId> {
   })
 }
 
+function signBuffer (
+  key: PrivateSigningKey, // eslint-disable-line no-undef
+  message: Buffer)
+: Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    key.sign(message, (err, sig) => {
+      if (err) return reject(err)
+      resolve(sig)
+    })
+  })
+}
+
+function verifyBuffer (
+  key: PublicSigningKey, // eslint-disable-line no-undef
+  message: Buffer,
+  sig: Buffer)
+: Promise<boolean> {
+  return new Promise((resolve, reject) => {
+    key.verify(message, sig, (err, valid) => {
+      if (err) return reject(err)
+      resolve(valid)
+    })
+  })
+}
+
 module.exports = {
   generateIdentity,
   saveIdentity,
   loadIdentity,
   loadOrGenerateIdentity,
   inflateMultiaddr,
-  generatePublisherId
+  generatePublisherId,
+  signBuffer,
+  verifyBuffer
 }
