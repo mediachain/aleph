@@ -9,13 +9,13 @@ import type { StatementMsg } from '../protobuf/types'
 function signStatement (stmt: StatementMsg, publisherId: PublisherId): Promise<StatementMsg> {
   // clone the original message, removing any existing signature
   const result = omit(cloneDeep(stmt), 'signature')
-  return calculateSignature(result).then((sig) => {
+  return calculateSignature(result, publisherId.privateKey).then((sig) => {
     result.signature = sig
     return result
   })
 }
 
-function calculateSignature (stmt: StatementMsg, publisherId: PublisherId): Promise<Buffer> {
+function calculateSignature (stmt: StatementMsg, signer: { sign: (bytes: Buffer) => string }): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     let bytes
     try {
@@ -26,7 +26,7 @@ function calculateSignature (stmt: StatementMsg, publisherId: PublisherId): Prom
     }
 
     // sign the encoded statement message and set the signature
-    publisherId.privateKey.sign(bytes, (err, sig) => {
+    signer.sign(bytes, (err, sig) => {
       if (err) return reject(err)
       resolve(sig)
     })
@@ -34,5 +34,6 @@ function calculateSignature (stmt: StatementMsg, publisherId: PublisherId): Prom
 }
 
 module.exports = {
-  signStatement
+  signStatement,
+  calculateSignature
 }
