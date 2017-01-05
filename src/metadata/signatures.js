@@ -9,7 +9,7 @@ import type { StatementMsg } from '../protobuf/types'
 function signStatement (stmt: StatementMsg, publisherId: PublisherId): Promise<StatementMsg> {
   // clone the original message, removing any existing signature
   const result = omit(cloneDeep(stmt), 'signature')
-  return calculateSignature(result).then((sig) => {
+  return calculateSignature(result, publisherId).then((sig) => {
     result.signature = sig
     return result
   })
