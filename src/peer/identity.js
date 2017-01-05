@@ -6,6 +6,7 @@ const PeerInfo = require('peer-info')
 const Crypto = require('libp2p-crypto')
 const Multiaddr = require('multiaddr')
 const b58 = require('bs58')
+const { b58MultihashForBuffer } = require('../common/util')
 
 const NODE_KEY_TYPE = 'RSA'
 const NODE_KEY_BITS = 2048
@@ -122,6 +123,15 @@ function generatePublisherId (): Promise<PublisherId> {
   })
 }
 
+function publisherKeyFromB58String (key58: string): PublicSigningKey {
+  const bytes = b58.decode(key58)
+  return Crypto.unmarshalPublicKey(bytes)
+}
+
+function publisherKeyToB58String (key: PublicSigningKey): string {
+  return b58MultihashForBuffer(key.bytes)
+}
+
 function signBuffer (
   key: PrivateSigningKey, // eslint-disable-line no-undef
   message: Buffer)
@@ -154,6 +164,8 @@ module.exports = {
   loadOrGenerateIdentity,
   inflateMultiaddr,
   generatePublisherId,
+  publisherKeyFromB58String,
+  publisherKeyToB58String,
   signBuffer,
   verifyBuffer
 }
