@@ -63,10 +63,7 @@ class Datastore {
   get (key: string, opts: {returnRawBuffer?: boolean} = {}): Promise<Object | string> {
     return new Promise((resolve, reject) => {
       this.db.get(key, (err, val) => {
-        if (err) {
-          console.error(`datastore (${this.location}) get error: `, err)
-          return reject(err)
-        }
+        if (err) return reject(err)
 
         if (opts.returnRawBuffer === true) {
           return resolve(val)
