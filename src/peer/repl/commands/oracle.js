@@ -3,7 +3,14 @@
 const os = require('os')
 const { bootstrap } = require('../util')
 const Web3 = require('web3');
-const SimpleWrite = require('../../../../contracts/simplewrite/build/contracts/SimpleWrite.sol.js')
+
+type OracleOpts = {
+  dir?: string,
+  remotePeer?: string,
+  identityPath: string,
+  contractPath: string,
+  rpc: string
+}
 
 module.exports = {
   command: 'oracle',
@@ -30,8 +37,8 @@ module.exports = {
       })
       .help()
   },
-  handler: (opts: {dir?: string, remotePeer?: string, identityPath: string, rpc: string}) => {
-    const {remotePeer, rpc} = opts
+  handler: (opts: OracleOpts) => {
+    const {remotePeer, rpc, contractPath} = opts
 
     bootstrap(opts)
       .catch(err => {
@@ -40,38 +47,39 @@ module.exports = {
       })
       .then(({node, remote}) => {
         let init
+
+        // load contract
+        // $FlowIssue let this slide for now
+        const writer = require(contractPath)
+
+        // connect to paired concat
         if (remote != null) {
           init = node.start()
             .then(() => node.openConnection(remote.remotePeerInfo))
             .then(() => { console.log(`Connected to `, remotePeer) })
         } else {
           console.log('No remote peer specified, running in detached mode')
-          // TODO: actually we want to die here, given that we don't have discovery
           init = node.start()
         }
 
         // TODO: directory stuff
         if (node.directory == null) {
-          // TODO: get directory from remote peer (and amend message below)
           console.log('No directory specified, running without directory')
         }
 
         init.then(() => {
+          // connect to ethereum and find deployed contract
           const web3 = new Web3()
           web3.setProvider(new web3.providers.HttpProvider(rpc))
-          const simpleWrite = SimpleWrite()
-          simpleWrite.setProvider(web3.currentProvider)
-          const simpleWriteDeployed = simpleWrite.deployed()
-          const we = simpleWriteDeployed.Write()
+          writer.setProvider(web3.currentProvider)
+          const we = writer.deployed().Write()
 
           if(!web3.isConnected()){
-            // TODO: may need to sleep here?
             console.error(`Unable to connect to ethereum RPC:`, rpc)
             process.exit(-1)
           } else {
             console.log(`Connected to ethereum RPC:`, rpc)
             we.watch(orderPlacedHandler)
-            // oce.watch(orderCompletedHandler)
           }
         }).catch(err => {
           console.log(err)
