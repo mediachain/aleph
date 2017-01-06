@@ -101,8 +101,11 @@ function mergeFromStreams (
     pull(
       objectIdStream,
 
-      // gather object ids into batches (filtering out those we have in the local store)
-      batchDataRequestStream(BATCH_SIZE, localNode.datastore),
+      // filter out keys we already have
+      filterExistingKeys(localNode.datastore),
+
+      // gather object ids into batches
+      batchDataRequestStream(BATCH_SIZE),
 
       // send request, read response
       protoStreamEncode(pb.node.DataRequest),
@@ -151,7 +154,21 @@ function mergeFromStreams (
   })
 }
 
-function batchDataRequestStream (batchSize: number, localDatastore: Datastore): PullStreamThrough<string, DataRequestMsg> {
+function filterExistingKeys (localDatastore: Datastore): PullStreamThrough<string, ?string> {
+  return pull.asyncMap((key, callback) => {
+    localDatastore.has(key)
+      .catch(err => {
+        callback(err)
+        return false
+      })
+      .then(existsLocally => {
+        if (existsLocally) return callback(null, null)
+        return callback(null, key)
+    })
+  })
+}
+
+function batchDataRequestStream (batchSize: number): PullStreamThrough<string, DataRequestMsg> {
   let batch = []
 
   return window(
@@ -169,17 +186,12 @@ function batchDataRequestStream (batchSize: number, localDatastore: Datastore): 
           return sendBatch()
         }
 
-        localDatastore.has(objectId).then(existsLocally => {
-          if (existsLocally) {
-            // console.log(`local store already has ${objectId}, skipping`)
-            return
-          }
-
+        if (objectId != null) {
           batch.push(objectId)
           if (batch.length >= batchSize) {
             sendBatch()
           }
-        })
+        }
       }
     },
 
