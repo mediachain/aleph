@@ -2,15 +2,16 @@
 /* eslint-env mocha */
 
 const assert = require('assert')
-const { describe, it, before, after } = require('mocha')
+const { describe, it, before } = require('mocha')
+const uuid = require('node-uuid')
 
 const { getTestNodeId } = require('../test/util')
 const { MediachainNode: AlephNode } = require('../src/peer/node')
 const { concatNodeClient, concatNodePeerInfo } = require('./util')
 
 const seedObjects = [
-  {foo: 'bar'},
-  {hello: 'world'}
+  {id: uuid.v4(), foo: 'bar'},
+  {id: uuid.v4(), hello: 'world'}
 ]
 
 describe('Remote Data Fetching', () => {
@@ -23,12 +24,6 @@ describe('Remote Data Fetching', () => {
       .then(() => concatClient.putData(...seedObjects))
       .then(ids => { dataIds = ids })
   })
-
-  after(() =>
-    concatClient.setStatus('offline')
-      .then(() => concatClient.garbageCollectDatastore())
-      .then(() => concatClient.setStatus('online'))
-  )
 
   it('can fetch data from a remote concat node', () => {
     let alephNode

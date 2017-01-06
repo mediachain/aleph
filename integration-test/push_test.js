@@ -3,19 +3,21 @@
 
 const assert = require('assert')
 const { describe, it, before, after } = require('mocha')
+const uuid = require('node-uuid')
 const { promiseHash } = require('../src/common/util')
 
 const { getTestNodeId } = require('../test/util')
 const { MediachainNode: AlephNode } = require('../src/peer/node')
 const { concatNodeClient, concatNodePeerInfo } = require('./util')
 const { generatePublisherId } = require('../src/peer/identity')
+const { makeSimpleStatement } = require('../src/metadata/statement')
 
 const TEST_NAMESPACE = 'scratch.push-test'
 const UNAUTHORIZED_NAMESPACE = 'scratch.unauthorized-push-test'
 
 const seedObjects = [
-  {id: 'foo:1', foo: 'bar'},
-  {id: 'foo:2', foo: 'baz'}
+  {id: uuid.v4(), foo: 'bar'},
+  {id: uuid.v4(), foo: 'baz'}
 ]
 
 function seedStatementsToAleph (alephNode: AlephNode): Promise<Array<string>> {
@@ -78,8 +80,6 @@ describe('Push', () => {
 
   after(() =>
     concatClient.delete(`DELETE FROM ${TEST_NAMESPACE}`)
-      .then(() => concatClient.setStatus('offline'))
-      .then(() => concatClient.garbageCollectDatastore())
   )
 
   it('pushes data to a concat node', () => {

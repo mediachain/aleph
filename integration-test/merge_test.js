@@ -3,6 +3,7 @@
 
 const assert = require('assert')
 const { describe, it, before, after } = require('mocha')
+const uuid = require('node-uuid')
 
 const { getTestNodeId } = require('../test/util')
 const { MediachainNode: AlephNode } = require('../src/peer/node')
@@ -12,9 +13,9 @@ const TEST_NAMESPACE = 'scratch.merge-test'
 const INVALID_STATEMENT_NAMESPACE = 'scratch.merge-test.invalid-stmt'
 
 const seedObjects = [
-  {hello: 'world'},
-  {foo: 'bar'},
-  {etc: 'and so on'}
+  {id: uuid.v4(), hello: 'world'},
+  {id: uuid.v4(), foo: 'bar'},
+  {id: uuid.v4(), etc: 'and so on'}
 ]
 
 describe('Merge (concat -> aleph)', () => {
@@ -53,9 +54,6 @@ describe('Merge (concat -> aleph)', () => {
   after(() =>
     concatClient.delete(`DELETE FROM ${TEST_NAMESPACE}`)
       .then(() => concatClient.delete(`DELETE FROM ${INVALID_STATEMENT_NAMESPACE}`))
-      .then(() => concatClient.setStatus('offline'))
-      .then(() => concatClient.garbageCollectDatastore())
-      .then(() => concatClient.setStatus('online'))
   )
 
   it('merges statements from a concat node', () => {
