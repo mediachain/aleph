@@ -38,17 +38,16 @@ function preparePartiallyValidStatements (alephNode: AlephNode, numValid: number
     .then(([object]) => {
       const promises = []
       for (let i = 0; i < numValid; i++) {
-        promises.push(alephNode.makeStatement(TEST_NAMESPACE, {simple: {
+        promises.push(makeSimpleStatement(alephNode.publisherId, TEST_NAMESPACE, {
           object,
-          refs: [`test:${i.toString()}`],
-          deps: [],
-          tags: []
-        }}))
+          refs: [`test:${i.toString()}`]
+        },
+        alephNode.statementCounter))
       }
       // add a statement with an invalid object reference
-      promises.push(alephNode.makeStatement(TEST_NAMESPACE, {simple: {
+      promises.push(makeSimpleStatement(alephNode.publisherId, TEST_NAMESPACE, {
         object: 'QmNLftPEMzsadpbTsGaVP3haETYJb4GfnCgQiaFj5Red9G', refs: [], deps: [], tags: []
-      }}))
+      }))
       return Promise.all(promises)
     })
 }
