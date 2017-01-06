@@ -21,7 +21,7 @@ const BATCH_SIZE = 1024
 export type MergeResult = {
   statementCount: number,
   objectCount: number,
-  error?: Error
+  error?: string
 }
 
 function mergeFromStreams (
@@ -31,6 +31,8 @@ function mergeFromStreams (
 : Promise<MergeResult> {
   const publisherKeyCache: Map<string, PublicSigningKey> = new Map()
   const objectIdStream = pushable()
+  const objectIngestionErrors: Array<string> = []
+  const statementIngestionErrors: Array<string> = []
 
   // A stream that accepts QueryResult messages, extracts statements from them,
   // verifies the statement signatures and sends the statements downstream,
@@ -38,31 +40,40 @@ function mergeFromStreams (
   const queryResultThrough: PullStreamThrough<QueryResultMsg, Array<StatementMsg>> = read => (end, callback) => {
     const endQueryStream = exitValue => {
       objectIdStream.end()
-      callback(exitValue)
+      if (exitValue instanceof Error) {
+        return callback(exitValue)
+      }
+
+      if (typeof exitValue === 'string') {
+        statementIngestionErrors.push(exitValue)
+      }
+      callback(true)
     }
 
     if (end) return callback(end)
     read(end, (end: ?mixed, queryResult: ?QueryResultMsg) => {
       if (end) return endQueryStream(end)
-      if (queryResult == null) return endQueryStream(new Error(`Got null queryResult`))
+      if (queryResult == null) return endQueryStream('Got null queryResult')
 
       if (queryResult.end !== undefined) {
         return endQueryStream(true)
       }
       if (queryResult.error !== undefined) {
         const err: StreamErrorMsg = (queryResult.error : any)
-        return endQueryStream(new Error(err.error))
+        return endQueryStream(err.error)
       }
       if (queryResult.value == null) {
-        return endQueryStream(new Error(`Unexpected query result message: ${JSON.stringify(queryResult)}`))
+        return endQueryStream(`Unexpected query result message: ${JSON.stringify(queryResult)}`)
       }
       const queryValue: QueryResultValueMsg = (queryResult.value : any)
       const statements = statementsFromQueryResult(queryValue)
       if (statements.length < 1) {
-        return endQueryStream(new Error(`Query result value contained no statements: ${JSON.stringify(queryValue)}`))
+        return endQueryStream(`Query result value contained no statements: ${JSON.stringify(queryValue)}`)
       }
 
-      // verify all statements
+      // verify all statements. verification failure causes the whole statement ingestion to fail
+      // by passing an Error into endQueryStream (as opposed to a string, which will cause a partially
+      // successful result
       Promise.all(statements.map(stmt => verifyStatementWithKeyCache(stmt, publisherKeyCache)))
         .catch(err => endQueryStream(err))
         .then(results => {
@@ -97,12 +108,17 @@ function mergeFromStreams (
     )
   })
 
-  const objectIngestionPromise = new Promise((resolve, reject) => {
+  const objectIngestionPromise: Promise<number> = new Promise((resolve, reject) => {
+    const keysRequested: Set<string> = new Set()
+
     pull(
       objectIdStream,
 
       // filter out keys we already have
       filterExistingKeys(localNode.datastore),
+
+      // keep track of keys we requested
+      pull.through(key => { key && keysRequested.add(key) }),
 
       // gather object ids into batches
       batchDataRequestStream(BATCH_SIZE),
@@ -116,7 +132,8 @@ function mergeFromStreams (
       pull.asyncMap((result, callback) => {
         if (result.error !== undefined) {
           const err: StreamErrorMsg = (result.error : any)
-          return callback(new Error(err.error))
+          objectIngestionErrors.push(err.error)
+          return callback(true)
         }
         if (result.data !== undefined) {
           return callback(null, result.data)
@@ -139,10 +156,18 @@ function mergeFromStreams (
       pull.flatten(),
 
       // drain the stream and return the object count
-      // TODO: if error occurs after partially successful merge,
-      // we should be returning the object count + error message
       pull.collect((err, objectIds) => {
         if (err) return reject(err)
+
+        if (objectIds.length !== keysRequested.size) {
+          for (const received of objectIds) {
+            keysRequested.delete(received)
+          }
+          const msg = 'Missing statement metadata. Missing keys: ' +
+              Array.from(keysRequested).join(', ')
+          objectIngestionErrors.push(msg)
+        }
+
         resolve(objectIds.length)
       })
     )
@@ -151,6 +176,24 @@ function mergeFromStreams (
   return promiseHash({
     statementCount: statementIngestionPromise,
     objectCount: objectIngestionPromise
+  }).then(({statementCount, objectCount}) => {
+    const result: MergeResult = {
+      statementCount,
+      objectCount
+    }
+    const errorMessages = []
+    if (objectIngestionErrors.length > 0) {
+      const msg = objectIngestionErrors.join('\n')
+      errorMessages.push(`Error ingesting objects: ${msg}`)
+    }
+    if (statementIngestionErrors.length > 0) {
+      const msg = statementIngestionErrors.join('\n')
+      errorMessages.push(`Error ingesting statements: ${msg}`)
+    }
+    if (errorMessages.length > 0) {
+      result.error = errorMessages.join('\n\n')
+    }
+    return result
   })
 }
 
@@ -164,7 +207,7 @@ function filterExistingKeys (localDatastore: Datastore): PullStreamThrough<strin
       .then(existsLocally => {
         if (existsLocally) return callback(null, null)
         return callback(null, key)
-    })
+      })
   })
 }
 

@@ -70,17 +70,16 @@ describe('Merge (concat -> aleph)', () => {
       })
   })
 
-  it ('returns counts + error message for partially successful merge', () => {
+  it('returns counts + error message for partially successful merge', () => {
     let alephNode
     return getTestNodeId()
-      .then(peerId => { alephNode = new AlephNode({ peerId })})
+      .then(peerId => { alephNode = new AlephNode({ peerId }) })
       .then(() => alephNode.start())
       .then(() => alephNode.merge(concatPeerInfo, `SELECT * FROM ${TEST_NAMESPACE}.* ORDER BY counter`))
       .catch(err => {
         assert.fail(err, 'no error', '', '!==')
       })
       .then(result => {
-        console.log('partially successful result: ', result)
         assert.notEqual(result, null, 'partially-successful merge should return a result')
         assert(typeof result.error === 'string' && result.error.length > 0,
           'partially successful merge should return an error message')
