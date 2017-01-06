@@ -6,7 +6,7 @@ const pushable = require('pull-pushable')
 const window = require('pull-window')
 const pb = require('../protobuf')
 const { statementsFromQueryResult, objectIdsFromStatement, protoStreamEncode, protoStreamDecode } = require('./util')
-const { flatMap, promiseHash } = require('../common/util')
+const { flatMap, promiseHash, b58MultihashForBuffer } = require('../common/util')
 const { verifyStatementWithKeyCache } = require('../metadata/signatures')
 
 import type { MediachainNode } from './node'
@@ -136,6 +136,16 @@ function mergeFromStreams (
           return callback(true)
         }
         if (result.data !== undefined) {
+          const dataObject: DataObjectMsg = (result.data : any)
+          if (!keysRequested.has(dataObject.key)) {
+            objectIngestionErrors.push(`Peer sent unrequested object ${dataObject.key}`)
+            return callback(true)
+          }
+          const objHash = b58MultihashForBuffer(dataObject.data)
+          if (objHash !== dataObject.key) {
+            objectIngestionErrors.push(`Object has invalid key ${dataObject.key} - actual hash: ${objHash}`)
+            return callback(true)
+          }
           return callback(null, result.data)
         }
         // we return null for "end" messages, since we want to read multiple
@@ -143,7 +153,6 @@ function mergeFromStreams (
         // objectIdStream when it's done
         return callback(null, null)
       }),
-      // TODO: verify that key is a valid hash of data
 
       // add the data to the local node's store
       pullThroughPromise((obj: ?DataObjectMsg) => {
