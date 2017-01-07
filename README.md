@@ -3,6 +3,7 @@
 [![npm version](https://badge.fury.io/js/aleph.svg)](https://badge.fury.io/js/aleph)
 [![Travis CI](https://travis-ci.org/mediachain/aleph.svg?branch=master)](https://travis-ci.org/mediachain/aleph.svg?branch=master)
 [![js-standard-style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg?style=flat-square)](https://github.com/feross/standard)
+[![Coverage Status](https://coveralls.io/repos/github/mediachain/aleph/badge.svg?branch=master)](https://coveralls.io/github/mediachain/aleph?branch=master)
 
 *The Aleph's diameter was probably little more than an inch, but all space was there, actual and undiminished. Each thing (a mirror's face, let us say) was infinite things, since I distinctly saw it from every angle of the universe[¹]*
 
