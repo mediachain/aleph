@@ -192,23 +192,37 @@ class MediachainNode {
     return this.lookup(peer)
   }
 
-  openConnection (peer: PeerInfo | PeerId | string, protocol: string): Promise<Connection> {
+  _resolvePeer (peer: PeerInfo | PeerId | string): Promise<PeerInfo> {
     return this._lookupIfNeeded(peer)
       .then(maybePeer => {
         if (!maybePeer) throw new Error(`Unable to locate peer ${peer}`)
         return maybePeer
       })
+  }
+
+  openConnection (peer: PeerInfo | PeerId | string, protocol: string): Promise<Connection> {
+    return this._resolvePeer(peer)
       .then(peerInfo => this.p2p.dialByPeerInfo(peerInfo, protocol))
   }
 
-  ping (peer: PeerInfo | PeerId | string): Promise<boolean> {
-    return this.openConnection(peer, PROTOCOLS.node.ping)
+  ping (peer: PeerInfo | PeerId | string): Promise<number> {
+    let timestamp: number
+    let latency: number
+
+    return this._resolvePeer(peer)
+      .then(peerInfo => this.p2p.ping(peerInfo))
+
+      // fall-back to deprecated mediachain ping protocol if remote node
+      // doesn't support libp2p ping
+      .catch(_err => this.openConnection(peer, PROTOCOLS.node.ping))
       .then((conn: Connection) => pullToPromise(
         pull.values([{}]),
         protoStreamEncode(pb.node.Ping),
+        pull.through(() => { timestamp = Date.now() }),
         conn,
+        pull.through(() => { latency = Date.now() - timestamp }),
         protoStreamDecode(pb.node.Pong),
-        pull.map(_ => { return true })
+        pull.map(_ => { return latency })
       ))
   }
 
