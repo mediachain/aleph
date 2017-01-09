@@ -11,9 +11,9 @@ module.exports = {
     const {peerId, client} = opts
     println('Pinging peer: ', peerId)
 
-    return client.ping(peerId)
+    return client.netPing(peerId)
       .then(
-        success => println('Ping OK'),
+        latency => println(`Ping OK. Latency: ${latency}`),
         err => { throw new Error(`Error pinging: ${err.message}`) }
       )
   })

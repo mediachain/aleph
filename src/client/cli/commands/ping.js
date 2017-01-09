@@ -5,7 +5,7 @@ const { subcommand, println } = require('../util')
 
 module.exports = {
   command: 'ping <peerId>',
-  describe: 'Ping a remote peer, identified by `peerId`. ' +
+  describe: 'Ping a remote peer, identified by `peerId`. Deprecated in favor of `mcclient net ping`.' +
   'Will attempt to lookup the peer with a configured directory server or DHT.\n',
   handler: subcommand((opts: {peerId: string, client: RestClient}) => {
     const {peerId, client} = opts

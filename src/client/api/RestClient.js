@@ -101,7 +101,12 @@ class RestClient {
 
   ping (peerId: string): Promise<boolean> {
     return this.getRequest(`ping/${peerId}`)
-      .then(response => true)
+      .then(parseBoolResponse)
+  }
+
+  netPing (peerId: string): Promise<string> {
+    return this.getRequest(`net/ping/${peerId}`)
+      .then(trimTextResponse)
   }
 
   publish (opts: {namespace: string, compound?: number}, ...statements: Array<SimpleStatementMsg>): Promise<Array<string>> {
