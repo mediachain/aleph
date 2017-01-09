@@ -331,6 +331,11 @@ class RestClient {
       .then(parseStringArrayResponse)
   }
 
+  netIdentify (peerId: string): Promise<Object> {
+    return this.getRequest(`net/identify/${peerId}`)
+      .then(r => r.json())
+  }
+
   shutdown (): Promise<boolean> {
     return this.postRequest('shutdown', '', false)
       .then(() => true)
