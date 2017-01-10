@@ -9,9 +9,9 @@
       "optional": true
     },
     "@types/node": {
-      "version": "6.0.56",
+      "version": "6.0.59",
       "from": "@types/node@>=6.0.45 <7.0.0",
-      "resolved": "https://registry.npmjs.org/@types/node/-/node-6.0.56.tgz"
+      "resolved": "https://registry.npmjs.org/@types/node/-/node-6.0.59.tgz"
     },
     "abstract-leveldown": {
       "version": "2.4.1",
@@ -24,9 +24,9 @@
       "resolved": "https://registry.npmjs.org/acorn/-/acorn-1.2.2.tgz"
     },
     "ajv": {
-      "version": "4.10.3",
+      "version": "4.10.4",
       "from": "ajv@>=4.9.2 <5.0.0",
-      "resolved": "https://registry.npmjs.org/ajv/-/ajv-4.10.3.tgz"
+      "resolved": "https://registry.npmjs.org/ajv/-/ajv-4.10.4.tgz"
     },
     "amdefine": {
       "version": "1.0.1",
@@ -1186,9 +1186,9 @@
       "resolved": "https://registry.npmjs.org/jsonify/-/jsonify-0.0.0.tgz"
     },
     "keypair": {
-      "version": "1.0.0",
+      "version": "1.0.1",
       "from": "keypair@>=1.0.0 <2.0.0",
-      "resolved": "https://registry.npmjs.org/keypair/-/keypair-1.0.0.tgz"
+      "resolved": "https://registry.npmjs.org/keypair/-/keypair-1.0.1.tgz"
     },
     "kind-of": {
       "version": "3.1.0",
@@ -1275,6 +1275,11 @@
       "version": "0.3.0",
       "from": "libp2p-identify@>=0.3.0 <0.4.0",
       "resolved": "https://registry.npmjs.org/libp2p-identify/-/libp2p-identify-0.3.0.tgz"
+    },
+    "libp2p-ping": {
+      "version": "0.3.0",
+      "from": "libp2p-ping@>=0.3.0 <0.4.0",
+      "resolved": "https://registry.npmjs.org/libp2p-ping/-/libp2p-ping-0.3.0.tgz"
     },
     "libp2p-secio": {
       "version": "0.6.4",
@@ -3552,9 +3557,9 @@
       "resolved": "https://registry.npmjs.org/webcrypto/-/webcrypto-0.1.0.tgz"
     },
     "webcrypto-core": {
-      "version": "0.1.6",
+      "version": "0.1.7",
       "from": "webcrypto-core@>=0.0.0 <1.0.0",
-      "resolved": "https://registry.npmjs.org/webcrypto-core/-/webcrypto-core-0.1.6.tgz",
+      "resolved": "https://registry.npmjs.org/webcrypto-core/-/webcrypto-core-0.1.7.tgz",
       "optional": true
     },
     "webcrypto-shim": {
