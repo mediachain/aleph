@@ -8,6 +8,7 @@ mcclient publish ${COMPOUND} \
     --skipSchemaValidation \
     --jqFilter '._source | del(.aesthetics)' \
     --idFilter '.native_id' \
+    --prefix 'flickr'
     ${NAMESPACE} \
     ${SCHEMA_HASH} \
     $1 > /dev/null

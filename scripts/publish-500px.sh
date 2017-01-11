@@ -11,6 +11,7 @@ SKIP_VALIDATION='--skipSchemaValidation'
 
 mcclient publish ${SKIP_VALIDATION} \
     --jqFilter '._source | del(.aesthetics)' \
+    --prefix '500px'
     --idFilter '.native_id' \
     ${NAMESPACE} \
     ${SCHEMA_HASH} \
