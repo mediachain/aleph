@@ -41,6 +41,12 @@ module.exports = {
       description: 'A jq filter that produces a mediachain identifier from your input object.  ' +
       'Will be applied after `jqFilter`, and does not modify the object itself.\n'
     },
+    prefix: {
+      required: true,
+      type: 'string',
+      description: 'Prefix for the WKI.  ' +
+      'The WKI is formed by joining the `prefix` (e.g. "moma") and the identifier extracted by `idFilter` with a colon (e.g. "moma:67350")'
+    },
     jqFilter: {
       type: 'string',
       description: 'A jq filter string to use to pre-process your input data.\n',
@@ -71,7 +77,7 @@ module.exports = {
   },
 
   handler: subcommand((opts: HandlerOptions) => {
-    const {client, namespace, schemaReference, batchSize, filename, dryRun, skipSchemaValidation, jqFilter, idFilter, compound} = opts
+    const {client, namespace, schemaReference, batchSize, filename, dryRun, skipSchemaValidation, jqFilter, prefix, idFilter, compound} = opts
     const publishOpts = {namespace, compound}
 
     let stream: Readable
@@ -114,6 +120,7 @@ module.exports = {
           publishOpts,
           schemaReference,
           schema,
+          prefix,
           jqFilter: composeJQFilters(jqFilter, idFilter)})
       )
   })
@@ -129,6 +136,7 @@ function publishStream (opts: {
   publishOpts: {namespace: string, compound?: number},
   schemaReference?: string,
   schema: ?SelfDescribingSchema,
+  prefix: string,
   jqFilter: string
 }): Promise<*> {
   const {
@@ -141,6 +149,7 @@ function publishStream (opts: {
     skipSchemaValidation,
     schemaReference,
     schema,
+    prefix,
     jqFilter
   } = opts
 
@@ -216,7 +225,9 @@ function publishStream (opts: {
 
         wki = wki.toString()
 
-        const refs = [ wki ]
+        wkiWithPrefix = [ prefix, wki ].join(':')
+
+        const refs = [ wkiWithPrefix ]
         const tags = [] // TODO: support extracting tags
         const deps = []
 
