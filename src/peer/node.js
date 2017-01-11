@@ -22,15 +22,18 @@ const {
   objectIdsForQueryResult,
   expandQueryResult
 } = require('./util')
+const { promiseHash } = require('../common/util')
 const { pushStatementsToConn } = require('./push')
-const { signStatement } = require('../metadata/signatures')
+const { mergeFromStreams } = require('./merge')
+const { makeSimpleStatement } = require('../metadata/statement')
 
-import type { QueryResultMsg, QueryResultValueMsg, DataResultMsg, DataObjectMsg, NodeInfoMsg, StatementMsg, StatementBodyMsg, PushEndMsg } from '../protobuf/types'
+import type { QueryResultMsg, QueryResultValueMsg, DataResultMsg, DataObjectMsg, NodeInfoMsg, StatementMsg, PushEndMsg } from '../protobuf/types'
 import type { Connection } from 'interface-connection'
 import type { PullStreamSource } from './util'
 import type { DatastoreOptions } from './datastore'
 import type { StatementDBOptions } from './db/statement-db'
 import type { PublisherId } from './identity'
+import type { MergeResult } from './merge'
 
 export type MediachainNodeOptions = {
   peerId: PeerId,
@@ -407,6 +410,14 @@ class MediachainNode {
       )
   }
 
+  merge (peer: PeerInfo | PeerId | string, queryString: string): Promise<MergeResult> {
+    return promiseHash({
+      queryStream: this.remoteQueryStream(peer, queryString),
+      dataConn: this.openConnection(peer, PROTOCOLS.node.data)
+    })
+      .then(({queryStream, dataConn}) => mergeFromStreams(this, queryStream, dataConn))
+  }
+
   pushStatements (peer: PeerInfo | PeerId | string, statements: Array<StatementMsg>): Promise<PushEndMsg> {
     return this.openConnection(peer, PROTOCOLS.node.push)
       .then(conn => pushStatementsToConn(statements, conn))
@@ -417,40 +428,23 @@ class MediachainNode {
       .then(statements => this.pushStatements(peer, statements))
   }
 
-  makeStatement (namespace: string, statementBody: StatementBodyMsg): Promise<StatementMsg> {
-    if (this.publisherId == null) {
-      return Promise.reject('Node does not have a publisher id, cannot create statements')
-    }
-
-    const timestamp = Date.now()
-    const counter = this.statementCounter.toString()
-    const statementId = [this.publisherId.id58, timestamp.toString(), counter].join(':')
-    const stmt = {
-      id: statementId,
-      publisher: this.publisherId.id58,
-      namespace,
-      timestamp,
-      body: statementBody,
-      signature: Buffer.from('')
-    }
-    return signStatement(stmt, this.publisherId)
-  }
-
   ingestSimpleStatement (namespace: string, object: Object, meta: {
     refs: Array<string>,
     deps?: Array<string>,
     tags?: Array<string>
   })
   : Promise<string> {
-    const {refs, deps, tags} = Object.assign({deps: [], tags: []}, meta)
+    if (this.publisherId == null) {
+      return Promise.reject('Node does not have a publisher id, cannot create statements')
+    }
+
+    let publisherId = this.publisherId
+    const {refs, deps, tags} = meta
     return this.putData(object)
-      .then(([objectHash]) => ({
-        object: objectHash,
-        refs,
-        deps,
-        tags
-      }))
-      .then(statementBody => this.makeStatement(namespace, {simple: statementBody}))
+      .then(([objectHash]) => {
+        const body = {object: objectHash, refs, deps, tags}
+        return makeSimpleStatement(publisherId, namespace, body, this.statementCounter)
+      })
       .then(stmt => this.db.put(stmt)
         .then(() => stmt.id))
   }

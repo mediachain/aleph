@@ -2,30 +2,35 @@
 /* eslint-env mocha */
 
 const assert = require('assert')
-const { describe, it, before } = require('mocha')
-const { PromiseHash } = require('../src/common/util')
+const { describe, it, before, after } = require('mocha')
+const uuid = require('node-uuid')
+const { promiseHash } = require('../src/common/util')
 
 const { getTestNodeId } = require('../test/util')
 const { MediachainNode: AlephNode } = require('../src/peer/node')
 const { concatNodeClient, concatNodePeerInfo } = require('./util')
 const { generatePublisherId } = require('../src/peer/identity')
+const { makeSimpleStatement } = require('../src/metadata/statement')
+
+const TEST_NAMESPACE = 'scratch.push-test'
+const UNAUTHORIZED_NAMESPACE = 'scratch.unauthorized-push-test'
 
 const seedObjects = [
-  {id: 'foo:1', foo: 'bar'},
-  {id: 'foo:2', foo: 'baz'}
+  {id: uuid.v4(), foo: 'bar'},
+  {id: uuid.v4(), foo: 'baz'}
 ]
 
 function seedStatementsToAleph (alephNode: AlephNode): Promise<Array<string>> {
   return Promise.all(
     seedObjects.map(obj =>
-      alephNode.ingestSimpleStatement('scratch.test', obj, { refs: [obj.id] })
+      alephNode.ingestSimpleStatement(TEST_NAMESPACE, obj, { refs: [obj.id] })
     )
   )
 }
 
 function seedUnauthorizedStatement (alephNode: AlephNode): Promise<string> {
   const obj = {letMeIn: 'please'}
-  return alephNode.ingestSimpleStatement('members.only', obj, { refs: ['foo'] })
+  return alephNode.ingestSimpleStatement(UNAUTHORIZED_NAMESPACE, obj, { refs: ['foo'] })
 }
 
 function preparePartiallyValidStatements (alephNode: AlephNode, numValid: number): Promise<Array<Object>> {
@@ -33,22 +38,22 @@ function preparePartiallyValidStatements (alephNode: AlephNode, numValid: number
     .then(([object]) => {
       const promises = []
       for (let i = 0; i < numValid; i++) {
-        promises.push(alephNode.makeStatement('scratch.test', {simple: {
+        promises.push(makeSimpleStatement(alephNode.publisherId, TEST_NAMESPACE, {
           object,
-          refs: [`test:${i.toString()}`],
-          deps: [],
-          tags: []
-        }}))
+          refs: [`test:${i.toString()}`]
+        },
+        alephNode.statementCounter))
       }
       // add a statement with an invalid object reference
-      promises.push(alephNode.makeStatement('scratch.test', {simple: {
+      promises.push(makeSimpleStatement(alephNode.publisherId, TEST_NAMESPACE, {
         object: 'QmNLftPEMzsadpbTsGaVP3haETYJb4GfnCgQiaFj5Red9G', refs: [], deps: [], tags: []
-      }}))
+      }))
       return Promise.all(promises)
     })
 }
 
 describe('Push', () => {
+  let concatClient
   let alephNode
   let alephPeerIdB58
   let publisherId
@@ -68,7 +73,12 @@ describe('Push', () => {
     .then(() => seedUnauthorizedStatement(alephNode))
     .then(_stmtId => { unauthorizedStatementId = _stmtId })
     .then(() => concatNodeClient())
-    .then(concat => concat.authorize(alephPeerIdB58, ['scratch.*']))
+    .then(client => { concatClient = client })
+    .then(() => concatClient.authorize(alephPeerIdB58, [TEST_NAMESPACE]))
+  )
+
+  after(() =>
+    concatClient.delete(`DELETE FROM ${TEST_NAMESPACE}`)
   )
 
   it('pushes data to a concat node', () => {
@@ -96,7 +106,7 @@ describe('Push', () => {
   it('returns counts + error message for partially successful push', () => {
     const numValid = 10
     return alephNode.start()
-      .then(() => PromiseHash({
+      .then(() => promiseHash({
         pInfo: concatNodePeerInfo(),
         statements: preparePartiallyValidStatements(alephNode, numValid)
       }))

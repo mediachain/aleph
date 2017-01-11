@@ -3,22 +3,25 @@
 
 const assert = require('assert')
 const { describe, it, before } = require('mocha')
+const uuid = require('node-uuid')
 
 const { getTestNodeId } = require('../test/util')
 const { MediachainNode: AlephNode } = require('../src/peer/node')
 const { concatNodeClient, concatNodePeerInfo } = require('./util')
 
 const seedObjects = [
-  {foo: 'bar'},
-  {hello: 'world'}
+  {id: uuid.v4(), foo: 'bar'},
+  {id: uuid.v4(), hello: 'world'}
 ]
 
 describe('Remote Data Fetching', () => {
   let dataIds = []
+  let concatClient
 
   before(() => {
     return concatNodeClient()
-      .then(client => client.putData(...seedObjects))
+      .then(client => { concatClient = client })
+      .then(() => concatClient.putData(...seedObjects))
       .then(ids => { dataIds = ids })
   })
 
