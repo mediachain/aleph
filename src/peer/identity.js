@@ -6,6 +6,7 @@ const PeerInfo = require('peer-info')
 const Crypto = require('libp2p-crypto')
 const Multiaddr = require('multiaddr')
 const b58 = require('bs58')
+const { b58MultihashForBuffer } = require('../common/util')
 
 const NODE_KEY_TYPE = 'RSA'
 const NODE_KEY_BITS = 2048
@@ -122,11 +123,49 @@ function generatePublisherId (): Promise<PublisherId> {
   })
 }
 
+function publisherKeyFromB58String (key58: string): PublicSigningKey { // eslint-disable-line no-undef
+  const bytes = Buffer.from(b58.decode(key58))
+  return Crypto.unmarshalPublicKey(bytes)
+}
+
+function publisherKeyToB58String (key: PublicSigningKey): string { // eslint-disable-line no-undef
+  return b58MultihashForBuffer(key.bytes)
+}
+
+function signBuffer (
+  key: PrivateSigningKey, // eslint-disable-line no-undef
+  message: Buffer)
+: Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    key.sign(message, (err, sig) => {
+      if (err) return reject(err)
+      resolve(sig)
+    })
+  })
+}
+
+function verifyBuffer (
+  key: PublicSigningKey, // eslint-disable-line no-undef
+  message: Buffer,
+  sig: Buffer)
+: Promise<boolean> {
+  return new Promise((resolve, reject) => {
+    key.verify(message, sig, (err, valid) => {
+      if (err) return reject(err)
+      resolve(valid)
+    })
+  })
+}
+
 module.exports = {
   generateIdentity,
   saveIdentity,
   loadIdentity,
   loadOrGenerateIdentity,
   inflateMultiaddr,
-  generatePublisherId
+  generatePublisherId,
+  publisherKeyFromB58String,
+  publisherKeyToB58String,
+  signBuffer,
+  verifyBuffer
 }

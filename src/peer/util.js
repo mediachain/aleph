@@ -7,8 +7,9 @@ const PeerInfo = require('peer-info')
 const lp = require('pull-length-prefixed')
 const {decode} = require('../metadata/serialize')
 const _ = require('lodash')
+const { flatMap } = require('../common/util')
 
-import type { PeerInfoMsg, LookupPeerResponseMsg, ProtoCodec, QueryResultMsg, QueryResultValueMsg, SimpleValueMsg, DataResultMsg, DataObjectMsg, StatementMsg, StatementBodyMsg, SimpleStatementMsg } from '../protobuf/types'  // eslint-disable-line no-unused-vars
+import type { PeerInfoMsg, LookupPeerResponseMsg, ProtoCodec, QueryResultMsg, QueryResultValueMsg, SimpleValueMsg, DataResultMsg, DataObjectMsg, StatementMsg, StatementBodyMsg, SimpleStatementMsg, CompoundStatementMsg } from '../protobuf/types'  // eslint-disable-line no-unused-vars
 
 // Flow signatures for pull-streams
 export type PullStreamCallback<T> = (end: ?mixed, value?: ?T) => void
@@ -165,25 +166,7 @@ const resultStreamThrough: MediachainStreamThrough<*> = (read) => {
   }
 }
 
-/**
- * Reject `promise` if it doesn't complete within `timeout` milliseconds
- * @param timeout milliseconds to wait before rejecting
- * @param promise a promise that you want to set a timeout for
- * @returns a Promise that will resolve to the value of `promise`, unless the timeout is exceeded
- */
-function promiseTimeout<T> (timeout: number, promise: Promise<T>): Promise<T> {
-  return Promise.race([promise, new Promise((resolve, reject) => {
-    setTimeout(() => {
-      reject(new Error(`Timeout of ${timeout}ms exceeded`))
-    }, timeout)
-  })])
-}
-
-function flatMap<T, U> (array: Array<T>, f: (x: T) => Array<U>): Array<U> {
-  return [].concat(...array.map(x => f(x)))
-}
-
-function objectIdsForQueryResult (result: QueryResultValueMsg): Array<string> {
+function valuesFromQueryResult (result: QueryResultValueMsg): Array<SimpleValueMsg> {
   let values: Array<SimpleValueMsg> = []
 
   const simpleResultValue: ?SimpleValueMsg = _.get(result, 'simple')
@@ -196,24 +179,31 @@ function objectIdsForQueryResult (result: QueryResultValueMsg): Array<string> {
       values = compoundResultBodies.map(b => b.value)
     }
   }
+  return values
+}
 
-  const statementBodies: Array<StatementBodyMsg> = values
+function statementsFromQueryResult (result: QueryResultValueMsg): Array<StatementMsg> {
+  return valuesFromQueryResult(result)
     .map(v => _.get(v, 'stmt'))
     .filter(stmt => stmt != null)
-    .map((stmt: StatementMsg) => stmt.body)
+}
 
-  const simpleStatements: Array<SimpleStatementMsg> =
-    flatMap(statementBodies, s => {
-      const stmt: ?SimpleStatementMsg = _.get(s, 'simple')
-      if (stmt != null) return [stmt]
-
-      const compoundStatements: Array<SimpleStatementMsg> =
-        _.get(s, 'compound.body')
-      if (compoundStatements != null) return compoundStatements
-      return []
-    })
-
+function objectIdsFromStatement (stmt: StatementMsg): Array<string> {
+  let simpleStatements: Array<SimpleStatementMsg> = []
+  if (stmt.body.simple !== undefined) {
+    const simpleStmt: SimpleStatementMsg = (stmt.body.simple: any)
+    simpleStatements = [simpleStmt]
+  }
+  if (stmt.body.compound !== undefined) {
+    const compoundStmt: CompoundStatementMsg = (stmt.body.compound: any)
+    simpleStatements = compoundStmt.body
+  }
   return simpleStatements.map(s => s.object)
+}
+
+function objectIdsForQueryResult (result: QueryResultValueMsg): Array<string> {
+  const statements = statementsFromQueryResult(result)
+  return flatMap(statements, objectIdsFromStatement)
 }
 
 function expandQueryResult (result: QueryResultValueMsg, dataObjects: Array<DataObjectMsg>): Object {
@@ -258,8 +248,8 @@ module.exports = {
   pullToPromise,
   pullRepeatedly,
   resultStreamThrough,
-  promiseTimeout,
+  statementsFromQueryResult,
+  objectIdsFromStatement,
   objectIdsForQueryResult,
-  expandQueryResult,
-  flatMap
+  expandQueryResult
 }

@@ -77,6 +77,15 @@ class Datastore {
       })
     })
   }
+
+  has (key: string): Promise<boolean> {
+    return this.get(key, {returnRawBuffer: true})
+      .then(() => true)
+      .catch(err => {
+        if (err.notFound) return false
+        throw err
+      })
+  }
 }
 
 const valueCodec = {

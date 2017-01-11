@@ -2,13 +2,11 @@
 
 const { clone, set } = require('lodash')
 const fs = require('fs')
-const Multihash = require('multihashes')
 const { JQ_PATH } = require('../../metadata/jqStream')
 const childProcess = require('child_process')
 const sshTunnel = require('tunnel-ssh')
 const { RestClient } = require('../api')
-import type { Writable } from 'stream'
-import type { WriteStream } from 'tty'
+const { println, printlnErr, isB58Multihash } = require('../../common/util')
 
 function formatJSON (obj: ?mixed,
                     options: {color?: ?boolean, pretty?: boolean} = {}): string {
@@ -42,15 +40,6 @@ function pluralizeCount (count: number, word: string): string {
   let plural = word
   if (count !== 1) plural += 's'
   return count.toString() + ' ' + plural
-}
-
-function isB58Multihash (str: string): boolean {
-  try {
-    Multihash.fromB58String(str)
-    return true
-  } catch (err) {
-    return false
-  }
 }
 
 function setupSSHTunnel (config: Object): Promise<Object> {
@@ -144,36 +133,6 @@ function subcommand<T: SubcommandGlobalOptions> (handler: (argv: T) => Promise<*
         process.exit(1)
       })
   }
-}
-
-/**
- * Print `output` to the `destination` stream and append a newline.
- * @param output
- * @param destination
- */
-function writeln (output: string, destination: Writable | WriteStream) {
-  destination.write(output + '\n')
-}
-
-/**
- * Print `output` to stdout and append a newline.
- * Always use this instead of console.log for non-debug output!
- * console.log keeps a strong reference to whatever you pass in,
- * which can result in memory leaks for long-running processes.
- * @param output
- */
-function println (output: string) {
-  writeln(output, process.stdout)
-}
-
-/**
- * Print `output` to stderr and append a newline.
- * Use if you don't want console.error to keep a strong reference
- * to whatever you pass in.
- * @param output
- */
-function printlnErr (output: string) {
-  writeln(output, process.stderr)
 }
 
 module.exports = {

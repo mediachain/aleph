@@ -10,9 +10,10 @@ const PeerId = require('peer-id')
 const PeerInfo = require('peer-info')
 const PeerBook = require('peer-book')
 const multiaddr = require('multiaddr')
+const Ping = require('libp2p-ping')
 const mafmt = require('mafmt')
 const Abortable = require('pull-abortable')
-const { promiseTimeout } = require('./util')
+const { promiseTimeout } = require('../common/util')
 
 import type { Connection } from 'interface-connection'
 
@@ -61,6 +62,8 @@ class P2PNode {
     this.swarm.on('peer-mux-closed', (peerInfo) => {
       this.peerBook.removeByB58String(peerInfo.id.toB58String())
     })
+
+    Ping.mount(this.swarm)
 
     this.abortables = new Set()
   }
@@ -226,6 +229,22 @@ class P2PNode {
 
   unhandle (protocol: string): any {
     return this.swarm.unhandle(protocol)
+  }
+
+  ping (peer: PeerInfo): Promise<number> {
+    const pingPromise = new Promise((resolve, reject) => {
+      const p = new Ping(this.swarm, peer)
+      p.on('error', err => {
+        p.stop()
+        reject(err)
+      })
+
+      p.on('ping', latency => {
+        p.stop()
+        resolve(latency)
+      })
+    })
+    return promiseTimeout(this.dialTimeout, pingPromise)
   }
 }
 

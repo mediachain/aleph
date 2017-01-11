@@ -27,6 +27,8 @@ before_install:
 script:
   - npm run test && if [ "$SKIP_INTEGRATION_TEST" == "true" ]; then true; else ./integration-test/run-in-docker.sh; fi
 
+after_success: npm run coverage
+
 deploy:
   skip_cleanup: true
   provider: npm
