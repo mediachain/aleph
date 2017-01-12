@@ -411,10 +411,11 @@ class MediachainNode {
   }
 
   merge (peer: PeerInfo | PeerId | string, queryString: string): Promise<MergeResult> {
-    return promiseHash({
-      queryStream: this.remoteQueryStream(peer, queryString),
-      dataConn: this.openConnection(peer, PROTOCOLS.node.data)
-    })
+    return this.remoteQueryStream(peer, queryString)
+      .then(queryStream => promiseHash({
+        queryStream,
+        dataConn: this.openConnection(peer, PROTOCOLS.node.data)
+      }))
       .then(({queryStream, dataConn}) => mergeFromStreams(this, queryStream, dataConn))
   }
 
