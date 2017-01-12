@@ -5,26 +5,9 @@ const { before, describe, it } = require('mocha')
 
 const { PROTOCOLS } = require('../src/peer/constants')
 const pull = require('pull-stream')
-const pb = require('../src/protobuf')
-const {
-  protoStreamDecode,
-  protoStreamEncode
-} = require('../src/peer/util')
-const { makeNode } = require('./util')
+const { makeNode, mockQueryHandler } = require('./util')
 
 import type Node from '../src/peer/node'
-import type { QueryResultMsg } from '../src/protobuf/types'
-import type { Connection } from 'interface-connection'
-
-// accept any query and return a stream of the given results
-const queryHandler = (results: Array<QueryResultMsg>) => (protocol: string, conn: Connection) => pull(
-  conn,
-  protoStreamDecode(pb.node.QueryRequest),
-  pull.map(() => results),
-  pull.flatten(),
-  protoStreamEncode(pb.node.QueryResult),
-  conn
-)
 
 function startNodes (...nodes: Array<Node>): Promise<*> {
   return Promise.all(nodes.map(n => n.start()))
@@ -57,7 +40,7 @@ describe('Remote Query', () => {
     return makeNode()
       .then(node => {
         remote = node
-        remote.p2p.handle(PROTOCOLS.node.query, queryHandler(responses))
+        remote.p2p.handle(PROTOCOLS.node.query, mockQueryHandler(responses))
       })
       .then(() => startNodes(local, remote)) // start both peers
       .then(() => local.remoteQueryStream(remote.p2p.peerInfo, 'SELECT * FROM foo.bar'))
@@ -90,7 +73,7 @@ describe('Remote Query', () => {
     return makeNode()
       .then(node => {
         remote = node
-        remote.p2p.handle(PROTOCOLS.node.query, queryHandler(responses))
+        remote.p2p.handle(PROTOCOLS.node.query, mockQueryHandler(responses))
       })
       .then(() => startNodes(local, remote))
       .then(() => local.remoteQueryStream(remote.p2p.peerInfo, 'SELECT * FROM foo.bar'))
