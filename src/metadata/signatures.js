@@ -2,7 +2,7 @@
 
 const { omit, cloneDeep } = require('lodash')
 const pb = require('../protobuf')
-const { publisherKeyFromB58String, signBuffer, verifyBuffer } = require('../peer/identity')
+const { publisherKeyFromB58String } = require('../peer/identity')
 
 import type { PublisherId, PublicSigningKey } from '../peer/identity'
 import type { StatementMsg } from '../protobuf/types'
@@ -20,7 +20,7 @@ function calculateSignature (stmt: StatementMsg, publisherId: PublisherId): Prom
   return Promise.resolve().then(() => {
     const bytes = pb.stmt.Statement.encode(stmt)
     // sign the encoded statement message and set the signature
-    return signBuffer(publisherId.privateKey, bytes)
+    return publisherId.privateKey.sign(bytes)
   })
 }
 
@@ -36,7 +36,7 @@ function verifyStatementSignature (stmt: StatementMsg, publicKey: PublicSigningK
       const sig = stmt.signature
       const withoutSig = omit(cloneDeep(stmt), 'signature')
       const bytes = pb.stmt.Statement.encode(withoutSig)
-      return verifyBuffer(publicKey, bytes, sig)
+      return publicKey.verify(bytes, sig)
     })
 }
 
