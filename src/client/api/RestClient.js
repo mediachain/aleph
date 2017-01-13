@@ -336,8 +336,8 @@ class RestClient {
       .then(r => r.json())
   }
 
-  getNodeManifest (): Promise<string> {
-    return this.getRequest('manifest/node')
+  getSelfManifest (): Promise<string> {
+    return this.getRequest('manifest/self')
       .then(trimTextResponse)
   }
 

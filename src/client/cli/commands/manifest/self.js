@@ -9,7 +9,7 @@ module.exports = {
     `suitable for signing by mcid to produce a manifest.\n`,
   handler: subcommand((opts: {client: RestClient}) => {
     const {client} = opts
-    return client.getNodeManifest()
+    return client.getSelfManifest()
       .then(m => println(m))
   })
 }
