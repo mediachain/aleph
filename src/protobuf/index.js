@@ -39,7 +39,10 @@ import type {
   EnvelopeStatementMsg,
   ArchiveStatementMsg,
   StatementBodyMsg,
-  StatementMsg
+  StatementMsg,
+  ManifestMsg,
+  ManifestBodyMsg,
+  NodeManifestMsg
 } from './types'
 
 type AllProtos = {
@@ -82,6 +85,11 @@ type AllProtos = {
     ArchiveStatement: ProtoCodec<ArchiveStatementMsg>,
     StatementBody: ProtoCodec<StatementBodyMsg>,
     Statement: ProtoCodec<StatementMsg>
+  },
+  manifest: {
+    Manifest: ProtoCodec<ManifestMsg>,
+    ManifestBody: ProtoCodec<ManifestBodyMsg>,
+    NodeManifest: ProtoCodec<NodeManifestMsg>
   }
 }
 
@@ -90,7 +98,7 @@ type AllProtos = {
 // we're concatenating all of our protos into one big string
 // Stop doing this when import works!
 function loadProtos (): AllProtos {
-  const files = ['dir.proto', 'node.proto', 'stmt.proto']
+  const files = ['dir.proto', 'node.proto', 'stmt.proto', 'manifest.proto']
 
   // parsing will fail if there's a `syntax` statement that's not the first line of the file
   // so we remove them from the concatenated monster and add back as the first line
@@ -144,6 +152,11 @@ function loadProtos (): AllProtos {
       ArchiveStatement: pb.ArchiveStatement,
       StatementBody: pb.StatementBody,
       Statement: pb.Statement
+    },
+    manifest: {
+      Manifest: pb.Manifest,
+      ManifestBody: pb.ManifestBody,
+      NodeManifest: pb.NodeManifest
     }
   }
 }

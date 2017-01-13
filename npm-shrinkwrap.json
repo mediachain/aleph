@@ -2104,6 +2104,11 @@
       "from": "pull-paramap@>=1.2.1 <2.0.0",
       "resolved": "https://registry.npmjs.org/pull-paramap/-/pull-paramap-1.2.1.tgz"
     },
+    "pull-promise": {
+      "version": "2.0.0",
+      "from": "pull-promise@>=2.0.0 <3.0.0",
+      "resolved": "https://registry.npmjs.org/pull-promise/-/pull-promise-2.0.0.tgz"
+    },
     "pull-pushable": {
       "version": "2.0.1",
       "from": "pull-pushable@>=2.0.0 <3.0.0",
@@ -2123,6 +2128,18 @@
       "version": "1.3.3",
       "from": "pull-stream-to-stream@>=1.3.3 <2.0.0",
       "resolved": "https://registry.npmjs.org/pull-stream-to-stream/-/pull-stream-to-stream-1.3.3.tgz"
+    },
+    "pull-window": {
+      "version": "2.1.4",
+      "from": "pull-window@>=2.1.4 <3.0.0",
+      "resolved": "https://registry.npmjs.org/pull-window/-/pull-window-2.1.4.tgz",
+      "dependencies": {
+        "looper": {
+          "version": "2.0.0",
+          "from": "looper@>=2.0.0 <3.0.0",
+          "resolved": "https://registry.npmjs.org/looper/-/looper-2.0.0.tgz"
+        }
+      }
     },
     "pull-ws": {
       "version": "3.2.8",

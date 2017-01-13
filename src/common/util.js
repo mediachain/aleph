@@ -1,7 +1,7 @@
 // @flow
 
 const Multihashing = require('multihashing')
-import type { Writable } from 'stream'
+import type { Writable, Readable } from 'stream'
 import type { WriteStream } from 'tty'
 
 /**
@@ -101,6 +101,22 @@ function printlnErr (output: string) {
   writeln(output, process.stderr)
 }
 
+/**
+ * Read a stream until it ends, returning its contents as a string.
+ * @param stream
+ * @returns {Promise}
+ */
+function consumeStream (stream: Readable): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const chunks = []
+    stream.on('error', err => reject(err))
+    stream.on('data', chunk => { chunks.push(chunk) })
+    stream.on('end', () => {
+      resolve(Buffer.concat(chunks).toString('utf-8'))
+    })
+  })
+}
+
 module.exports = {
   promiseHash,
   promiseTimeout,
@@ -109,5 +125,6 @@ module.exports = {
   isB58Multihash,
   writeln,
   println,
-  printlnErr
+  printlnErr,
+  consumeStream
 }
