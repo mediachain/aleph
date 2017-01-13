@@ -9,7 +9,7 @@ const { promiseHash } = require('../src/common/util')
 const { getTestNodeId } = require('../test/util')
 const { MediachainNode: AlephNode } = require('../src/peer/node')
 const { concatNodeClient, concatNodePeerInfo } = require('./util')
-const { generatePublisherId } = require('../src/peer/identity')
+const { PublisherId } = require('../src/peer/identity')
 const { makeSimpleStatement } = require('../src/metadata/statement')
 
 const TEST_NAMESPACE = 'scratch.push-test'
@@ -60,7 +60,7 @@ describe('Push', () => {
   let statementIds
   let unauthorizedStatementId
 
-  before(() => generatePublisherId()
+  before(() => PublisherId.generate()
     .then(_publisherId => { publisherId = _publisherId })
     .then(() => getTestNodeId())
     .then(nodeId => {

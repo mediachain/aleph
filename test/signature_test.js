@@ -4,7 +4,7 @@
 const assert = require('assert')
 const { before, describe, it } = require('mocha')
 
-const { generatePublisherId } = require('../src/peer/identity')
+const { PublisherId } = require('../src/peer/identity')
 const { makeSimpleStatement } = require('../src/metadata/statement')
 const { signStatement, verifyStatement } = require('../src/metadata/signatures')
 
@@ -12,14 +12,14 @@ describe('Signature verification', () => {
   let publisherId
 
   before(() =>
-    generatePublisherId()
+    PublisherId.generate()
       .then(_pubId => { publisherId = _pubId })
   )
 
   it('signs and validates a buffer', () => {
     const msg = Buffer.from(`You can get anything you want, at Alice's Restaurant`)
-    return publisherId.privateKey.sign(msg)
-      .then(sig => publisherId.privateKey.publicKey.verify(msg, sig))
+    return publisherId.sign(msg)
+      .then(sig => publisherId.verify(msg, sig))
       .then(result => {
         assert(result === true, 'signature did not validate')
       })
@@ -27,8 +27,8 @@ describe('Signature verification', () => {
 
   it('does not validate a modified buffer', () => {
     const msg = Buffer.from(`Launch code: 0000`)
-    return publisherId.privateKey.sign(msg)
-      .then(sig => publisherId.privateKey.publicKey.verify(Buffer.from('Launch code: 0001'), sig))
+    return publisherId.sign(msg)
+      .then(sig => publisherId.verify(Buffer.from('Launch code: 0001'), sig))
       .then(result => {
         assert(result === false, 'signature validated an invalid message')
       })

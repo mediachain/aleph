@@ -119,12 +119,22 @@ class PrivateSigningKey {
       .then(p2pKey => new PrivateSigningKey(p2pKey))
   }
 
+  static fromB58String (str: string): Promise<PrivateSigningKey> {
+    const bytes = Buffer.from(b58.decode(str))
+    return Crypto.unmarshalPrivateKey(bytes)
+      .then(p2pKey => new PrivateSigningKey(p2pKey))
+  }
+
   save (filename: string): Promise<void> {
     return fs.writeFile(filename, this.bytes)
   }
 
   get bytes (): Buffer {
     return this._key.bytes
+  }
+
+  toB58String (): string {
+    return b58.encode(this.bytes)
   }
 
   sign (message: Buffer): Promise<Buffer> {
@@ -150,12 +160,22 @@ class PublicSigningKey {
       .then(p2pKey => new PublicSigningKey(p2pKey))
   }
 
+  static fromB58String (b58String: string): PublicSigningKey {
+    const bytes = Buffer.from(b58.decode(b58String))
+    const p2pKey = Crypto.unmarshalPublicKey(bytes)
+    return new PublicSigningKey(p2pKey)
+  }
+
   save (filename: string): Promise<void> {
     return fs.writeFile(filename, this.bytes)
   }
 
   get bytes (): Buffer {
     return this._key.bytes
+  }
+
+  toB58String (): string {
+    return b58.encode(this.bytes)
   }
 
   verify (message: Buffer, signature: Buffer): Promise<boolean> {
@@ -168,43 +188,41 @@ class PublicSigningKey {
   }
 }
 
-export type PublisherId = {
-  id58: string,
+class PublisherId {
+  id58: string
   privateKey: PrivateSigningKey
-}
 
-function generatePublisherId (): Promise<PublisherId> {
-  return Crypto.generateKeyPair(PUBLISHER_KEY_TYPE, PUBLISHER_KEY_BITS)
-      .then(privateP2PKey => {
-        const privateKey = new PrivateSigningKey(privateP2PKey)
-        const id58 = b58.encode(privateKey.publicKey.bytes)
-        return { id58, privateKey }
-      })
-}
+  constructor (privateKey: PrivateSigningKey | P2PSigningPrivateKey) { // eslint-disable-line no-undef
+    if (!(privateKey instanceof PrivateSigningKey)) {
+      privateKey = new PrivateSigningKey(privateKey)
+    }
 
-function publisherKeyFromB58String (key58: string): PublicSigningKey {
-  const bytes = Buffer.from(b58.decode(key58))
-  const p2pKey = Crypto.unmarshalPublicKey(bytes)
-  return new PublicSigningKey(p2pKey)
-}
+    this.id58 = b58.encode(privateKey.publicKey.bytes)
+    this.privateKey = privateKey
+  }
 
-function publisherKeyToB58String (key: PublicSigningKey): string { // eslint-disable-line no-undef
-  return b58.encode(key.bytes)
-}
+  static generate (): Promise<PublisherId> {
+    return Crypto.generateKeyPair(PUBLISHER_KEY_TYPE, PUBLISHER_KEY_BITS)
+      .then(key => new PublisherId(key))
+  }
 
-function loadPublisherId (filename: string): Promise<PublisherId> {
-  return fs.readFile(filename)
-    .then(bytes => Crypto.unmarshalPrivateKey(bytes))
-    .then(privateKey => ({
-      id58: b58.encode(privateKey.public.bytes),
-      privateKey
-    }))
-}
+  static load (filename: string): Promise<PublisherId> {
+    return PrivateSigningKey.load(filename)
+      .then(key => new PublisherId(key))
+  }
 
-function savePublisherId (publisherId: PublisherId, filename: string): Promise<void> {
-  return fs.writeFile(filename, publisherId.privateKey.bytes)
-}
+  save (filename: string): Promise<void> {
+    return this.privateKey.save(filename)
+  }
 
+  sign (message: Buffer): Promise<Buffer> {
+    return this.privateKey.sign(message)
+  }
+
+  verify (message: Buffer, signature: Buffer): Promise<boolean> {
+    return this.privateKey.publicKey.verify(message, signature)
+  }
+}
 
 module.exports = {
   generateIdentity,
@@ -212,11 +230,7 @@ module.exports = {
   loadIdentity,
   loadOrGenerateIdentity,
   inflateMultiaddr,
-  generatePublisherId,
-  loadPublisherId,
-  savePublisherId,
-  publisherKeyFromB58String,
-  publisherKeyToB58String,
+  PublisherId,
   PublicSigningKey,
   PrivateSigningKey
 }
