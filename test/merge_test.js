@@ -10,9 +10,8 @@ const { PROTOCOLS } = require('../src/peer/constants')
 const { b58MultihashForBuffer } = require('../src/common/util')
 const { makeSimpleStatement } = require('../src/metadata/statement')
 const serialize = require('../src/metadata/serialize')
-const { generatePublisherId } = require('../src/peer/identity')
+const { PublisherId } = require('../src/peer/identity')
 
-import type { PublisherId } from '../src/peer/identity'
 import type { QueryResultMsg, StatementMsg } from '../src/protobuf/types'
 
 const TEST_NAMESPACE = 'scratch.merge-test'
@@ -48,7 +47,7 @@ describe('Merge', () => {
   before(() =>
     makeNode()
       .then(node => { alephNode = node })
-      .then(() => generatePublisherId())
+      .then(() => PublisherId.generate())
       .then(pubId => { publisherId = pubId })
       .then(() => makeSeedStatements(publisherId, SEED_OBJECT_BUFFERS))
       .then(statements => { seedStatements = statements })
@@ -66,8 +65,9 @@ describe('Merge', () => {
       .then(() => mockSource.start())
       .then(() => alephNode.merge(mockSource.peerInfo, `SELECT * FROM ${TEST_NAMESPACE}`))
       .then(result => {
-        console.log('merge result: ', result)
         assert.notEqual(result, null, 'merge did not return a result')
+        assert.equal(result.statementCount, seedStatements.length, 'merged an unexpected number of statements')
+        assert.equal(result.objectCount, SEED_OBJECT_BUFFERS.length, 'merged an unexpected number of objects')
       })
       .catch(err => {
         console.error('error during merge test: ', err)
