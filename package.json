@@ -81,7 +81,7 @@
     "babel-plugin-transform-flow-strip-types": "6.21.0",
     "babel-register": "6.18.0",
     "coveralls": "^2.11.15",
-    "eslint-plugin-flowtype": "2.29.2",
+    "eslint-plugin-flowtype": "2.30.0",
     "interface-connection": "^0.3.0",
     "mocha": "3.2.0",
     "mocha-eventually": "^1.1.0",
