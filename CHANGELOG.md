@@ -1,3 +1,26 @@
+## 2016-01-18: aleph-v1.5.1
+
+aleph:
+- Fixed an issue that caused the aleph statement db to be erased after a period of inactivity. [PR # 165](https://github.com/mediachain/aleph/165)
+
+## 2016-01-17: aleph-v1.5
+
+mcclient:
+- Removed default connection timeouts to concat node API to prevent spurious errors [PR #145](https://github.com/mediachain/aleph/pull/145)
+- Added `mcclient net ping` command, which uses libp2p ping protocol, and `mcclient net identify`, which returns
+  the output of the libp2p identify protocol.
+  Also renamed `mcclient netAddr` and `mcclient netConnections` to `mcclient net addr` and `mcclient net connections`, with
+  the old invocations kept around as aliases for compatibility. [PR #154](https://github.com/mediachain/aleph/pull/154)
+- Require a prefix for "WKI"s during `mcclient publish`. [PR #156](https://github.com/mediachain/aleph/pull/156)
+- Add support for `mcnode` "manifest" commands to set and retrieve the node's public identity manifests. [PR #158](https://github.com/mediachain/aleph/pull/158)
+
+aleph:
+- Added local datastore to aleph nodes (currently in-memory only). [PR #144](https://github.com/mediachain/aleph/pull/144)
+- Added local statement db to aleph nodes (again, in-memory only). [PR #146](https://github.com/mediachain/aleph/pull/146)
+- Added support for pushing statements + data from aleph nodes to concat nodes. [PR #147](https://github.com/mediachain/aleph/pull/147)
+- Added support for merging statements + data from concat nodes to aleph nodes. [PR #152](https://github.com/mediachain/aleph/pull/152)
+
+
 ## 2016-12-19: aleph-v1.4
 
 mcclient:
@@ -9,7 +32,7 @@ mcclient:
 - Support for batch data object retrieval API endpoint [PR #123](https://github.com/mediachain/aleph/pull/123)
 - Added global `--timeout` flag to override default 15s request timeout [PR #129](https://github.com/mediachain/aleph/pull/129)
 - Much faster (~ 1.8x) CBOR conversions thanks to [borc](https://github.com/dignifiedquire/borc) module [PR #131](https://github.com/mediachain/aleph/pull/131)
-- Fixed memory leak that could cause x`mcclient publish` to fail on very large ingestions [PR #134](https://github.com/mediachain/aleph/pull/134)
+- Fixed memory leak that could cause `mcclient publish` to fail on very large ingestions [PR #134](https://github.com/mediachain/aleph/pull/134)
 - Automatic SSH tunneling no longer conflicts with local `mcnode`, uses random free port for tunnel [PR #136](https://github.com/mediachain/aleph/pull/136)
 - Added debug commands to list libp2p connections and known addresses for peers [PR #122](https://github.com/mediachain/aleph/pull/122)
 

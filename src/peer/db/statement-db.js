@@ -3,6 +3,7 @@
 const path = require('path')
 const Knex = require('knex')
 const locks = require('locks')
+const temp = require('temp').track()
 const pb = require('../../protobuf')
 
 import type { StatementMsg, SimpleStatementMsg, EnvelopeStatementMsg, CompoundStatementMsg } from '../../protobuf/types'
@@ -11,11 +12,11 @@ import type { Mutex } from 'locks'
 const MIGRATIONS_DIR = path.join(__dirname, 'migrations')
 
 type StatementDBOptions = {
-  filename: string,
+  filename: ?string,
 }
 
 const DefaultOptions: StatementDBOptions = {
-  filename: ':memory:'
+  filename: null
 }
 
 class StatementDB {
@@ -25,12 +26,11 @@ class StatementDB {
 
   constructor (options: ?StatementDBOptions = DefaultOptions) {
     if (options == null) options = DefaultOptions
+    const filename = options.filename || temp.path({prefix: 'aleph-', suffix: '.db'})
 
     this._db = Knex({
       client: 'sqlite3',
-      connection: {
-        filename: options.filename
-      },
+      connection: { filename },
       useNullAsDefault: true
     })
     this._migrated = false

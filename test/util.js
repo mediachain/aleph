@@ -6,10 +6,16 @@ const config = require('./config')
 const thenify = require('thenify')
 const PeerId = require('peer-id')
 const path = require('path')
+const pull = require('pull-stream')
 
+const pb = require('../src/protobuf')
+const { protoStreamEncode, protoStreamDecode } = require('../src/peer/util')
 const createFromJSON = thenify(PeerId.createFromJSON)
 const nodeIdObjects = require('./resources/test_node_ids.json')
 const testNodeIds = Promise.all(nodeIdObjects.map(id => createFromJSON(id)))
+
+import type { Connection } from 'interface-connection'
+import type { QueryResultMsg } from '../src/protobuf/types'
 
 function getTestNodeId (): Promise<PeerId> {
   return testNodeIds.then(ids => {
@@ -42,8 +48,25 @@ function makeDirectory (options: Object): Promise<Directory> {
   })
 }
 
+/**
+ * Respond to any query with the given QueryResult messages.
+ * Should be added to an aleph node with
+ * `node.p2p.handle(PROTOCOLS.node.query, mockQueryHandler(results)`
+ *
+ * @param results - the query results, including any `StreamEnd` or `StreamError` messages
+ */
+const mockQueryHandler = (results: Array<QueryResultMsg>) => (protocol: string, conn: Connection) => pull(
+  conn,
+  protoStreamDecode(pb.node.QueryRequest),
+  pull.map(() => results),
+  pull.flatten(),
+  protoStreamEncode(pb.node.QueryResult),
+  conn
+)
+
 module.exports = {
   getTestNodeId,
   makeNode,
-  makeDirectory
+  makeDirectory,
+  mockQueryHandler
 }

@@ -17,6 +17,7 @@ type HandlerOptions = {
   client: RestClient,
   jqFilter: string,
   idFilter: string,
+  prefix: string,
   filename?: string,
   batchSize: number,
   compound?: number,
@@ -225,7 +226,7 @@ function publishStream (opts: {
 
         wki = wki.toString()
 
-        wkiWithPrefix = [ prefix, wki ].join(':')
+        const wkiWithPrefix = [ prefix, wki ].join(':')
 
         const refs = [ wkiWithPrefix ]
         const tags = [] // TODO: support extracting tags

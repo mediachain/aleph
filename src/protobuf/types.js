@@ -143,4 +143,27 @@ export type StatementMsg = {
   signature: Buffer,
 };
 
+// manifest.proto
+// message Manifest {
+//   string entity = 1;
+//   string keyId = 2;
+//   ManifestBody body = 3;
+//   int64 timestamp = 4;
+//   bytes signature = 5;
+// }
+export type ManifestMsg = {
+  entity: string,
+  keyId: string,
+  body: ManifestBodyMsg,
+  timestamp: number,
+  signature: Buffer
+}
+
+export type ManifestBodyMsg = {node: NodeManifestMsg}
+
+export type NodeManifestMsg = {
+  peer: string,
+  publisher: string
+}
+
 export type ProtoCodec<T> = { encode: (obj: T) => Buffer, decode: (buf: Buffer) => T }

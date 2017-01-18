@@ -336,6 +336,27 @@ class RestClient {
       .then(r => r.json())
   }
 
+  getSelfManifest (): Promise<string> {
+    return this.getRequest('manifest/self')
+      .then(trimTextResponse)
+  }
+
+  getManifests (peerId: ?string = null): Promise<Array<Object>> {
+    let path = (peerId == null)
+      ? 'manifest'
+      : `manifest/${peerId}`
+
+    return this.getRequest(path)
+      .then(r => new NDJsonResponse(r))
+      .then(r => r.values())
+  }
+
+  setManifests (...manifests: Array<Object>): Promise<boolean> {
+    const body = manifests.map(m => JSON.stringify(m)).join('\n')
+    return this.postRequest('manifest', body, false)
+      .then(parseBoolResponse)
+  }
+
   shutdown (): Promise<boolean> {
     return this.postRequest('shutdown', '', false)
       .then(() => true)
