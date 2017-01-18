@@ -16,17 +16,9 @@ function signStatement (stmt: StatementMsg, publisherId: PublisherId): Promise<S
   })
 }
 
-function calculateSignature (stmt: StatementMsg, signer: { sign: (bytes: Buffer) => string }): Promise<Buffer> {
-  return new Promise((resolve, reject) => {
-    let bytes
-    try {
-      // encode statement protobuf
-      bytes = pb.stmt.Statement.encode(stmt)
-    } catch (err) {
-      return reject(err)
-    }
-
-    // sign the encoded statement message and set the signature
+function calculateSignature (stmt: StatementMsg, signer: { sign: (bytes: Buffer) => Buffer }): Promise<Buffer> {
+  return Promise.resolve().then(() => {
+    const bytes = pb.stmt.Statement.encode(stmt)
     return signBuffer(signer, bytes)
   })
 }
