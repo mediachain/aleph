@@ -3,7 +3,7 @@ const path = require('path')
 const fs = thenifyAll(require('fs'), {}, ['readFile', 'writeFile'])
 const PeerId = thenifyAll(require('peer-id'), {}, ['createFromPrivKey', 'create'])
 const PeerInfo = require('peer-info')
-const Crypto = thenifyAll(require('libp2p-crypto'), {}, ['unmarshalPrivateKey'])
+const Crypto = thenifyAll(require('libp2p-crypto'), {}, ['unmarshalPrivateKey', 'generateKeyPair'])
 const Multiaddr = require('multiaddr')
 const b58 = require('bs58')
 
@@ -91,82 +91,137 @@ function inflateMultiaddr (multiaddrString: string): PeerInfo {
 // eslint (and thus standard.js) doesn't like flow interfaces,
 // so we need to temporarily disable the no-undef rule
 /* eslint-disable no-undef */
-interface PrivateSigningKey {
+interface P2PSigningPrivateKey {
   sign: (message: Buffer, callback: (err: ?Error, sig: Buffer) => void) => void,
-  public: PublicSigningKey,
+  public: P2PSigningPublicKey,
   bytes: Buffer
 }
 
-interface PublicSigningKey {
+interface P2PSigningPublicKey {
   verify: (message: Buffer, signature: Buffer, callback: (err: ?Error, valid: boolean) => void) => void,
   bytes: Buffer
 }
-
-export type PublisherId = {
-  id58: string,
-  privateKey: PrivateSigningKey
-}
 /* eslint-enable no-undef */
 
-function generatePublisherId (): Promise<PublisherId> {
-  return new Promise((resolve, reject) => {
-    Crypto.generateKeyPair(PUBLISHER_KEY_TYPE, PUBLISHER_KEY_BITS,
-      (err: ?Error, privateKey: PrivateSigningKey) => { // eslint-disable-line no-undef
+// wrapper classes for the above to expose a Promise-based interface
+class PrivateSigningKey {
+  publicKey: PublicSigningKey
+  _key: P2PSigningPrivateKey // eslint-disable-line no-undef
+
+  constructor (p2pKey: P2PSigningPrivateKey) { // eslint-disable-line no-undef
+    this._key = p2pKey
+    this.publicKey = new PublicSigningKey(p2pKey.public)
+  }
+
+  static load (filename: string): Promise<PrivateSigningKey> {
+    return fs.readFile(filename)
+      .then(bytes => Crypto.unmarshalPrivateKey(bytes))
+      .then(p2pKey => new PrivateSigningKey(p2pKey))
+  }
+
+  static fromB58String (str: string): Promise<PrivateSigningKey> {
+    const bytes = Buffer.from(b58.decode(str))
+    return Crypto.unmarshalPrivateKey(bytes)
+      .then(p2pKey => new PrivateSigningKey(p2pKey))
+  }
+
+  save (filename: string): Promise<void> {
+    return fs.writeFile(filename, this.bytes)
+  }
+
+  get bytes (): Buffer {
+    return this._key.bytes
+  }
+
+  toB58String (): string {
+    return b58.encode(this.bytes)
+  }
+
+  sign (message: Buffer): Promise<Buffer> {
+    return new Promise((resolve, reject) => {
+      this._key.sign(message, (err, sig) => {
         if (err) return reject(err)
-        const id58 = b58.encode(privateKey.public.bytes)
-        resolve({
-          id58,
-          privateKey
-        })
+        resolve(sig)
       })
-  })
-}
-
-function publisherKeyFromB58String (key58: string): PublicSigningKey { // eslint-disable-line no-undef
-  const bytes = Buffer.from(b58.decode(key58))
-  return Crypto.unmarshalPublicKey(bytes)
-}
-
-function publisherKeyToB58String (key: PublicSigningKey): string { // eslint-disable-line no-undef
-  return b58.encode(key.bytes)
-}
-
-function loadPublisherId (filename: string): Promise<PublisherId> {
-  return fs.readFile(filename)
-    .then(bytes => Crypto.unmarshalPrivateKey(bytes))
-    .then(privateKey => ({
-      id58: b58.encode(privateKey.public.bytes),
-      privateKey
-    }))
-}
-
-function savePublisherId (publisherId: PublisherId, filename: string): Promise<void> {
-  return fs.writeFile(filename, publisherId.privateKey.bytes)
-}
-
-function signBuffer (
-  key: PrivateSigningKey, // eslint-disable-line no-undef
-  message: Buffer)
-: Promise<Buffer> {
-  return new Promise((resolve, reject) => {
-    key.sign(message, (err, sig) => {
-      if (err) return reject(err)
-      resolve(sig)
     })
-  })
+  }
 }
 
-function verifyBuffer (
-  key: PublicSigningKey, // eslint-disable-line no-undef
-  message: Buffer,
-  sig: Buffer)
-: Promise<boolean> {
-  return new Promise((resolve, reject) => {
-    key.verify(message, sig, (err, valid) => {
-      if (err) return reject(err)
-      resolve(valid)
+class PublicSigningKey {
+  _key: P2PSigningPublicKey // eslint-disable-line no-undef
+
+  constructor (p2pKey: P2PSigningPublicKey) { // eslint-disable-line no-undef
+    this._key = p2pKey
+  }
+
+  static load (filename: string): Promise<PublicSigningKey> {
+    return fs.readFile(filename)
+      .then(bytes => Crypto.unmarshalPublicKey(bytes))
+      .then(p2pKey => new PublicSigningKey(p2pKey))
+  }
+
+  static fromB58String (b58String: string): PublicSigningKey {
+    const bytes = Buffer.from(b58.decode(b58String))
+    const p2pKey = Crypto.unmarshalPublicKey(bytes)
+    return new PublicSigningKey(p2pKey)
+  }
+
+  save (filename: string): Promise<void> {
+    return fs.writeFile(filename, this.bytes)
+  }
+
+  get bytes (): Buffer {
+    return this._key.bytes
+  }
+
+  toB58String (): string {
+    return b58.encode(this.bytes)
+  }
+
+  verify (message: Buffer, signature: Buffer): Promise<boolean> {
+    return new Promise((resolve, reject) => {
+      this._key.verify(message, signature, (err, valid) => {
+        if (err) return reject(err)
+        resolve(valid)
+      })
     })
-  })
+  }
+}
+
+class PublisherId {
+  id58: string
+  privateKey: PrivateSigningKey
+
+  constructor (privateKey: PrivateSigningKey | P2PSigningPrivateKey) { // eslint-disable-line no-undef
+    if (!(privateKey instanceof PrivateSigningKey)) {
+      privateKey = new PrivateSigningKey(privateKey)
+    }
+
+    this.id58 = b58.encode(privateKey.publicKey.bytes)
+    this.privateKey = privateKey
+  }
+
+  static generate (): Promise<PublisherId> {
+    return Crypto.generateKeyPair(PUBLISHER_KEY_TYPE, PUBLISHER_KEY_BITS)
+      .then(key => new PublisherId(key))
+  }
+
+  static load (filename: string): Promise<PublisherId> {
+    return PrivateSigningKey.load(filename)
+      .then(key => new PublisherId(key))
+  }
+
+  save (filename: string): Promise<void> {
+    return this.privateKey.save(filename)
+  }
+
+  sign (message: Buffer): Promise<Buffer> {
+    return this.privateKey.sign(message)
+  }
+
+  verify (message: Buffer, signature: Buffer): Promise<boolean> {
+    return this.privateKey.publicKey.verify(message, signature)
+  }
 }
 
 module.exports = {
@@ -175,11 +230,7 @@ module.exports = {
   loadIdentity,
   loadOrGenerateIdentity,
   inflateMultiaddr,
-  generatePublisherId,
-  loadPublisherId,
-  savePublisherId,
-  publisherKeyFromB58String,
-  publisherKeyToB58String,
-  signBuffer,
-  verifyBuffer
+  PublisherId,
+  PublicSigningKey,
+  PrivateSigningKey
 }
