@@ -1,12 +1,11 @@
 const thenifyAll = require('thenify-all')
 const path = require('path')
-const fs = thenifyAll(require('fs'), {}, ['readFile'])
+const fs = thenifyAll(require('fs'), {}, ['readFile', 'writeFile'])
 const PeerId = thenifyAll(require('peer-id'), {}, ['createFromPrivKey', 'create'])
 const PeerInfo = require('peer-info')
-const Crypto = require('libp2p-crypto')
+const Crypto = thenifyAll(require('libp2p-crypto'), {}, ['unmarshalPrivateKey'])
 const Multiaddr = require('multiaddr')
 const b58 = require('bs58')
-const { b58MultihashForBuffer } = require('../common/util')
 
 const NODE_KEY_TYPE = 'RSA'
 const NODE_KEY_BITS = 2048
@@ -129,7 +128,20 @@ function publisherKeyFromB58String (key58: string): PublicSigningKey { // eslint
 }
 
 function publisherKeyToB58String (key: PublicSigningKey): string { // eslint-disable-line no-undef
-  return b58MultihashForBuffer(key.bytes)
+  return b58.encode(key.bytes)
+}
+
+function loadPublisherId (filename: string): Promise<PublisherId> {
+  return fs.readFile(filename)
+    .then(bytes => Crypto.unmarshalPrivateKey(bytes))
+    .then(privateKey => ({
+      id58: b58.encode(privateKey.public.bytes),
+      privateKey
+    }))
+}
+
+function savePublisherId (publisherId: PublisherId, filename: string): Promise<void> {
+  return fs.writeFile(filename, publisherId.privateKey.bytes)
 }
 
 function signBuffer (
@@ -164,6 +176,8 @@ module.exports = {
   loadOrGenerateIdentity,
   inflateMultiaddr,
   generatePublisherId,
+  loadPublisherId,
+  savePublisherId,
   publisherKeyFromB58String,
   publisherKeyToB58String,
   signBuffer,
