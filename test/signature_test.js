@@ -3,10 +3,34 @@
 
 const assert = require('assert')
 const { before, describe, it } = require('mocha')
+const path = require('path')
 
-const { generatePublisherId, signBuffer, verifyBuffer } = require('../src/peer/identity')
+const { generatePublisherId, loadIdentity, signBuffer, verifyBuffer } = require('../src/peer/identity')
 const { makeSimpleStatement } = require('../src/metadata/statement')
-const { signStatement, verifyStatement } = require('../src/metadata/signatures')
+const { calculateSignature, signStatement, verifyStatement } = require('../src/metadata/signatures')
+
+describe('Signing', () => {
+  let publisherId
+  before(() =>
+    loadIdentity(path.join(__dirname, 'resources', 'publisher_ids', '4XTTM2UhNoDF1EfwonksnNN1zRGcZCMFutDRMtXYgciwiLzCf.id'))
+      .then(_pubId => { publisherId = _pubId })
+  )
+
+  it('calculates a signature for arbitrary statement with a Ed25519 key', () => {
+    const stmt = {
+      id: 'foo',
+      publisher: publisherId.id58,
+      namespace: 'scratch.sig-test',
+      timestamp: new Date("October 13, 2014 11:13:00"),
+      body: {simple: {object: 'QmF00123', refs: [], deps: [], tags: []}},
+      signature: Buffer.from('')
+    }
+    console.error(publisherId)
+    const expected = '285dc5140880e24d1f431d10510621656d837e34e6349ecdc6ebfbbac348630cd53da486f65efa9b0a604994590663b98707d96a5525c8661f73e6167f32280a'
+    return calculateSignature(stmt, publisherId.privateKey)
+      .then(signature => assert.equal(signature.toString('hex'), expected, 'signature not as expected'))
+  })
+})
 
 describe('Signature verification', () => {
   let publisherId
