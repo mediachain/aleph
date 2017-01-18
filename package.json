@@ -1,6 +1,6 @@
 {
   "name": "aleph",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "description": "Mediachain client and javascript peer",
   "main": "index.js",
   "scripts": {

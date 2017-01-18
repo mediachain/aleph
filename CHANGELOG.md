@@ -1,3 +1,8 @@
+## 2016-01-18: aleph-v1.5.1
+
+aleph:
+- Fixed an issue that caused the aleph statement db to be erased after a period of inactivity. [PR # 165](https://github.com/mediachain/aleph/165)
+
 ## 2016-01-17: aleph-v1.5
 
 mcclient:
