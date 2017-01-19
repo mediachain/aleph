@@ -11,7 +11,7 @@ const { verifyStatementWithKeyCache } = require('../metadata/signatures')
 
 import type { MediachainNode } from './node'
 import type { Datastore } from './datastore'
-import type { PublicSigningKey } from './identity'
+import type { P2PSigningPublicKey } from './identity'
 import type { PullStreamSource, PullStreamThrough } from './util'
 import type { QueryResultMsg, QueryResultValueMsg, StreamErrorMsg, StatementMsg, DataRequestMsg, DataObjectMsg } from '../protobuf/types'
 import type { Connection } from 'interface-connection'
@@ -29,7 +29,7 @@ function mergeFromStreams (
   queryResultStream: PullStreamSource<QueryResultMsg>,
   dataConn: Connection)
 : Promise<MergeResult> {
-  const publisherKeyCache: Map<string, PublicSigningKey> = new Map()
+  const publisherKeyCache: Map<string, P2PSigningPublicKey> = new Map()
   const objectIdStream = pushable()
   const objectIngestionErrors: Array<string> = []
   const statementIngestionErrors: Array<string> = []

@@ -3361,7 +3361,7 @@
     },
     "temp": {
       "version": "0.8.3",
-      "from": "temp@latest",
+      "from": "temp@>=0.8.3 <0.9.0",
       "resolved": "https://registry.npmjs.org/temp/-/temp-0.8.3.tgz",
       "dependencies": {
         "rimraf": {
