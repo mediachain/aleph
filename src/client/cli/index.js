@@ -5,6 +5,7 @@ const yargs = require('yargs')
 yargs
   .usage('Usage: $0 [options] <command> [command-options]')
   .help()
+  .version()
   .demand(1, 'Missing command argument')
   .option('apiUrl', {
     alias: ['p'],
