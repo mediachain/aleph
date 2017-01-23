@@ -2,7 +2,7 @@
 
 const { clone } = require('lodash')
 const Levelup = require('levelup')
-const uuid = require('node-uuid')
+const uuid = require('uuid')
 const serialize = require('../metadata/serialize')
 const Multihashing = require('multihashing')
 const Multihash = require('multihashes')

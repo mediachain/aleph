@@ -3,7 +3,7 @@
 
 const assert = require('assert')
 const { describe, it, before, after } = require('mocha')
-const uuid = require('node-uuid')
+const uuid = require('uuid')
 const { promiseHash } = require('../src/common/util')
 
 const { getTestNodeId } = require('../test/util')
