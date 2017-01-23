@@ -160,8 +160,7 @@ class PublicSigningKey {
 
   static load (filename: string): Promise<PublicSigningKey> {
     return fs.readFile(filename)
-      .then(bytes => Crypto.unmarshalPublicKey(bytes))
-      .then(p2pKey => new PublicSigningKey(p2pKey))
+      .then(bytes => PublicSigningKey.fromBytes(bytes))
   }
 
   static fromB58String (b58String: string): PublicSigningKey {
@@ -170,14 +169,14 @@ class PublicSigningKey {
   }
 
   static fromBytes (bytes: Buffer): PublicSigningKey {
+    let p2pKey
     try {
-      const p2pKey = Crypto.unmarshalPublicKey(bytes)
-      return new PublicSigningKey(p2pKey)
+      p2pKey = Crypto.unmarshalPublicKey(bytes)
     } catch (err) {
       const ethKey = decodeEthereumPubKey(bytes)
-      const p2pKey = new Secp256k1PublicKey(ethKey)
-      return new PublicSigningKey(p2pKey)
+      p2pKey = new Secp256k1PublicKey(ethKey)
     }
+    return new PublicSigningKey(p2pKey)
   }
 
   static fromSignedEthereumMessage (message: Buffer, signature: Buffer, ethereumAddress: Buffer | string): PublicSigningKey {
@@ -290,15 +289,8 @@ function decodeEthereumPubKey (key: Buffer): Buffer {
 }
 
 function recoverEthereumPubKey (message: Buffer, signature: Buffer): Buffer {
-  const prefixedMsg = Buffer.concat([
-    Buffer.from('\u0019Ethereum Signed Message:\n', 'utf-8'),
-    Buffer.from(message.length.toString(), 'utf-8'),
-    message
-  ])
-  const msgHash = ethereumUtils.sha3(prefixedMsg)
   const { v, r, s } = ethereumUtils.fromRpcSig(signature)
-
-  const ethereumPubKey = ethereumUtils.ecrecover(msgHash, v, r, s)
+  const ethereumPubKey = ethereumUtils.ethRecover(message, v, r, s)
   return ethereumPubKeyToStandardSecp(ethereumPubKey)
 }
 

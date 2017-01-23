@@ -223,11 +223,6 @@
       "from": "browserify-rsa@>=4.0.0 <5.0.0",
       "resolved": "https://registry.npmjs.org/browserify-rsa/-/browserify-rsa-4.0.1.tgz"
     },
-    "browserify-sha3": {
-      "version": "0.0.1",
-      "from": "browserify-sha3@>=0.0.1 <0.0.2",
-      "resolved": "https://registry.npmjs.org/browserify-sha3/-/browserify-sha3-0.0.1.tgz"
-    },
     "browserify-sign": {
       "version": "4.0.0",
       "from": "browserify-sign@>=4.0.0 <5.0.0",
@@ -628,8 +623,8 @@
     },
     "ethereumjs-util": {
       "version": "5.0.1",
-      "from": "ethereumjs-util@>=5.0.1 <6.0.0",
-      "resolved": "https://registry.npmjs.org/ethereumjs-util/-/ethereumjs-util-5.0.1.tgz"
+      "from": "git://github.com/yusefnapora/ethereumjs-util.git#ad7c8317c9d109ba68d1dc646066a9cacb19c3a9",
+      "resolved": "git://github.com/yusefnapora/ethereumjs-util.git#ad7c8317c9d109ba68d1dc646066a9cacb19c3a9"
     },
     "evp_bytestokey": {
       "version": "1.0.0",
@@ -1239,11 +1234,6 @@
       "from": "isobject@>=2.0.0 <3.0.0",
       "resolved": "https://registry.npmjs.org/isobject/-/isobject-2.1.0.tgz"
     },
-    "js-sha3": {
-      "version": "0.3.1",
-      "from": "js-sha3@>=0.3.1 <0.4.0",
-      "resolved": "https://registry.npmjs.org/js-sha3/-/js-sha3-0.3.1.tgz"
-    },
     "jsbn": {
       "version": "0.1.0",
       "from": "jsbn@0.1.0",
@@ -1269,10 +1259,10 @@
       "from": "jsonify@>=0.0.0 <0.1.0",
       "resolved": "https://registry.npmjs.org/jsonify/-/jsonify-0.0.0.tgz"
     },
-    "keccakjs": {
-      "version": "0.2.1",
-      "from": "keccakjs@>=0.2.0 <0.3.0",
-      "resolved": "https://registry.npmjs.org/keccakjs/-/keccakjs-0.2.1.tgz"
+    "keccak": {
+      "version": "1.1.0",
+      "from": "keccak@>=1.0.2 <2.0.0",
+      "resolved": "https://registry.npmjs.org/keccak/-/keccak-1.1.0.tgz"
     },
     "keypair": {
       "version": "1.0.1",
@@ -2451,11 +2441,6 @@
       "version": "2.4.8",
       "from": "sha.js@>=2.3.6 <3.0.0",
       "resolved": "https://registry.npmjs.org/sha.js/-/sha.js-2.4.8.tgz"
-    },
-    "sha3": {
-      "version": "1.2.0",
-      "from": "sha3@>=1.1.0 <2.0.0",
-      "resolved": "https://registry.npmjs.org/sha3/-/sha3-1.2.0.tgz"
     },
     "shallow-copy": {
       "version": "0.0.1",
