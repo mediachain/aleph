@@ -278,14 +278,10 @@ class PublisherId {
 
 /**
  * Since ethereum clients secure their private keys, we can't use an ethereum private
- * key as a PublisherId directly.  This class lets you construct a PublisherId from a
- * public key (or ethereum address) and a `sign` method that accepts a message `Buffer`
- * and returns a `string` or `Promise<string>` signature in the format produced by geth's
+ * key as a PublisherId directly.  This class lets you construct a PublisherId from an
+ * ethereum address and a `sign` method that accepts a message `Buffer`
+ * and returns a `string` signature in the format produced by geth's
  * `eth_sign` RPC call.
- *
- * The static `fromRPCMethod` call is the de-facto constructor, since it will likely be
- * easier to use from within a Dapp, where getting your own public key is ridiculously
- * complicated.
  */
 class EthereumPublisherId {
   id58: string
@@ -293,6 +289,14 @@ class EthereumPublisherId {
   ethereumAddress: string
   sign: (message: Buffer) => Promise<Buffer>
 
+  /**
+   * This constructor should be considered "internal"; ethereum dapps will want to use
+   * `EthereumPublisherId.fromRPCMethod`.
+   * @param {PublicSigningKey} publicKey - key type must be secp256k1
+   * @param {string} ethereumAddress - hex-encoded ethereum address, prefixed with '0x'
+   * @param {Function} sign - a function of (message: Buffer) => Promise<Buffer> that
+   *        produces signatures in the same format as the `eth_sign` RPC method.
+   */
   constructor (publicKey: PublicSigningKey, ethereumAddress: string, sign: (message: Buffer) => Promise<Buffer>) {
     this.publicKey = publicKey
     this.id58 = b58.encode(publicKey.bytes)
@@ -300,6 +304,15 @@ class EthereumPublisherId {
     this.sign = sign
   }
 
+  /**
+   * The de-facto constructor, produces an `EthereumPublisherId` from an ethereum address and
+   * the `web3.eth.sign` RPC function. The ethereum address must be recoverable (using `ecrecover`) from the
+   * signatures produced by the sign function. Uses the async form of the RPC call, so returns a `Promise`.
+   * @param ethereumAddress - hex-encoded ethereum address (optionally prefixed with '0x')
+   * @param signRPC - the `web3.eth.sign` function, or one with an identical signature and behavior
+   * @return {Promise<EthereumPublisherId>} - on success, an `EthereumPublisherId` which can be used to sign
+   *         mediachain statements.
+   */
   static fromRPCMethod (ethereumAddress: string, signRPC: EthSignRPCFunction)
   : Promise<EthereumPublisherId> {
     ethereumAddress = ethereumUtils.addHexPrefix(ethereumAddress)
