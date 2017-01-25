@@ -101,13 +101,16 @@ class P2PNode {
   stop (): Promise<void> {
     if (!this.isOnline) return Promise.resolve()
 
-    this.isOnline = false
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       // abort any ongoing pull-stream connections
       this.abortables.forEach(a => { a.abort() })
       this.abortables.clear()
 
-      this.swarm.close(resolve)
+      this.swarm.close((err) => {
+        if (err) return reject(err)
+        this.isOnline = false
+        resolve()
+      })
     })
   }
 

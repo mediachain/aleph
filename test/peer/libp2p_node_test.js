@@ -1,6 +1,6 @@
-// @flow
-
-const { expect } = require('chai')
+const chai = require('chai')
+chai.use(require('chai-as-promised'))
+const { expect } = chai
 const { before, describe, it } = require('mocha')
 const { getTestNodeId } = require('../util')
 const pull = require('pull-stream')
@@ -30,21 +30,37 @@ describe('LibP2P Node base class', () => {
       .then(result => {
         expect(result).to.exist
       })
-      .then(() => node1.hangUpByPeerInfo(node2.peerInfo))
       .then(() => Promise.all([node1.stop(), node2.stop()]))
   })
 
-  it('throws if you try to dial when not online', () => {
+  // note: this test fails if you use raw TCP transport unless you set
+  // a high timeout (more than ~3 seconds), but succeeds
+  // if you use websockets. The problem seems to be in libp2p-swarm's
+  // `.close()` method, which takes a while to shut down if you've opened
+  // any TCP connections, even if you've since hung up to the peers you
+  // dialed.
+  it('fails if you try to dial/hangup when not online', () => {
     const info1 = new PeerInfo(id1)
     const info2 = new PeerInfo(id2)
-    info1.multiaddr.add(Multiaddr('/ip4/127.0.0.1/tcp/9090'))
-    info2.multiaddr.add(Multiaddr('/ip4/127.0.0.1/tcp/9091'))
+    info1.multiaddr.add(Multiaddr('/ip4/127.0.0.1/tcp/9090/ws'))
+    info2.multiaddr.add(Multiaddr('/ip4/127.0.0.1/tcp/9091/ws'))
 
     const node1 = new P2PNode({peerInfo: info1})
-    return node1.dialByPeerInfo(info2, 'foo-protocol')
-      .catch(err => {
-        expect(err.message).to.be.eql('The libp2p node is not started yet')
-      })
+    const node2 = new P2PNode({peerInfo: info2})
+    node2.handle('foo-protocol', (_proto, conn) => { })
+
+    return Promise.all([
+      expect(node1.dialByPeerInfo(info2, 'foo-protocol'))
+        .to.eventually.be.rejectedWith('The libp2p node is not started yet'),
+      expect(node1.hangUpByPeerInfo(info2))
+        .to.eventually.be.rejectedWith('The libp2p node is not started yet'),
+      expect(
+        Promise.all([node1.start(), node2.start()])
+          .then(() => node1.dialByPeerInfo(info2, 'foo-protocol'))
+          .then(() => node1.hangUpByPeerInfo(info2))
+          .then(() => Promise.all([node1.stop(), node2.stop()]))
+      ).to.eventually.be.fulfilled
+    ])
   })
 
   it('start/stop are idempotent', () => {

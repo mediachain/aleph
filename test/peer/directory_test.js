@@ -1,8 +1,9 @@
 /* eslint-env mocha */
 
-const assert = require('assert')
-const { describe, it, before, afterEach } = require('mocha')
+const { assert, expect } = require('chai')
+const { describe, it, before, after, afterEach } = require('mocha')
 const eventually = require('mocha-eventually')
+const PeerInfo = require('peer-info')
 
 const { makeNode, makeDirectory } = require('../util')
 
@@ -19,25 +20,26 @@ describe('Directory Node', function () {
   )
 
   afterEach(() => {
-    dir.registeredPeers.removeByB58String(nodeIdB58)
+    dir.peerBook.removeByB58String(nodeIdB58)
   })
 
   it('adds a node to its registry in response to a register message', function () {
     // verify that the peer is not registered before the call
-    assert.throws(() => {
-      dir.registeredPeers.getByB58String(nodeIdB58)
-    })
+    expect(dir.getPeerInfo(nodeIdB58)).to.be.null
 
     return node.register()
-      .then(eventually(() => {
-        const entry = dir.registeredPeers.getByB58String(nodeIdB58)
-        assert(entry, 'registered successfully')
+      .then(() => eventually((done) => {
+        const result = dir.getPeerInfo(nodeIdB58)
+        expect(result).to.not.be.null
+        expect(result).to.be.an.instanceof(PeerInfo)
+        expect(result.id.toB58String()).to.be.eql(nodeIdB58)
+        done()
       }))
   })
 
   it('responds to lookup requests for known peers', function () {
     // just stuff the node's id into the directory manually
-    dir.registeredPeers.put(node.peerInfo)
+    dir.peerBook.put(node.peerInfo)
 
     return node.lookup(nodeIdB58)
       .then(peerInfo => {
