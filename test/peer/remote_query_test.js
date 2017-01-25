@@ -3,11 +3,11 @@
 const assert = require('assert')
 const { before, describe, it } = require('mocha')
 
-const { PROTOCOLS } = require('../src/peer/constants')
+const { PROTOCOLS } = require('../../src/peer/constants')
 const pull = require('pull-stream')
-const { makeNode, mockQueryHandler } = require('./util')
+const { makeNode, mockQueryHandler } = require('../util')
 
-import type Node from '../src/peer/node'
+import type Node from '../../src/peer/node'
 
 function startNodes (...nodes: Array<Node>): Promise<*> {
   return Promise.all(nodes.map(n => n.start()))

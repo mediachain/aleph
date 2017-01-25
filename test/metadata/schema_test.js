@@ -3,7 +3,7 @@
 const assert = require('assert')
 const { describe, it } = require('mocha')
 
-const { validate } = require('../src/metadata/schema')
+const { validate } = require('../../src/metadata/schema')
 
 describe('schema validation', () => {
   const fooSchemaDescription = {

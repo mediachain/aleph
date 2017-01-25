@@ -2,9 +2,9 @@
 
 const assert = require('assert')
 const { before, describe, it } = require('mocha')
-const { makeNode } = require('./util')
+const { makeNode } = require('../util')
 const { zip } = require('lodash')
-const { encode } = require('../src/metadata/serialize')
+const { encode } = require('../../src/metadata/serialize')
 
 const SEED_OBJECTS = [
   {'foo': 'bar'},

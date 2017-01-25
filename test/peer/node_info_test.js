@@ -2,7 +2,7 @@
 
 const assert = require('assert')
 const { before, describe, it } = require('mocha')
-const { makeNode } = require('./util')
+const { makeNode } = require('../util')
 
 describe('Node Info', function () {
   const infoMessage = 'tests are great!'

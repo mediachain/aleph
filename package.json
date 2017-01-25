@@ -6,7 +6,7 @@
   "scripts": {
     "build-jq": "node scripts/build-jq.js",
     "postinstall": "npm run build-jq",
-    "test": "nyc mocha --compilers js:babel-register ./test",
+    "test": "nyc mocha --recursive --compilers js:babel-register './test/**/*_test.js'",
     "coverage": "nyc report --reporter=text-lcov | coveralls",
     "build": "mkdirp ./lib && babel --copy-files src -d lib",
     "check": "standard && flow",

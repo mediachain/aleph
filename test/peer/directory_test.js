@@ -4,7 +4,7 @@ const assert = require('assert')
 const { describe, it, before, afterEach } = require('mocha')
 const eventually = require('mocha-eventually')
 
-const { makeNode, makeDirectory } = require('./util')
+const { makeNode, makeDirectory } = require('../util')
 
 describe('Directory Node', function () {
   let dir, node, nodeIdB58

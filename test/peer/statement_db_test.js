@@ -3,9 +3,9 @@
 const assert = require('assert')
 const { before, describe, it } = require('mocha')
 
-const { StatementDB } = require('../src/peer/db/statement-db')
+const { StatementDB } = require('../../src/peer/db/statement-db')
 
-import type { StatementMsg } from '../src/protobuf/types'
+import type { StatementMsg } from '../../src/protobuf/types'
 
 const SEED_STATEMENTS: Array<StatementMsg> = [
   {

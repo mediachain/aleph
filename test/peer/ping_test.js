@@ -2,7 +2,7 @@
 
 const assert = require('assert')
 const { before, describe, it } = require('mocha')
-const { getTestNodeId, makeNode } = require('./util')
+const { getTestNodeId, makeNode } = require('../util')
 const PeerInfo = require('peer-info')
 const Multiaddr = require('multiaddr')
 
