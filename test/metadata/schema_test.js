@@ -85,7 +85,6 @@ describe('Schema validation', () => {
     const result = validateSelfDescribingSchema(fooSchema)
     assert.deepEqual(result, fooSchema)
 
-
     expect(() => {
       validateSelfDescribingSchema('foobar')
     }).to.throw(Error)

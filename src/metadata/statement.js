@@ -5,7 +5,6 @@ const { setUnion } = require('../common/util')
 import type { PublisherId } from '../peer/identity'
 import type { StatementMsg, StatementBodyMsg, SimpleStatementMsg, EnvelopeStatementMsg, CompoundStatementMsg } from '../protobuf/types'
 
-
 function makeStatement (
   publisherId: PublisherId,
   namespace: string,

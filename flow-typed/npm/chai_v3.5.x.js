@@ -1,9 +1,8 @@
 // flow-typed signature: 9e3d57d259619cd3fcf8c7c3eced99f5
 // flow-typed version: 60acee2512/chai_v3.5.x/flow_>=v0.24.0
 
-declare module "chai" {
-
-    declare type ExpectChain<T> = {
+declare module 'chai' {
+  declare type ExpectChain<T> = {
         and: ExpectChain<T>,
         at: ExpectChain<T>,
         be: ExpectChain<T>,
@@ -95,11 +94,11 @@ declare module "chai" {
         calledWithExactly: (...args: Array<mixed>) => ExpectChain<T>,
     };
 
-    declare function expect<T>(actual: T): ExpectChain<T>;
+  declare function expect<T>(actual: T): ExpectChain<T>;
 
-    declare function use(plugin: (chai: Object, utils: Object) => void): void;
+  declare function use(plugin: (chai: Object, utils: Object) => void): void;
 
-    declare class assert {
+  declare class assert {
       static(expression: mixed, message?: string): void;
       static fail(actual: mixed, expected: mixed, message?: string, operator?: string): void;
 
@@ -182,7 +181,7 @@ declare module "chai" {
       static lengthOf(exp: mixed, len: number, msg?: string): void;
     }
 
-    declare var config: {
+  declare var config: {
         includeStack: boolean,
         showDiff: boolean,
         truncateThreshold: number

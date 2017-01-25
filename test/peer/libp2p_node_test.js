@@ -3,7 +3,6 @@ chai.use(require('chai-as-promised'))
 const { expect } = chai
 const { before, describe, it } = require('mocha')
 const { getTestNodeId } = require('../util')
-const pull = require('pull-stream')
 const PeerInfo = require('peer-info')
 const Multiaddr = require('multiaddr')
 const P2PNode = require('../../src/peer/libp2p_node')
@@ -14,7 +13,7 @@ describe('LibP2P Node base class', () => {
   before(() => Promise.all([
     getTestNodeId().then(_id1 => { id1 = _id1 }),
     getTestNodeId().then(_id2 => { id2 = _id2 })
-    ]
+  ]
   ))
 
   it('works with websockets', () => {

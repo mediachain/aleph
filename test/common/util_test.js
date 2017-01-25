@@ -15,7 +15,6 @@ describe('Multihash helpers', () => {
 })
 
 describe('Stream functions', () => {
-
   before(() => {
     stdMocks.use()
   })

@@ -1,7 +1,7 @@
 /* eslint-env mocha */
 
 const { assert, expect } = require('chai')
-const { describe, it, before, after, afterEach } = require('mocha')
+const { describe, it, before, afterEach } = require('mocha')
 const eventually = require('mocha-eventually')
 const PeerInfo = require('peer-info')
 

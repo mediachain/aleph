@@ -1,7 +1,7 @@
 // @flow
 
 const { expect } = require('chai')
-const { before, describe, it } = require('mocha')
+const { describe, it } = require('mocha')
 const { statementSource, statementRefs } = require('../../src/metadata/statement')
 
 const SIMPLE_STMT_1 = {
