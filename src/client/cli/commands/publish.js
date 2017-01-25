@@ -2,7 +2,7 @@
 
 const fs = require('fs')
 const { JQTransform } = require('../../../metadata/jqStream')
-const objectPath = require('object-path')
+const _ = require('lodash')
 const RestClient = require('../../api/RestClient')
 const { println, subcommand } = require('../util')
 const { validate, validateSelfDescribingSchema, isSelfDescribingRecord } = require('../../../metadata/schema')
@@ -236,7 +236,7 @@ function publishStream (opts: {
           deps.push(schemaReference)
 
           if (isSelfDescribingRecord(obj)) {
-            const ref = objectPath.get(obj, 'schema', '/')
+            const ref = _.get(obj, ['schema', '/'])
             if (ref !== schemaReference) {
               return publishFailed(new Error(
                 `Record contains reference to a different schema (${ref}) than the one specified ${schemaReference}`

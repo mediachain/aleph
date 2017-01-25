@@ -3,7 +3,7 @@
 const assert = require('assert')
 const { before, describe, it } = require('mocha')
 
-const uuid = require('node-uuid')
+const uuid = require('uuid')
 
 const { makeNode, mockQueryHandler } = require('./util')
 const { PROTOCOLS } = require('../src/peer/constants')

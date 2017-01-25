@@ -3,7 +3,7 @@
 
 const assert = require('assert')
 const { describe, it, before } = require('mocha')
-const uuid = require('node-uuid')
+const uuid = require('uuid')
 
 const { getTestNodeId } = require('../test/util')
 const { MediachainNode: AlephNode } = require('../src/peer/node')
