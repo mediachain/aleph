@@ -92,6 +92,9 @@ declare module 'chai' {
         calledWith: (...args: Array<mixed>) => ExpectChain<T>,
         calledWithMatch: (...args: Array<mixed>) => ExpectChain<T>,
         calledWithExactly: (...args: Array<mixed>) => ExpectChain<T>,
+
+        // chai-as-promised
+        eventually: () => ExpectChain<T>
     };
 
   declare function expect<T>(actual: T): ExpectChain<T>;
