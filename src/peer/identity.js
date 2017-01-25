@@ -11,6 +11,7 @@ const NODE_KEY_TYPE = 'RSA'
 const NODE_KEY_BITS = 2048
 const PUBLISHER_KEY_TYPE = 'Ed25519'
 const PUBLISHER_KEY_BITS = 512
+const P2P_CODE = 420
 const IPFS_CODE = 421
 
 function generateIdentity (): Promise<PeerId> {
@@ -71,18 +72,18 @@ function inflateMultiaddr (multiaddrString: string): PeerInfo {
   // total hack to patch in support for /p2p/ multiaddrs, which should
   // be supported upstream soon
   multiaddrString = multiaddrString.replace('/p2p/', '/ipfs/')
-
   const multiaddr = Multiaddr(multiaddrString)
-  const ipfsIdB58String = multiaddr.stringTuples().filter((tuple) => {
-    if (tuple[0] === IPFS_CODE) {
+  const tuples = multiaddr.stringTuples().filter((tuple) => {
+    if (tuple[0] === IPFS_CODE || tuple[0] === P2P_CODE) {
       return true
     }
-  })[0][1]
-  if (ipfsIdB58String == null) {
+  })
+  if (tuples.length < 1) {
     throw new Error('multiaddr string must contain /p2p/ or /ipfs/ protocol')
   }
+  const p2pIdB58String = tuples[0][1]
 
-  const peerId = PeerId.createFromB58String(ipfsIdB58String)
+  const peerId = PeerId.createFromB58String(p2pIdB58String)
   const peerInfo = new PeerInfo(peerId)
   peerInfo.multiaddr.add(multiaddr)
   return peerInfo

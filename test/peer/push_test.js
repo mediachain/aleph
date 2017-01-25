@@ -7,7 +7,6 @@ const { expect } = chai
 const { before, describe, it } = require('mocha')
 
 const uuid = require('uuid')
-const pull = require('pull-stream')
 
 const { makeNode, mockPushHandler } = require('../util')
 const { PROTOCOLS } = require('../../src/peer/constants')
@@ -79,6 +78,6 @@ describe('Push', () => {
         expect(alephNode.pushStatements(mockDestination.peerInfo, seedStatements))
           .to.eventually.be.deep.eql(result)
       )
-    }
+  }
   )
 })
