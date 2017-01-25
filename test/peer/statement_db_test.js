@@ -1,11 +1,13 @@
 // @flow
 
-const assert = require('assert')
+const { assert, expect } = require('chai')
 const { before, describe, it } = require('mocha')
-
+const path = require('path')
 const { StatementDB } = require('../../src/peer/db/statement-db')
 
 import type { StatementMsg } from '../../src/protobuf/types'
+
+const MIGRATIONS_DIR = path.join(__dirname, '..', '..', 'src', 'peer', 'db', 'migrations')
 
 const SEED_STATEMENTS: Array<StatementMsg> = [
   {
@@ -83,4 +85,26 @@ describe('Statement DB', () => {
           assert.deepEqual(results, expected)
         })
     ]))
+})
+
+describe('StatementDB migrations', () => {
+  it('migrates and rolls back', () => {
+    const db = new StatementDB()
+    let sqlDB
+    return db.sqlDB()
+      .then(_sqlDB => { sqlDB = _sqlDB })
+      .then(() => sqlDB.select().table('Statement'))
+      .then(result => {
+        expect(result).to.exist
+      })
+      .then(() => sqlDB.migrate.rollback({
+        directory: MIGRATIONS_DIR
+      }))
+      .then(() =>
+        sqlDB.select().table('Statement')
+          .catch(err => {
+            expect(err).to.be.an.instanceof(Error)
+          })
+      )
+  })
 })
