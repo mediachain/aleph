@@ -127,10 +127,7 @@ class MediachainNode {
           pullRepeatedly(req, 5000 * 60),
           abortable,
           protoStreamEncode(pb.dir.RegisterPeer),
-          conn,
-          pull.onEnd(() => {
-            console.log('registration connection ended')
-          })
+          conn
         )
         return true
       })

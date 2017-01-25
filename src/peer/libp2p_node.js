@@ -6,7 +6,6 @@ const TCP = require('libp2p-tcp')
 const WS = require('libp2p-websockets')
 const spdy = require('libp2p-spdy')
 const secio = require('libp2p-secio')
-const PeerId = require('peer-id')
 const PeerInfo = require('peer-info')
 const PeerBook = require('peer-book')
 const multiaddr = require('multiaddr')
@@ -18,7 +17,6 @@ const { promiseTimeout } = require('../common/util')
 import type { Connection } from 'interface-connection'
 
 const OFFLINE_ERROR_MESSAGE = 'The libp2p node is not started yet'
-const IPFS_CODE = 421
 const DEFAULT_DIAL_TIMEOUT = 10000
 
 type P2PNodeOptions = {
@@ -121,46 +119,6 @@ class P2PNode {
     }
   }
 
-  dialById (id: PeerId, protocol: string): Promise<Connection> {
-    if (!this.isOnline) {
-      return Promise.reject(new Error(OFFLINE_ERROR_MESSAGE))
-    }
-    // NOTE, these dialById only works if a previous dial
-    // was made until we have PeerRouting
-    // TODO support PeerRouting when it is Ready
-    return Promise.reject(new Error('not implemented yet'))
-  }
-
-  dialByMultiaddr (maddr: multiaddr, protocol: string): Promise<Connection> {
-    if (!this.isOnline) {
-      return Promise.reject(new Error(OFFLINE_ERROR_MESSAGE))
-    }
-
-    if (typeof maddr === 'string') {
-      maddr = multiaddr(maddr)
-    }
-
-    if (!mafmt.IPFS.matches(maddr.toString())) {
-      return Promise.reject(new Error('multiaddr not valid'))
-    }
-
-    const ipfsIdB58String = maddr.stringTuples().filter((tuple) => {
-      if (tuple[0] === IPFS_CODE) {
-        return true
-      }
-    })[0][1]
-
-    let peer
-    try {
-      peer = this.peerBook.getByB58String(ipfsIdB58String)
-    } catch (err) {
-      peer = new PeerInfo(PeerId.createFromB58String(ipfsIdB58String))
-    }
-
-    peer.multiaddr.add(maddr)
-    return this.dialByPeerInfo(peer, protocol)
-  }
-
   dialByPeerInfo (peer: PeerInfo, protocol: string): Promise<Connection> {
     if (!this.isOnline) {
       return Promise.reject(new Error(OFFLINE_ERROR_MESSAGE))
@@ -177,39 +135,6 @@ class P2PNode {
     })
 
     return promiseTimeout(this.dialTimeout, dialPromise)
-  }
-
-  hangUpById (id: PeerId): Promise<void> {
-    return Promise.reject(new Error('not implemented yet'))
-    // TODO
-  }
-
-  hangUpByMultiaddr (maddr: multiaddr): Promise<void> {
-    if (!this.isOnline) {
-      return Promise.reject(new Error(OFFLINE_ERROR_MESSAGE))
-    }
-
-    if (typeof maddr === 'string') {
-      maddr = multiaddr(maddr)
-    }
-
-    if (!mafmt.IPFS.matches(maddr.toString())) {
-      return Promise.reject(new Error('multiaddr not valid'))
-    }
-
-    const ipfsIdB58String = maddr.stringTuples().filter((tuple) => {
-      if (tuple[0] === IPFS_CODE) {
-        return true
-      }
-    })[0][1]
-
-    try {
-      const peerInfo = this.peerBook.getByB58String(ipfsIdB58String)
-      return this.hangUpByPeerInfo(peerInfo)
-    } catch (err) {
-      // already disconnected
-      return Promise.resolve()
-    }
   }
 
   hangUpByPeerInfo (peer: PeerInfo): Promise<void> {
