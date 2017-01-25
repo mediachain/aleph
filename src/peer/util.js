@@ -236,7 +236,7 @@ function expandQueryResult (result: QueryResultValueMsg, dataObjects: Array<Data
     }
   }
 
-  return _.cloneDeepWith(result, replacer)
+  return (_.cloneDeepWith(result, replacer) : any)
 }
 
 module.exports = {
