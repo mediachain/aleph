@@ -43,7 +43,7 @@ const SEED_STATEMENTS: Array<StatementMsg> = [
 ]
 
 describe('Statement DB', () => {
-  const db = new StatementDB()
+  const db = new StatementDB(null)
 
   before(() => db.sqlDB()
     .then(() => Promise.all(SEED_STATEMENTS.map(stmt => db.put(stmt)))))
