@@ -6,7 +6,7 @@
   "scripts": {
     "build-jq": "node scripts/build-jq.js",
     "postinstall": "npm run build-jq",
-    "test": "nyc mocha --recursive --compilers js:babel-register './test/**/*_test.js'",
+    "test": "NODE_ENV=test nyc --require babel-register mocha --recursive './test/**/*_test.js'",
     "coverage": "nyc report --reporter=text-lcov | coveralls",
     "coverage:lcov": "npm run test && nyc report --reporter=lcov",
     "build": "mkdirp ./lib && babel --copy-files src -d lib",
@@ -78,9 +78,10 @@
     "babel-eslint": "^7.1.0",
     "babel-plugin-transform-flow-strip-types": "^6.22.0",
     "babel-register": "^6.22.0",
+    "babel-plugin-istanbul": "^3.1.2",
+    "chai": "^3.5.0",
     "coveralls": "^2.11.15",
     "eslint-plugin-flowtype": "^2.30.0",
-    "babel-plugin-istanbul": "^3.1.2",
     "flow-bin": "^0.38.0",
     "interface-connection": "^0.3.0",
     "mocha": "^3.2.0",
@@ -95,5 +96,9 @@
     "plugins": [
       "flowtype"
     ]
+  },
+  "nyc": {
+    "sourceMap": false,
+    "instrument": false
   }
 }
