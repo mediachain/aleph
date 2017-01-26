@@ -70,14 +70,14 @@ describe('Push', () => {
     }
 
     return alephNode.start()
+      .then(() => Promise.all(seedStatements.map(s => alephNode.db.put(s))))
       .then(() => {
         mockDestination.p2p.handle(PROTOCOLS.node.push, mockPushHandler({accept: {}}, seedStatements.length, result))
         return mockDestination.start()
       })
       .then(() =>
-        expect(alephNode.pushStatements(mockDestination.peerInfo, seedStatements))
+        expect(alephNode.pushStatementsById(mockDestination.peerInfo, seedStatements.map(s => s.id)))
           .to.eventually.be.deep.eql(result)
       )
-  }
-  )
+  })
 })
