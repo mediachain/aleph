@@ -4,107 +4,50 @@ const { expect } = require('chai')
 const { describe, it } = require('mocha')
 const { statementSource, statementRefs } = require('../../src/metadata/statement')
 
-const SIMPLE_STMT_1 = {
-  id: 'simple:1',
-  namespace: 'scratch.test',
-  publisher: 'simple-stmt-publisher',
-  timestamp: 12345678,
-  body: {
-    simple: {
-      object: 'foo',
-      refs: ['simple-1'],
-      deps: [],
-      tags: []
-    }
-  },
-  signature: Buffer.from('')
-}
-
-const SIMPLE_STMT_2 = {
-  id: 'simple:2',
-  namespace: 'scratch.test',
-  publisher: 'simple-stmt-publisher',
-  timestamp: 12345678,
-  body: {
-    simple: {
-      object: 'bar',
-      refs: ['simple-2'],
-      deps: [],
-      tags: []
-    }
-  },
-  signature: Buffer.from('')
-}
-
-const COMPOUND_STMT = {
-  id: 'compound:1',
-  namespace: 'scratch.test',
-  publisher: 'compound-stmt-publisher',
-  timestamp: 12345678,
-  body: {
-    compound: {
-      body: [
-        SIMPLE_STMT_1.body.simple,
-        SIMPLE_STMT_2.body.simple
-      ]
-    }
-  },
-  signature: Buffer.from('')
-}
-
-const ENVELOPE_STMT = {
-  id: 'envelope:1',
-  namespace: 'scratch.test',
-  publisher: 'envelope-stmt-publisher',
-  timestamp: 12345678,
-  body: {
-    envelope: {
-      body: [
-        SIMPLE_STMT_1,
-        SIMPLE_STMT_2
-      ]
-    }
-  },
-  signature: Buffer.from('')
-}
-
-const EMPTY_ENVELOPE_STMT = {
-  id: 'envelope:1',
-  namespace: 'scratch.test',
-  publisher: 'envelope-stmt-publisher',
-  timestamp: 12345678,
-  body: {
-    envelope: {
-      body: []
-    }
-  },
-  signature: Buffer.from('')
-}
+const fixtures = require('../resources/fixtures/test-statements')
 
 describe('Statement source/refs helpers', () => {
   it('statementSource returns the publisher field for simple and compound statements and empty envelope statements', () => {
-    expect(statementSource(SIMPLE_STMT_1))
-      .to.be.eql(SIMPLE_STMT_1.publisher)
 
-    expect(statementSource(COMPOUND_STMT))
-      .to.be.eql(COMPOUND_STMT.publisher)
+    const simplePublisher = fixtures.publisherIds.simple.id58
+    const compoundPublisher = fixtures.publisherIds.compound.id58
+    const envelopePublisher = fixtures.publisherIds.envelope.id58
 
-    expect(statementSource(EMPTY_ENVELOPE_STMT))
-      .to.be.eql(EMPTY_ENVELOPE_STMT.publisher)
+    for (let i = 0; i < fixtures.statements.simple.length; i++) {
+      const stmt = fixtures.statements.simple[i]
+      expect(statementSource(stmt)).to.be.eql(simplePublisher)
+    }
+
+    for (let i = 0; i < fixtures.statements.compound.length; i++) {
+      const stmt = fixtures.statements.compound[i]
+      expect(statementSource(stmt)).to.be.eql(compoundPublisher)
+    }
+
+    expect(statementSource(fixtures.statements.envelopeEmpty[0]))
+      .to.be.eql(envelopePublisher)
   })
 
-  it('statmentSource returns the publisher of the first contained statement for envelope statements', () => {
-    expect(statementSource(ENVELOPE_STMT))
-      .to.be.eql(SIMPLE_STMT_1.publisher)
+  it('statementSource returns the publisher of the first contained statement for envelope statements', () => {
+    for (let i = 0; i < fixtures.statements.compound.length; i++) {
+      const stmt = fixtures.statements.envelope[i]
+      expect(statementSource(stmt)).to.be.eql(stmt.body.envelope.body[0].publisher)
+    }
   })
 
   it('statementRefs gets all refs from simple, compound, and envelope statements', () => {
-    expect(Array.from(statementRefs(SIMPLE_STMT_1)))
-      .to.have.members(['simple-1'])
-    expect(Array.from(statementRefs(COMPOUND_STMT)))
-      .to.have.members(['simple-1', 'simple-2'])
-    expect(Array.from(statementRefs(ENVELOPE_STMT)))
-      .to.have.members(['simple-1', 'simple-2'])
+    const statementTypes = ['simple', 'compound', 'envelope', 'envelopeEmpty']
+    for (const type of statementTypes) {
+      const statements = fixtures.statements[type]
+      const expectedRefs = fixtures.expectedRefs[type]
+      for (let i = 0; i < statements.length; i++) {
+        const stmt = statements[i]
+        const refs = Array.from(statementRefs(stmt))
+        expect(refs.length).to.be.eql(expectedRefs[i].length)
+        for (const r of expectedRefs[i]) {
+          expect(refs).to.include(r)
+        }
+      }
+    }
 
     expect(() => {
       const invalidStmt: any = {body: {foo: 'bar'}}
