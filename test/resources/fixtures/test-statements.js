@@ -76,5 +76,11 @@ module.exports = {
     compound: [ ['compound-1', 'compound-2'] ],
     envelope: [ ['simple-1', 'simple-2'] ],
     envelopeEmpty: [ [] ]
+  },
+  objectIds: {
+    simple: [ ['foo'], ['foo'] ],
+    compound: [ ['foo', 'foo'] ],
+    envelope: [ ['foo', 'foo'], ],
+    envelopeEmpty: [ [] ]
   }
 }
