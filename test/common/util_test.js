@@ -11,6 +11,7 @@ describe('Multihash helpers', () => {
 
   it('isB58Multihash returns false for non-multihash', () => {
     assert(util.isB58Multihash('QmF00123456789') === false)
+    assert(util.isB58Multihash('foo') === false)
   })
 })
 

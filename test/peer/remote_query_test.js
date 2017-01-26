@@ -5,6 +5,7 @@ const { before, describe, it } = require('mocha')
 
 const { PROTOCOLS } = require('../../src/peer/constants')
 const pull = require('pull-stream')
+const { PublisherId } = require('../../src/peer/identity')
 const { makeNode, mockQueryHandler } = require('../util')
 
 import type Node from '../../src/peer/node'
@@ -43,18 +44,10 @@ describe('Remote Query', () => {
         remote.p2p.handle(PROTOCOLS.node.query, mockQueryHandler(responses))
       })
       .then(() => startNodes(local, remote)) // start both peers
-      .then(() => local.remoteQueryStream(remote.p2p.peerInfo, 'SELECT * FROM foo.bar'))
-      .then(resultStream =>
-        new Promise(resolve => {
-          pull(
-            resultStream,
-            pull.collect((err, results) => {
-              assert(err == null, 'query should not return an error')
-              assert.deepEqual(results, expected, 'query should return all expected results')
-              resolve()
-            }))
-        })
-      )
+      .then(() => local.remoteQuery(remote.p2p.peerInfo, 'SELECT * FROM foo.bar'))
+      .then(results => {
+        assert.deepEqual(results, expected, 'query should return all expected results')
+      })
   })
 
   it('ends the stream with an error when it gets an error response', function () {
@@ -89,4 +82,37 @@ describe('Remote Query', () => {
         )
       }))
   })
+})
+
+describe('Remote Query with inline data', () => {
+  let local, remote
+
+  const seedObject = {foo: 'bar'}
+
+  before(() =>
+    makeNode().then(peer => { local = peer })
+      .then(() => PublisherId.generate())
+      .then(publisherId => makeNode({publisherId}))
+      .then(peer => {
+        remote = peer
+      })
+      .then(() =>
+        remote.ingestSimpleStatement('scratch.test.queryWithData', seedObject, {refs: ['test-1']})
+      )
+      .then(stmtId => remote.db.get(stmtId))
+      .then(stmt => {
+        remote.p2p.handle(PROTOCOLS.node.query, mockQueryHandler([{value: {simple: {stmt}}}]))
+      })
+  )
+
+  it('returns query results with data objects inline', () =>
+    Promise.all([local.start(), remote.start()])
+      .then(() => local.remoteQueryWithData(remote.peerInfo, 'SELECT * FROM scratch.test.queryWithData'))
+      .then(result => {
+        assert(result != null)
+        assert(Array.isArray(result))
+        console.dir(result[0], {depth: 100, colors: true})
+        assert.deepEqual(result[0].simple.stmt.body.simple.object.data, seedObject)
+      })
+  )
 })

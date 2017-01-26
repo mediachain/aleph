@@ -22,7 +22,7 @@ const {
   objectIdsForQueryResult,
   expandQueryResult
 } = require('./util')
-const { promiseHash } = require('../common/util')
+const { promiseHash, isB58Multihash } = require('../common/util')
 const { pushStatementsToConn } = require('./push')
 const { mergeFromStreams } = require('./merge')
 const { makeSimpleStatement } = require('../metadata/statement')
@@ -134,44 +134,44 @@ class MediachainNode {
   }
 
   lookup (peerId: string | PeerId): Promise<?PeerInfo> {
-    if (peerId instanceof PeerId) {
-      peerId = peerId.toB58String()
-    } else {
-      // validate that string arguments are legit multihashes
-      try {
-        Multihash.fromB58String(peerId)
-      } catch (err) {
-        return Promise.reject(new Error(`Peer id is not a valid multihash: ${err.message}`))
+    return Promise.resolve().then(() => {
+      if (peerId instanceof PeerId) {
+        peerId = peerId.toB58String()
+      } else if (typeof peerId !== 'string') {
+        throw new Error(`invalid input: lookup requires a PeerId or base58-encoded multihash string`)
       }
-    }
 
-    // If we've already got an entry for this PeerId in our PeerBook,
-    // because we already have a multiplex connection open to this peer,
-    // use the existing entry.
-    //
-    // Note that when we close the peer multiplex connection, then entry is
-    // automatically removed from the peer book, so we should never be returning
-    // stale results.
-    try {
-      const peerInfo = this.p2p.peerBook.getByB58String(peerId)
-      return Promise.resolve(peerInfo)
-    } catch (err) {
-    }
+      if (!isB58Multihash(peerId)) {
+        throw new Error('Peer id is not a valid multihash')
+      }
 
-    if (this.directory == null) {
-      // TODO: support DHT lookups
-      return Promise.reject(new Error('No known directory server, cannot lookup'))
-    }
+      // If we've already got an entry for this PeerId in our PeerBook,
+      // because we already have a multiplex connection open to this peer,
+      // use the existing entry.
+      //
+      // Note that when we close the peer multiplex connection, then entry is
+      // automatically removed from the peer book, so we should never be returning
+      // stale results.
+      try {
+        return this.p2p.peerBook.getByB58String(peerId)
+      } catch (err) {
+      }
 
-    return this.p2p.dialByPeerInfo(this.directory, PROTOCOLS.dir.lookup)
-      .then(conn => pullToPromise(
-        pull.values([{id: peerId}]),
-        protoStreamEncode(pb.dir.LookupPeerRequest),
-        conn,
-        protoStreamDecode(pb.dir.LookupPeerResponse),
-        pull.map(lookupResponseToPeerInfo),
+      if (this.directory == null) {
+        // TODO: support DHT lookups
+        throw new Error('No known directory server, cannot lookup')
+      }
+
+      return this.p2p.dialByPeerInfo(this.directory, PROTOCOLS.dir.lookup)
+        .then(conn => pullToPromise(
+          pull.values([ { id: peerId } ]),
+          protoStreamEncode(pb.dir.LookupPeerRequest),
+          conn,
+          protoStreamDecode(pb.dir.LookupPeerResponse),
+          pull.map(lookupResponseToPeerInfo),
+          )
         )
-      )
+    })
   }
 
   _lookupIfNeeded (peer: PeerInfo | PeerId | string): Promise<?PeerInfo> {

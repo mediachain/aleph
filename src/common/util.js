@@ -78,7 +78,8 @@ function b58MultihashForBuffer (buf: Buffer): string {
  */
 function isB58Multihash (str: string): boolean {
   try {
-    Multihashing.multihash.fromB58String(str)
+    const h = Multihashing.multihash.fromB58String(str)
+    Multihashing.multihash.validate(h)
     return true
   } catch (err) {
     return false
