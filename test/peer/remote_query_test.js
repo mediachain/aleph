@@ -111,7 +111,6 @@ describe('Remote Query with inline data', () => {
       .then(result => {
         assert(result != null)
         assert(Array.isArray(result))
-        console.dir(result[0], {depth: 100, colors: true})
         assert.deepEqual(result[0].simple.stmt.body.simple.object.data, seedObject)
       })
   )
