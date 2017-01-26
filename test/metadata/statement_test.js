@@ -8,7 +8,6 @@ const fixtures = require('../resources/fixtures/test-statements')
 
 describe('Statement source/refs helpers', () => {
   it('statementSource returns the publisher field for simple and compound statements and empty envelope statements', () => {
-
     const simplePublisher = fixtures.publisherIds.simple.id58
     const compoundPublisher = fixtures.publisherIds.compound.id58
     const envelopePublisher = fixtures.publisherIds.envelope.id58

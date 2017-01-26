@@ -55,11 +55,11 @@ describe('Directory Node', function () {
       .then(() => { node.directory = null })
       .then(() =>
          Promise.all([
-            expect(node.lookup(nodeIdB58))
+           expect(node.lookup(nodeIdB58))
               .to.eventually.be.rejectedWith('No known directory server'),
-            expect(node.register())
+           expect(node.register())
               .to.eventually.be.rejectedWith('No known directory server')
-          ]))
+         ]))
       .then(() => { node.setDirectory(dir.peerInfo) })
   )
 
@@ -69,7 +69,7 @@ describe('Directory Node', function () {
       .to.eventually.be.rejectedWith('not a valid multihash'),
     expect(node.lookup(42))
       .to.eventually.be.rejectedWith('invalid input')
-    ])
+  ])
   )
 
   it('can lookup by string or PeerId', () => {
@@ -82,21 +82,21 @@ describe('Directory Node', function () {
     dir.peerBook.put(node.peerInfo)
 
     return Promise.all([
-        expect(node._resolvePeer(node.peerInfo))
+      expect(node._resolvePeer(node.peerInfo))
           .to.eventually.eql(node.peerInfo),
 
-        expect(node._resolvePeer(nodeIdB58))
+      expect(node._resolvePeer(nodeIdB58))
           .to.eventually.be.an.instanceof(PeerInfo),
 
-        expect(node._resolvePeer('/ip4/127.0.0.1/tcp/1234/p2p/QmZvvcVA8t5qrM5DeQ8xM6PK18qzCYxseYNtaqauhSc4Na'))
+      expect(node._resolvePeer('/ip4/127.0.0.1/tcp/1234/p2p/QmZvvcVA8t5qrM5DeQ8xM6PK18qzCYxseYNtaqauhSc4Na'))
           .to.eventually.be.an.instanceof(PeerInfo),
 
-        expect(node._resolvePeer('/ip4/not-a-real-multiaddr'))
+      expect(node._resolvePeer('/ip4/not-a-real-multiaddr'))
           .to.eventually.be.rejectedWith('not a valid multiaddr'),
 
-        expect(node._resolvePeer('QmZvvcVA8t5qrM5DeQ8xM6PK18qzCYxseYNtaqauhSc4Na'))
+      expect(node._resolvePeer('QmZvvcVA8t5qrM5DeQ8xM6PK18qzCYxseYNtaqauhSc4Na'))
           .to.eventually.be.rejectedWith('Unable to locate peer')
-      ])
-    }
+    ])
+  }
   )
 })

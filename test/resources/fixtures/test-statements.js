@@ -80,7 +80,7 @@ module.exports = {
   objectIds: {
     simple: [ ['foo'], ['foo'] ],
     compound: [ ['foo', 'foo'] ],
-    envelope: [ ['foo', 'foo'], ],
+    envelope: [ ['foo', 'foo'] ],
     envelopeEmpty: [ [] ]
   }
 }
