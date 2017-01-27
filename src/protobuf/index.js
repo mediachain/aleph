@@ -13,6 +13,10 @@ import type {
   LookupPeerResponseMsg,
   ListPeersRequestMsg,
   ListPeersResponseMsg,
+  ListManifestRequestMsg,
+  ListManifestResponseMsg,
+  ManifestRequestMsg,
+  ManifestResponseMsg,
   PingMsg,
   PongMsg,
   NodeInfoRequestMsg,
@@ -53,11 +57,15 @@ type AllProtos = {
     LookupPeerRequest: ProtoCodec<LookupPeerRequestMsg>,
     LookupPeerResponse: ProtoCodec<LookupPeerResponseMsg>,
     ListPeersRequest: ProtoCodec<ListPeersRequestMsg>,
-    ListPeersResponse: ProtoCodec<ListPeersResponseMsg>
+    ListPeersResponse: ProtoCodec<ListPeersResponseMsg>,
+    ListManifestRequest: ProtoCodec<ListManifestRequestMsg>,
+    ListManifestResponse: ProtoCodec<ListManifestResponseMsg>
   },
   node: {
     Ping: ProtoCodec<PingMsg>,
     Pong: ProtoCodec<PongMsg>,
+    ManifestRequest: ProtoCodec<ManifestRequestMsg>,
+    ManifestResponse: ProtoCodec<ManifestResponseMsg>,
     NodeInfoRequest: ProtoCodec<NodeInfoRequestMsg>,
     NodeInfo: ProtoCodec<NodeInfoMsg>,
     QueryRequest: ProtoCodec<QueryRequestMsg>,
@@ -120,11 +128,15 @@ function loadProtos (): AllProtos {
       LookupPeerRequest: pb.LookupPeerRequest,
       LookupPeerResponse: pb.LookupPeerResponse,
       ListPeersRequest: pb.ListPeersRequest,
-      ListPeersResponse: pb.ListPeersResponse
+      ListPeersResponse: pb.ListPeersResponse,
+      ListManifestRequest: pb.ListManifestRequest,
+      ListManifestResponse: pb.ListManifestResponse
     },
     node: {
       Ping: pb.Ping,
       Pong: pb.Pong,
+      ManifestRequest: pb.ManifestRequest,
+      ManifestResponse: pb.ManifestResponse,
       NodeInfoRequest: pb.NodeInfoRequest,
       NodeInfo: pb.NodeInfo,
       QueryRequest: pb.QueryRequest,

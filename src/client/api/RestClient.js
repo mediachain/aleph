@@ -357,6 +357,12 @@ class RestClient {
       .then(parseBoolResponse)
   }
 
+  listManifestsForEntity (entityId: string): Promise<Array<Object>> {
+    return this.getRequest(`dir/listmf/${entityId}`)
+      .then(r => new NDJsonResponse(r))
+      .then(r => r.values())
+  }
+
   shutdown (): Promise<boolean> {
     return this.postRequest('shutdown', '', false)
       .then(() => true)
