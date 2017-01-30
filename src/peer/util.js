@@ -9,7 +9,7 @@ const {decode} = require('../metadata/serialize')
 const _ = require('lodash')
 const { flatMap } = require('../common/util')
 
-import type { PeerInfoMsg, LookupPeerResponseMsg, ProtoCodec, QueryResultMsg, QueryResultValueMsg, SimpleValueMsg, DataResultMsg, DataObjectMsg, StatementMsg, StatementBodyMsg, SimpleStatementMsg, CompoundStatementMsg } from '../protobuf/types'  // eslint-disable-line no-unused-vars
+import type { PeerInfoMsg, LookupPeerResponseMsg, ProtoCodec, QueryResultMsg, QueryResultValueMsg, SimpleValueMsg, DataResultMsg, DataObjectMsg, StatementMsg, KeyValuePairMsg, SimpleStatementMsg, CompoundStatementMsg, EnvelopeStatementMsg } from '../protobuf/types'  // eslint-disable-line no-unused-vars
 
 // Flow signatures for pull-streams
 export type PullStreamCallback<T> = (end: ?mixed, value?: ?T) => void
@@ -173,11 +173,8 @@ function valuesFromQueryResult (result: QueryResultValueMsg): Array<SimpleValueM
   if (simpleResultValue != null) {
     values = [simpleResultValue]
   } else {
-    const compoundResultBodies: ?Array<{key: string, value: SimpleValueMsg}> =
-      _.get(result, 'compound.body')
-    if (compoundResultBodies != null) {
-      values = compoundResultBodies.map(b => b.value)
-    }
+    const compoundResultBodies: Array<KeyValuePairMsg> = _.get(result, 'compound.body') || []
+    values = compoundResultBodies.map(b => b.value)
   }
   return values
 }
@@ -193,10 +190,14 @@ function objectIdsFromStatement (stmt: StatementMsg): Array<string> {
   if (stmt.body.simple !== undefined) {
     const simpleStmt: SimpleStatementMsg = (stmt.body.simple: any)
     simpleStatements = [simpleStmt]
-  }
-  if (stmt.body.compound !== undefined) {
+  } else if (stmt.body.compound !== undefined) {
     const compoundStmt: CompoundStatementMsg = (stmt.body.compound: any)
     simpleStatements = compoundStmt.body
+  } else if (stmt.body.envelope !== undefined) {
+    const envelopeStmt: EnvelopeStatementMsg = (stmt.body.envelope: any)
+    return flatMap(envelopeStmt.body, objectIdsFromStatement)
+  } else {
+    throw new Error(`Unknown statement type. Expected statement body to be simple, compound, or envelope`)
   }
   return simpleStatements.map(s => s.object)
 }
@@ -236,7 +237,7 @@ function expandQueryResult (result: QueryResultValueMsg, dataObjects: Array<Data
     }
   }
 
-  return _.cloneDeepWith(result, replacer)
+  return (_.cloneDeepWith(result, replacer) : any)
 }
 
 module.exports = {

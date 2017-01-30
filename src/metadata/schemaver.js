@@ -18,7 +18,7 @@ function isSchemaVer (obj: mixed): boolean {
   return true
 }
 
-function parseSchemaVer (version: string | SchemaVer): ?SchemaVer {
+function parseSchemaVer (version: string | Object): ?SchemaVer {
   if (typeof (version) === 'string') {
     const components = version.split('-')
       .map(s => Number(s))

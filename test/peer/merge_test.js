@@ -5,14 +5,14 @@ const { before, describe, it } = require('mocha')
 
 const uuid = require('uuid')
 
-const { makeNode, mockQueryHandler } = require('./util')
-const { PROTOCOLS } = require('../src/peer/constants')
-const { b58MultihashForBuffer } = require('../src/common/util')
-const { makeSimpleStatement } = require('../src/metadata/statement')
-const serialize = require('../src/metadata/serialize')
-const { PublisherId } = require('../src/peer/identity')
+const { makeNode, mockQueryHandler } = require('../util')
+const { PROTOCOLS } = require('../../src/peer/constants')
+const { b58MultihashForBuffer } = require('../../src/common/util')
+const { makeSimpleStatement } = require('../../src/metadata/statement')
+const serialize = require('../../src/metadata/serialize')
+const { PublisherId } = require('../../src/peer/identity')
 
-import type { QueryResultMsg, StatementMsg } from '../src/protobuf/types'
+import type { QueryResultMsg, StatementMsg } from '../../src/protobuf/types'
 
 const TEST_NAMESPACE = 'scratch.merge-test'
 

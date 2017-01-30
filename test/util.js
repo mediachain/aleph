@@ -7,6 +7,7 @@ const thenify = require('thenify')
 const PeerId = require('peer-id')
 const path = require('path')
 const pull = require('pull-stream')
+const lp = require('pull-length-prefixed')
 
 const pb = require('../src/protobuf')
 const { protoStreamEncode, protoStreamDecode } = require('../src/peer/util')
@@ -15,7 +16,7 @@ const nodeIdObjects = require('./resources/test_node_ids.json')
 const testNodeIds = Promise.all(nodeIdObjects.map(id => createFromJSON(id)))
 
 import type { Connection } from 'interface-connection'
-import type { QueryResultMsg } from '../src/protobuf/types'
+import type { QueryResultMsg, PushResponseMsg, PushEndMsg } from '../src/protobuf/types'
 
 function getTestNodeId (): Promise<PeerId> {
   return testNodeIds.then(ids => {
@@ -64,9 +65,32 @@ const mockQueryHandler = (results: Array<QueryResultMsg>) => (protocol: string, 
   conn
 )
 
+const mockPushHandler = (handshakeResponse: PushResponseMsg, expectedStatements: number = 0, result?: PushEndMsg) => (protocol: string, conn: Connection) => {
+  let sentHandshake = false
+  let statementsReceived = 0
+  pull(
+    conn,
+    pull.asyncMap((val, cb) => {
+      if (!sentHandshake) {
+        sentHandshake = true
+        return cb(null, pb.node.PushResponse.encode(handshakeResponse))
+      }
+      statementsReceived++
+      if (statementsReceived === expectedStatements && result != null) {
+        return cb(null, pb.node.PushEnd.encode(result))
+      }
+      cb(null, null)
+    }),
+    pull.filter(val => val !== null),
+    lp.encode(),
+    conn
+  )
+}
+
 module.exports = {
   getTestNodeId,
   makeNode,
   makeDirectory,
-  mockQueryHandler
+  mockQueryHandler,
+  mockPushHandler
 }

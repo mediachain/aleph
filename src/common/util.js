@@ -49,6 +49,20 @@ function flatMap<T, U> (array: Array<T>, f: (x: T) => Array<U>): Array<U> {
 }
 
 /**
+ * Given two `Set`s, return a new `Set` that contains all elements from both.
+ * @param {Set} a
+ * @param {Set} b
+ * @returns {Set} - the union of `a` and `b`
+ */
+function setUnion<T> (a: Set<T>, b: Set<T>): Set<T> {
+  const u = new Set(a)
+  for (const elem of b) {
+    u.add(elem)
+  }
+  return u
+}
+
+/**
  * Returns base58-encoded sha256 multihash for the given Buffer
  * @param buf - a `Buffer` you want to hash
  * @returns {string} a base58-encoded multihash string
@@ -64,7 +78,8 @@ function b58MultihashForBuffer (buf: Buffer): string {
  */
 function isB58Multihash (str: string): boolean {
   try {
-    Multihashing.multihash.fromB58String(str)
+    const h = Multihashing.multihash.fromB58String(str)
+    Multihashing.multihash.validate(h)
     return true
   } catch (err) {
     return false
@@ -121,6 +136,7 @@ module.exports = {
   promiseHash,
   promiseTimeout,
   flatMap,
+  setUnion,
   b58MultihashForBuffer,
   isB58Multihash,
   writeln,

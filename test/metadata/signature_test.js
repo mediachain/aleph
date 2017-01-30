@@ -5,14 +5,14 @@ const assert = require('assert')
 const { before, describe, it } = require('mocha')
 const path = require('path')
 
-const { PublisherId, PrivateSigningKey } = require('../src/peer/identity')
-const { makeSimpleStatement } = require('../src/metadata/statement')
-const { signStatement, verifyStatement } = require('../src/metadata/signatures')
+const { PublisherId, PrivateSigningKey } = require('../../src/peer/identity')
+const { makeSimpleStatement } = require('../../src/metadata/statement')
+const { signStatement, verifyStatement } = require('../../src/metadata/signatures')
 
 const CONCAT_PUBLISHER_ID_PUB58 = '4XTTM4JKrrBeAK6qXmo8FoKmT5RkfjeXfZrnWjJNw9fKvPnEs'
-const CONCAT_PUBLISHER_ID_PATH = path.join(__dirname, 'resources', 'publisher_ids', 'concat',
+const CONCAT_PUBLISHER_ID_PATH = path.join(__dirname, '..', 'resources', 'publisher_ids', 'concat',
   `${CONCAT_PUBLISHER_ID_PUB58}.privateKey`)
-const CONCAT_MESSAGE_FIXTURES = require('./resources/fixtures/concat-message-signature')
+const CONCAT_MESSAGE_FIXTURES = require('./../resources/fixtures/concat-message-signature')
 
 describe('Signature verification', () => {
   let publisherId

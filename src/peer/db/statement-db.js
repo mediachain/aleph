@@ -5,8 +5,9 @@ const Knex = require('knex')
 const locks = require('locks')
 const temp = require('temp').track()
 const pb = require('../../protobuf')
+const { statementSource, statementRefs } = require('../../metadata/statement')
 
-import type { StatementMsg, SimpleStatementMsg, EnvelopeStatementMsg, CompoundStatementMsg } from '../../protobuf/types'
+import type { StatementMsg } from '../../protobuf/types'
 import type { Mutex } from 'locks'
 
 const MIGRATIONS_DIR = path.join(__dirname, 'migrations')
@@ -48,7 +49,6 @@ class StatementDB {
     if (this._migrated) return Promise.resolve(this._db)
 
     return new Promise(resolve => this._migrationLock.lock(() => {
-      if (this._migrated) return resolve(this._db)
       this._db.migrate.latest({directory: MIGRATIONS_DIR})
         .then(() => {
           this._migrated = true
@@ -117,59 +117,6 @@ function namespaceCriteria (field: string, ns: string): string {
   }
   const prefix = ns.substr(0, starIndex - 1)
   return `${field} LIKE '%${prefix}%%'`
-}
-
-// TODO: move these helpers elsewhere
-
-function statementSource (stmt: StatementMsg): string {
-  if (stmt.body.envelope !== undefined) {
-    const envelopeStatement: EnvelopeStatementMsg = (stmt.body.envelope: any)  // stupid flow typecast
-    if (envelopeStatement.body.length > 0) {
-      return statementSource(envelopeStatement.body[0])
-    }
-  }
-  return stmt.publisher
-}
-
-function statementRefs (stmt: StatementMsg): Set<string> {
-  if (stmt.body.simple !== undefined) {
-    return simpleStmtRefs((stmt.body.simple: any))
-  }
-  if (stmt.body.compound !== undefined) {
-    return compoundStmtRefs((stmt.body.compound: any))
-  }
-  if (stmt.body.envelope !== undefined) {
-    return envelopeStmtRefs((stmt.body.envelope: any))
-  }
-  throw new Error('Invalid statement type (expected simple, compound, or envelope)')
-}
-
-function simpleStmtRefs (stmt: SimpleStatementMsg): Set<string> {
-  return new Set(stmt.refs)
-}
-
-function compoundStmtRefs (stmt: CompoundStatementMsg): Set<string> {
-  let allRefs: Set<string> = new Set()
-  for (const simpleStmt of stmt.body) {
-    allRefs = union(allRefs, simpleStmtRefs(simpleStmt))
-  }
-  return allRefs
-}
-
-function envelopeStmtRefs (stmt: EnvelopeStatementMsg): Set<string> {
-  let allRefs: Set<string> = new Set()
-  for (const innerStmt of stmt.body) {
-    allRefs = union(allRefs, statementRefs(innerStmt))
-  }
-  return allRefs
-}
-
-function union<T> (a: Set<T>, b: Set<T>): Set<T> {
-  const u = new Set(a)
-  for (const elem of b) {
-    u.add(elem)
-  }
-  return u
 }
 
 module.exports = {
