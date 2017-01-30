@@ -13,7 +13,7 @@ SKIP_VALIDATION='--skipSchemaValidation'
 mcclient publish ${SKIP_VALIDATION} \
     --jqFilter '._source | del(.aesthetics)' \
     --idFilter '.native_id | sub("dpla_http://dp.la/api/items/(?<id>.+)"; "\(.id)")' \
-    --prefix 'dpla'
+    --prefix 'dpla' \
     ${NAMESPACE} \
     ${SCHEMA_HASH} \
     $1 > /dev/null
