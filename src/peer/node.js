@@ -25,7 +25,9 @@ const { promiseHash, isB58Multihash } = require('../common/util')
 const { pushStatementsToConn } = require('./push')
 const { mergeFromStreams } = require('./merge')
 const { makeSimpleStatement } = require('../metadata/statement')
+const { unpackQueryResultProtobuf } = require('../model/query_result')
 
+import type { QueryResult } from '../model/query_result'
 import type { QueryResultMsg, QueryResultValueMsg, DataResultMsg, DataObjectMsg, NodeInfoMsg, StatementMsg, PushEndMsg } from '../protobuf/types'
 import type { Connection } from 'interface-connection'
 import type { PullStreamSource } from './util'
@@ -267,10 +269,11 @@ class MediachainNode {
           conn,
           protoStreamDecode(pb.node.QueryResult),
           resultStreamThrough,
+          pull.map(r => unpackQueryResultProtobuf(r))
         ))
   }
 
-  remoteQuery (peer: PeerInfo | PeerId | string, queryString: string): Promise<Array<QueryResultMsg>> {
+  remoteQuery (peer: PeerInfo | PeerId | string, queryString: string): Promise<Array<QueryResult>> {
     return this.remoteQueryStream(peer, queryString)
       .then(stream => new Promise((resolve, reject) => {
         pull(
@@ -309,7 +312,7 @@ class MediachainNode {
   }
 
   // local queries (MCQL parser NOT IMPLEMENTED)
-  query (queryString: string): Promise<Array<QueryResultMsg>> {
+  query (queryString: string): Promise<Array<QueryResult>> {
     throw new Error('Local MCQL queries are not implemented!')
   }
 
@@ -460,7 +463,7 @@ class RemoteNode {
     return this.node.ping(this.remotePeerInfo)
   }
 
-  query (queryString: string): Promise<Array<QueryResultMsg>> {
+  query (queryString: string): Promise<Array<QueryResult>> {
     return this.node.remoteQuery(this.remotePeerInfo, queryString)
   }
 
