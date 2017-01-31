@@ -4,10 +4,10 @@ const { omit, cloneDeep } = require('lodash')
 const pb = require('../protobuf')
 const { PublicSigningKey } = require('../peer/identity')
 
-import type { PublisherId } from '../peer/identity'
+import type { IPublisherId } from '../peer/identity'
 import type { StatementMsg } from '../protobuf/types'
 
-function signStatement (stmt: StatementMsg, publisherId: PublisherId): Promise<StatementMsg> {
+function signStatement (stmt: StatementMsg, publisherId: IPublisherId): Promise<StatementMsg> {
   // clone the original message, removing any existing signature
   const result = omit(cloneDeep(stmt), 'signature')
   return calculateSignature(result, publisherId).then((sig) => {
@@ -16,7 +16,7 @@ function signStatement (stmt: StatementMsg, publisherId: PublisherId): Promise<S
   })
 }
 
-function calculateSignature (stmt: StatementMsg, publisherId: PublisherId): Promise<Buffer> {
+function calculateSignature (stmt: StatementMsg, publisherId: IPublisherId): Promise<Buffer> {
   return Promise.resolve().then(() => {
     const bytes = pb.stmt.Statement.encode(stmt)
     // sign the encoded statement message and set the signature

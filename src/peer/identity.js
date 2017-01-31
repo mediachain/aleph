@@ -235,6 +235,11 @@ class PublicSigningKey {
   }
 }
 
+export interface IPublisherId {  // eslint-disable-line no-undef
+  id58: string,
+  sign (message: Buffer): Promise<Buffer>
+}
+
 class PublisherId {
   id58: string
   privateKey: PrivateSigningKey
@@ -271,7 +276,65 @@ class PublisherId {
   }
 }
 
+/**
+ * Since ethereum clients secure their private keys, we can't use an ethereum private
+ * key as a PublisherId directly.  This class lets you construct a PublisherId from a
+ * public key (or ethereum address) and a `sign` method that accepts a message `Buffer`
+ * and returns a `string` or `Promise<string>` signature in the format produced by geth's
+ * `eth_sign` RPC call.
+ *
+ * The static `fromRPCMethod` call is the de-facto constructor, since it will likely be
+ * easier to use from within a Dapp, where getting your own public key is ridiculously
+ * complicated.
+ */
+class EthereumPublisherId {
+  id58: string
+  publicKey: PublicSigningKey
+  ethereumAddress: string
+  sign: (message: Buffer) => Promise<Buffer>
+
+  constructor (publicKey: PublicSigningKey, ethereumAddress: string, sign: (message: Buffer) => Promise<Buffer>) {
+    this.publicKey = publicKey
+    this.id58 = b58.encode(publicKey.bytes)
+    this.ethereumAddress = ethereumAddress
+    this.sign = sign
+  }
+
+  static fromRPCMethod (ethereumAddress: string, signRPC: EthSignRPCFunction)
+  : Promise<EthereumPublisherId> {
+    ethereumAddress = ethereumUtils.addHexPrefix(ethereumAddress)
+    const message = Buffer.from('I need a public key, please', 'utf-8')
+    const sign = wrapEthSignRPCFunction(ethereumAddress, signRPC)
+    return sign(message)
+      .then(sig => recoverEthereumPubKey(message, sig))
+      .then(ethKey => {
+        const recoveredAddress = ethereumUtils.publicToAddress(ethKey, true)
+        const expectedAddress = ethereumUtils.toBuffer(ethereumAddress)
+        if (!recoveredAddress.equals(expectedAddress)) {
+          throw new Error(`Signature from RPC method does not match expected ethereum address ${ethereumAddress}`)
+        }
+        const pubKey = new PublicSigningKey(new Secp256k1PublicKey(ethKey))
+        return new EthereumPublisherId(pubKey, ethereumAddress, sign)
+      })
+  }
+
+  verify (message: Buffer, signature: Buffer): Promise<boolean> {
+    return this.publicKey.verify(message, signature)
+  }
+}
+
 const ETH_SIGNATURE_LENGTH = 65
+
+type EthSignRPCFunction = (account: string, message: string, callback?: Function) => ?string
+
+function wrapEthSignRPCFunction (ethereumAddress: string, ethSign: EthSignRPCFunction): (message: Buffer) => Promise<Buffer> {
+  return (message) => new Promise((resolve, reject) => {
+    ethSign(ethereumAddress, '0x' + message.toString('hex'), (err, sigHex) => {
+      if (err) return reject(err)
+      resolve(ethereumUtils.toBuffer(sigHex))
+    })
+  })
+}
 
 function ethereumPubKeyToStandardSecp (ethKey: Buffer): Buffer {
   return secp256k1.publicKeyConvert(Buffer.concat([Buffer.from([4]), ethKey]))
@@ -302,5 +365,6 @@ module.exports = {
   inflateMultiaddr,
   PublisherId,
   PublicSigningKey,
-  PrivateSigningKey
+  PrivateSigningKey,
+  EthereumPublisherId
 }
