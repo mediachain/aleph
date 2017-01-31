@@ -6,6 +6,8 @@ const PeerInfo = require('peer-info')
 const Crypto = thenifyAll(require('libp2p-crypto'), {}, ['unmarshalPrivateKey', 'generateKeyPair'])
 const Multiaddr = require('multiaddr')
 const b58 = require('bs58')
+const ethereumUtils = require('ethereumjs-util')
+const secp256k1 = require('secp256k1')
 
 const NODE_KEY_TYPE = 'RSA'
 const NODE_KEY_BITS = 2048
@@ -225,6 +227,23 @@ class PublisherId {
   }
 }
 
+// FIXME: this needs a better interface
+// it should accept a libp2p marshaled public key instead of an ethereum address
+function verifyEthereumSignature (message: Buffer | string, sig: Buffer | string, ethAddress: Buffer | string): boolean {
+  const msgBuffer = ethereumUtils.toBuffer(message)
+  const prefixedMsg = Buffer.concat([
+    Buffer.from('\u0019Ethereum Signed Message:\n', 'utf-8'),
+    Buffer.from(msgBuffer.length.toString(), 'utf-8'),
+    msgBuffer
+  ])
+  const msgHash = ethereumUtils.sha3(prefixedMsg)
+  const {v, r, s} = ethereumUtils.fromRpcSig(sig)
+
+  const pubKey = ethereumUtils.ecrecover(msgHash, v, r, s)
+  const sigAddress = ethereumUtils.pubToAddress(pubKey)
+  return sigAddress.equals(ethereumUtils.toBuffer(ethAddress))
+}
+
 module.exports = {
   generateIdentity,
   saveIdentity,
@@ -233,5 +252,6 @@ module.exports = {
   inflateMultiaddr,
   PublisherId,
   PublicSigningKey,
-  PrivateSigningKey
+  PrivateSigningKey,
+  verifyEthereumSignature // FIXME: remove once integrated into PublisherId
 }
