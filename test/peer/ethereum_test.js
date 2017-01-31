@@ -4,18 +4,19 @@
 const assert = require('assert')
 const { before, describe, it } = require('mocha')
 const ethereumUtils = require('ethereumjs-util')
-const { EthereumPublisherId, PublicSigningKey } = require('../src/peer/identity')
+const { EthereumPublisherId, PublicSigningKey } = require('../../src/peer/identity')
 
-const ETH_MESSAGE_FIXTURES = require('./resources/fixtures/ethereum-message-signature')
+const ETH_MESSAGE_FIXTURES = require('./../resources/fixtures/ethereum-message-signature')
 
-import type { EthSignRPCFunction } from '../src/peer/identity'
+import type { EthSignRPCFunction } from '../../src/peer/identity'
 
 function genMockEthSign (privateKey: Buffer): EthSignRPCFunction {
   return (_account, message, callback) => {
     let rpcSig
     try {
       const msgBuffer = ethereumUtils.toBuffer(message)
-      const {r, s, v} = ethereumUtils.ethSign(msgBuffer, privateKey)
+      const msgHash = ethereumUtils.hashPersonalMessage(msgBuffer)
+      const {r, s, v} = ethereumUtils.ecsign(msgHash, privateKey)
       rpcSig = ethereumUtils.toRpcSig(v, r, s)
     } catch (err) {
       setImmediate(() => callback(err))

@@ -623,8 +623,8 @@
     },
     "ethereumjs-util": {
       "version": "5.0.1",
-      "from": "git://github.com/yusefnapora/ethereumjs-util.git#ad7c8317c9d109ba68d1dc646066a9cacb19c3a9",
-      "resolved": "git://github.com/yusefnapora/ethereumjs-util.git#ad7c8317c9d109ba68d1dc646066a9cacb19c3a9"
+      "from": "git://github.com/yusefnapora/ethereumjs-util.git#c5d3d872e2b36de167fc5869006a94064adfa9d7",
+      "resolved": "git://github.com/yusefnapora/ethereumjs-util.git#c5d3d872e2b36de167fc5869006a94064adfa9d7"
     },
     "evp_bytestokey": {
       "version": "1.0.0",

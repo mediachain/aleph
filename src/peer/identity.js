@@ -353,7 +353,8 @@ function decodeEthereumPubKey (key: Buffer): Buffer {
 
 function recoverEthereumPubKey (message: Buffer, signature: Buffer): Buffer {
   const { v, r, s } = ethereumUtils.fromRpcSig(signature)
-  const ethereumPubKey = ethereumUtils.ethRecover(message, v, r, s)
+  const msgHash = ethereumUtils.hashPersonalMessage(message)
+  const ethereumPubKey = ethereumUtils.ecrecover(msgHash, v, r, s)
   return ethereumPubKeyToStandardSecp(ethereumPubKey)
 }
 
