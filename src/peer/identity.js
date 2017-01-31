@@ -180,6 +180,17 @@ class PublicSigningKey {
     }
   }
 
+  static fromSignedEthereumMessage (message: Buffer, signature: Buffer, ethereumAddress: Buffer | string): PublicSigningKey {
+    const pubKey = recoverEthereumPubKey(message, signature)
+    const addrForSig = ethereumUtils.pubToAddress(pubKey, true)
+    const expectedAddr = ethereumUtils.toBuffer(ethereumAddress)
+    if (!expectedAddr.equals(addrForSig)) {
+      throw new Error(`Public key for signature does not match expected ethereum address ${expectedAddr.toString('hex')}`)
+    }
+    const p2pKey = new Secp256k1PublicKey(pubKey)
+    return new PublicSigningKey(p2pKey)
+  }
+
   get isSecp256k1 () {
     return (this._key instanceof Secp256k1PublicKey)
   }
