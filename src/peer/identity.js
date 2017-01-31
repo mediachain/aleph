@@ -4,6 +4,7 @@ const fs = thenifyAll(require('fs'), {}, ['readFile', 'writeFile'])
 const PeerId = thenifyAll(require('peer-id'), {}, ['createFromPrivKey', 'create'])
 const PeerInfo = require('peer-info')
 const Crypto = thenifyAll(require('libp2p-crypto'), {}, ['unmarshalPrivateKey', 'generateKeyPair'])
+const Secp256k1PublicKey = Crypto.keys.secp256k1.Secp256k1PublicKey
 const Multiaddr = require('multiaddr')
 const b58 = require('bs58')
 const ethereumUtils = require('ethereumjs-util')
@@ -165,8 +166,22 @@ class PublicSigningKey {
 
   static fromB58String (b58String: string): PublicSigningKey {
     const bytes = Buffer.from(b58.decode(b58String))
-    const p2pKey = Crypto.unmarshalPublicKey(bytes)
-    return new PublicSigningKey(p2pKey)
+    return this.fromBytes(bytes)
+  }
+
+  static fromBytes (bytes: Buffer): PublicSigningKey {
+    try {
+      const p2pKey = Crypto.unmarshalPublicKey(bytes)
+      return new PublicSigningKey(p2pKey)
+    } catch (err) {
+      const ethKey = decodeEthereumPubKey(bytes)
+      const p2pKey = new Secp256k1PublicKey(ethKey)
+      return new PublicSigningKey(p2pKey)
+    }
+  }
+
+  get isSecp256k1 () {
+    return (this._key instanceof Secp256k1PublicKey)
   }
 
   save (filename: string): Promise<void> {
@@ -182,11 +197,30 @@ class PublicSigningKey {
   }
 
   verify (message: Buffer, signature: Buffer): Promise<boolean> {
+    if (this.isSecp256k1 && signature.length === ETH_SIGNATURE_LENGTH) {
+      return this.verifyEthereum(message, signature)
+    }
+
     return new Promise((resolve, reject) => {
       this._key.verify(message, signature, (err, valid) => {
         if (err) return reject(err)
         resolve(valid)
       })
+    })
+  }
+
+  verifyEthereum (message: Buffer, signature: Buffer): Promise<boolean> {
+    return Promise.resolve().then(() => {
+      if (!this.isSecp256k1) {
+        throw new Error('Only secp256k1 public keys can verify ethereum signatures')
+      }
+      if (signature.length !== ETH_SIGNATURE_LENGTH) {
+        throw new Error(`Invalid ethereum signature length ${signature.length}, expected ${ETH_SIGNATURE_LENGTH}`)
+      }
+
+      const pubKey = recoverEthereumPubKey(message, signature)
+      const p2pKey = new Secp256k1PublicKey(pubKey)
+      return p2pKey.bytes.equals(this.bytes)
     })
   }
 }
@@ -227,21 +261,34 @@ class PublisherId {
   }
 }
 
-// FIXME: this needs a better interface
-// it should accept a libp2p marshaled public key instead of an ethereum address
-function verifyEthereumSignature (message: Buffer | string, sig: Buffer | string, ethAddress: Buffer | string): boolean {
-  const msgBuffer = ethereumUtils.toBuffer(message)
+const ETH_SIGNATURE_LENGTH = 65
+
+function ethereumPubKeyToStandardSecp (ethKey: Buffer): Buffer {
+  return secp256k1.publicKeyConvert(Buffer.concat([Buffer.from([4]), ethKey]))
+}
+
+function decodeEthereumPubKey (key: Buffer): Buffer {
+  if (key.length === 65 || key.length === 33) {
+    key = secp256k1.publicKeyConvert(key)
+  } else if (key.length === 64) {
+    key = secp256k1.publicKeyConvert(ethereumPubKeyToStandardSecp(key))
+  } else {
+    throw new Error(`Invalid public key length ${key.length}`)
+  }
+  return key
+}
+
+function recoverEthereumPubKey (message: Buffer, signature: Buffer): Buffer {
   const prefixedMsg = Buffer.concat([
     Buffer.from('\u0019Ethereum Signed Message:\n', 'utf-8'),
-    Buffer.from(msgBuffer.length.toString(), 'utf-8'),
-    msgBuffer
+    Buffer.from(message.length.toString(), 'utf-8'),
+    message
   ])
   const msgHash = ethereumUtils.sha3(prefixedMsg)
-  const {v, r, s} = ethereumUtils.fromRpcSig(sig)
+  const { v, r, s } = ethereumUtils.fromRpcSig(signature)
 
-  const pubKey = ethereumUtils.ecrecover(msgHash, v, r, s)
-  const sigAddress = ethereumUtils.pubToAddress(pubKey)
-  return sigAddress.equals(ethereumUtils.toBuffer(ethAddress))
+  const ethereumPubKey = ethereumUtils.ecrecover(msgHash, v, r, s)
+  return ethereumPubKeyToStandardSecp(ethereumPubKey)
 }
 
 module.exports = {
@@ -252,6 +299,5 @@ module.exports = {
   inflateMultiaddr,
   PublisherId,
   PublicSigningKey,
-  PrivateSigningKey,
-  verifyEthereumSignature // FIXME: remove once integrated into PublisherId
+  PrivateSigningKey
 }
