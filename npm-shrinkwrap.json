@@ -1355,8 +1355,13 @@
     },
     "libp2p-crypto": {
       "version": "0.7.6",
-      "from": "git://github.com/yusefnapora/js-libp2p-crypto.git#7a27b786054ac137d7bebf616b4d2228bb8a0e68",
-      "resolved": "git://github.com/yusefnapora/js-libp2p-crypto.git#7a27b786054ac137d7bebf616b4d2228bb8a0e68"
+      "from": "git://github.com/yusefnapora/js-libp2p-crypto.git#ec387c3b9eafca2ca0ad5defa7dd80dcc978950a",
+      "resolved": "git://github.com/yusefnapora/js-libp2p-crypto.git#ec387c3b9eafca2ca0ad5defa7dd80dcc978950a"
+    },
+    "libp2p-crypto-secp256k1": {
+      "version": "0.0.1",
+      "from": "git://github.com/yusefnapora/js-libp2p-crypto-secp256k1.git#fb7a7c331880bb8e8caf63d853376f043316d2e3",
+      "resolved": "git://github.com/yusefnapora/js-libp2p-crypto-secp256k1.git#fb7a7c331880bb8e8caf63d853376f043316d2e3"
     },
     "libp2p-identify": {
       "version": "0.3.1",
