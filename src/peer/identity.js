@@ -319,13 +319,13 @@ class EthereumPublisherId {
   }
 
   verify (message: Buffer, signature: Buffer): Promise<boolean> {
-    return this.publicKey.verify(message, signature)
+    return this.publicKey.verifyEthereum(message, signature)
   }
 }
 
 const ETH_SIGNATURE_LENGTH = 65
 
-type EthSignRPCFunction = (account: string, message: string, callback?: Function) => ?string
+export type EthSignRPCFunction = (account: string, message: string, callback?: Function) => ?string
 
 function wrapEthSignRPCFunction (ethereumAddress: string, ethSign: EthSignRPCFunction): (message: Buffer) => Promise<Buffer> {
   return (message) => new Promise((resolve, reject) => {
