@@ -35,7 +35,7 @@
     "byline": "^5.0.0",
     "digest-stream": "^1.0.1",
     "duplex-child-process": "0.0.5",
-    "ethereumjs-util": "git://github.com/yusefnapora/ethereumjs-util.git#c5d3d872e2b36de167fc5869006a94064adfa9d7",
+    "ethereumjs-util": "git://github.com/ethereumjs/ethereumjs-util.git#ac5d0908536b447083ea422b435da27f26615de9",
     "knex": "^0.12.6",
     "levelup": "^1.3.3",
     "libp2p-crypto": "git://github.com/yusefnapora/js-libp2p-crypto.git#ec387c3b9eafca2ca0ad5defa7dd80dcc978950a",
