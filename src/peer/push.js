@@ -4,9 +4,10 @@ const lp = require('pull-length-prefixed')
 const locks = require('locks')
 const pb = require('../protobuf')
 const { pullToPromise } = require('./util')
+const { Statement } = require('../model/statement')
 
 import type { Connection } from 'interface-connection'
-import type { StatementMsg, PushEndMsg } from '../protobuf/types'
+import type { PushEndMsg } from '../protobuf/types'
 
 /**
  * "Driver" function for pushing statements to a remote peer.
@@ -24,7 +25,7 @@ import type { StatementMsg, PushEndMsg } from '../protobuf/types'
  * @param conn - an open libp2p Connection to the remote peer's /mediachain/node/push handler
  * @returns {*}
  */
-function pushStatementsToConn (statements: Array<StatementMsg>, conn: Connection): Promise<PushEndMsg> {
+function pushStatementsToConn (statements: Array<Statement>, conn: Connection): Promise<PushEndMsg> {
   // build the PushRequest message
   const namespaces: Set<string> = new Set()
   for (const stmt of statements) {
@@ -61,7 +62,7 @@ function pushStatementsToConn (statements: Array<StatementMsg>, conn: Connection
       () => {
         // if we have statements, pop one from the head of the array and send it, wrapped in a PushValue
         if (statements.length > 0) {
-          const stmt = statements.pop()
+          const stmt = statements.pop().toProtobuf()
           const msg = { stmt }
           return callback(null, pb.node.PushValue.encode(msg))
         }

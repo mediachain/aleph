@@ -12,6 +12,7 @@ const { makeNode, mockPushHandler } = require('../util')
 const { PROTOCOLS } = require('../../src/peer/constants')
 const { b58MultihashForBuffer } = require('../../src/common/util')
 const { makeSimpleStatement } = require('../../src/metadata/statement')
+const { Statement } = require('../../src/model/statement')
 const serialize = require('../../src/metadata/serialize')
 const { PublisherId } = require('../../src/peer/identity')
 
@@ -24,11 +25,12 @@ const SEED_OBJECT_BUFFERS = [
   {id: uuid.v4(), test: 'yep'}
 ].map(obj => serialize.encode(obj))
 
-function makeSeedStatements (publisherId: PublisherId, seedObjectBuffers: Array<Buffer>): Promise<Array<StatementMsg>> {
+function makeSeedStatements (publisherId: PublisherId, seedObjectBuffers: Array<Buffer>): Promise<Array<Statement>> {
   return Promise.all(
     seedObjectBuffers.map((buf, idx) => {
       const object = b58MultihashForBuffer(buf)
       return makeSimpleStatement(publisherId, TEST_NAMESPACE, {object, refs: [`merge-test:${idx.toString()}`]}, idx)
+        .then(s => Statement.fromProtobuf(s))
     })
   )
 }

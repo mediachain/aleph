@@ -415,7 +415,7 @@ class MediachainNode {
       .then(({queryStream, dataConn}) => mergeFromStreams(this, queryStream, dataConn))
   }
 
-  pushStatements (peer: PeerInfo | PeerId | string, statements: Array<StatementMsg>): Promise<PushEndMsg> {
+  pushStatements (peer: PeerInfo | PeerId | string, statements: Array<Statement>): Promise<PushEndMsg> {
     return this.openConnection(peer, PROTOCOLS.node.push)
       .then(conn => pushStatementsToConn(statements, conn))
   }

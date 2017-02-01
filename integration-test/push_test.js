@@ -11,6 +11,7 @@ const { MediachainNode: AlephNode } = require('../src/peer/node')
 const { concatNodeClient, concatNodePeerInfo } = require('./util')
 const { PublisherId } = require('../src/peer/identity')
 const { makeSimpleStatement } = require('../src/metadata/statement')
+const { Statement } = require('../src/model/statement')
 
 const TEST_NAMESPACE = 'scratch.push-test'
 const UNAUTHORIZED_NAMESPACE = 'scratch.unauthorized-push-test'
@@ -49,6 +50,7 @@ function preparePartiallyValidStatements (alephNode: AlephNode, numValid: number
         object: 'QmNLftPEMzsadpbTsGaVP3haETYJb4GfnCgQiaFj5Red9G', refs: [], deps: [], tags: []
       }))
       return Promise.all(promises)
+        .then(statements => statements.map(s => Statement.fromProtobuf(s)))
     })
 }
 
