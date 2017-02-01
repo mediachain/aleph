@@ -1,7 +1,6 @@
 // @flow
 
-const { Statement, statementBodyFromProtobuf } = require('./statement')
-import type { StatementBody } from './statement'
+const { Statement, StatementBody } = require('./statement')
 import type { QueryResultMsg, QueryResultValueMsg, SimpleValueMsg, CompoundValueMsg } from '../protobuf/types'
 
 export type QueryResult = QueryResultValue | Error
@@ -38,7 +37,7 @@ function unpackSimpleValue (val: SimpleValueMsg): SimpleQueryResultValue {
   if (val.stringValue != null) return (val.stringValue: any)
   if (val.intValue != null) return (val.intValue: any)
   if (val.stmt != null) return Statement.fromProtobuf((val.stmt: any))
-  if (val.stmtBody != null) return statementBodyFromProtobuf((val.stmtBody: any))
+  if (val.stmtBody != null) return StatementBody.fromProtobuf((val.stmtBody: any))
 
   throw new Error('Unexpected query result value: ' + JSON.stringify(val))
 }

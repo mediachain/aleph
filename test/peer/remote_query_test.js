@@ -7,6 +7,7 @@ const { PROTOCOLS } = require('../../src/peer/constants')
 const pull = require('pull-stream')
 const { PublisherId } = require('../../src/peer/identity')
 const { makeNode, mockQueryHandler } = require('../util')
+const { unpackQueryResultProtobuf } = require('../../src/model/query_result')
 
 import type Node from '../../src/peer/node'
 
@@ -35,6 +36,7 @@ describe('Remote Query', () => {
 
     // the stream doesn't deliver the "end" response, it just ends the stream
     const expected = responses.slice(0, responses.length - 1)
+      .map(raw => unpackQueryResultProtobuf(raw))
 
     let remote
 
@@ -61,6 +63,7 @@ describe('Remote Query', () => {
     ]
 
     const expected = responses.slice(0, responses.length - 1)
+      .map(raw => unpackQueryResultProtobuf(raw))
 
     let remote
     return makeNode()
