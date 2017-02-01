@@ -1,9 +1,10 @@
 // @flow
 
 const { inspect } = require('util')
+const { PublisherId } = require('../peer/identity')
 const pb = require('../protobuf')
 const serialize = require('../metadata/serialize')
-const { b58MultihashForBuffer, stringifyNestedBuffers } = require('../common/util')
+const { b58MultihashForBuffer, stringifyNestedBuffers, setUnion } = require('../common/util')
 
 import type { StatementMsg, StatementBodyMsg, SimpleStatementMsg, CompoundStatementMsg, EnvelopeStatementMsg } from '../protobuf/types'
 
@@ -26,6 +27,43 @@ class Statement {
     } else {
       this.signature = Buffer.from(stmt.signature, 'base64')
     }
+  }
+
+  static create (
+    publisherId: PublisherId,
+    namespace: string,
+    statementBody: StatementBody | StatementBodyMsg,
+    counter: number = 0,
+    timestampGenerator: () => number = Date.now)
+  : Promise<Statement> {
+    const body = (statementBody instanceof StatementBody) ? statementBody : StatementBody.fromProtobuf(statementBody)
+    const timestamp = timestampGenerator()
+    const statementId = [publisherId.id58, timestamp.toString(), counter.toString()].join(':')
+    const stmt = new Statement({
+      id: statementId,
+      publisher: publisherId.id58,
+      namespace,
+      timestamp,
+      body,
+      signature: Buffer.from('')
+    })
+    return stmt.sign(publisherId)
+  }
+
+  static createSimple (
+    publisherId: PublisherId,
+    namespace: string,
+    statementBody: {object: string | Object, refs?: Array<string>, deps?: Array<string>, tags?: Array<string>},
+    counter: number = 0,
+    timestampGenerator: () => number = Date.now
+  ): Promise<Statement> {
+    let body: SimpleStatementBody
+    if (typeof statementBody.object === 'object') {
+      body = new ExpandedSimpleStatementBody((statementBody: any))
+    } else {
+      body = new SimpleStatementBody((statementBody: any))
+    }
+    return Statement.create(publisherId, namespace, body, counter, timestampGenerator)
   }
 
   static fromProtobuf (msg: StatementMsg): Statement {
@@ -74,14 +112,43 @@ class Statement {
     return this.body.objectIds
   }
 
-  get refs (): Array<string> {
-    return this.body.refs
+  get refSet (): Set<string> {
+    return this.body.refSet
+  }
+
+  get source (): string {
+    if (!(this.body instanceof EnvelopeStatementBody)) {
+      return this.publisher
+    }
+
+    if (this.body.statements.length < 1) {
+      return this.publisher
+    }
+
+    return this.body.statements[0].source
   }
 
   expandObjects (source: Map<string, Object>): Statement {
     const body = this.body.expandObjects(source)
     const {id, publisher, namespace, timestamp, signature} = this
     return new Statement({id, publisher, namespace, timestamp, body, signature})
+  }
+
+  sign (publisherId: PublisherId): Promise<Statement> {
+    return Promise.resolve().then(() => {
+      if (publisherId.id58 !== this.publisher) {
+        throw new Error(`Cannot sign statement, publisher id of signer does not match statement publisher`)
+      }
+
+      const msg: Object = this.toProtobuf()
+      msg.signature = undefined
+      const bytes = pb.stmt.Statement.encode(msg)
+      return publisherId.sign(bytes)
+        .then(sig => {
+          msg.signature = sig
+          return Statement.fromProtobuf(msg)
+        })
+    })
   }
 }
 
@@ -102,8 +169,8 @@ class StatementBody {
     return this
   }
 
-  get refs (): Array<string> {
-    return []
+  get refSet (): Set<string> {
+    return new Set()
   }
 
   get objectIds (): Array<string> {
@@ -113,14 +180,14 @@ class StatementBody {
 
 class SimpleStatementBody extends StatementBody {
   objectRef: string
-  _refs: Array<string>
+  refs: Array<string>
   deps: Array<string>
   tags: Array<string>
 
   constructor (contents: {object: string, refs?: Array<string>, deps?: Array<string>, tags?: Array<string>}) {
     super()
     this.objectRef = contents.object
-    this._refs = contents.refs || []
+    this.refs = contents.refs || []
     this.deps = contents.deps || []
     this.tags = contents.tags || []
   }
@@ -148,8 +215,8 @@ class SimpleStatementBody extends StatementBody {
     return [this.objectRef]
   }
 
-  get refs (): Array<string> {
-    return this._refs
+  get refSet (): Set<string> {
+    return new Set(this.refs)
   }
 
   inspect (_depth: number, _opts: Object) {
@@ -190,8 +257,8 @@ class CompoundStatementBody extends StatementBody {
     return [].concat(...this.simpleBodies.map(b => b.objectIds))
   }
 
-  get refs (): Array<string> {
-    return [].concat(...this.simpleBodies.map(b => b.refs))
+  get refSet (): Set<string> {
+    return setUnion(...this.simpleBodies.map(b => b.refSet))
   }
 }
 
@@ -226,8 +293,8 @@ class EnvelopeStatementBody extends StatementBody {
     return [].concat(...this.statements.map(stmt => stmt.objectIds))
   }
 
-  get refs (): Array<string> {
-    return [].concat(...this.statements.map(stmt => stmt.refs))
+  get refSet (): Set<string> {
+    return setUnion(...this.statements.map(stmt => stmt.refSet))
   }
 }
 

@@ -5,10 +5,8 @@ const Knex = require('knex')
 const locks = require('locks')
 const temp = require('temp').track()
 const pb = require('../../protobuf')
-const { statementSource, statementRefs } = require('../../metadata/statement')
 const { Statement } = require('../../model/statement')
 
-import type { StatementMsg } from '../../protobuf/types'
 import type { Mutex } from 'locks'
 
 const MIGRATIONS_DIR = path.join(__dirname, 'migrations')
@@ -59,18 +57,18 @@ class StatementDB {
     }))
   }
 
-  put (stmt: StatementMsg | Statement): Promise<void> {
-    const msg = (stmt instanceof Statement) ? stmt.toProtobuf() : stmt
+  put (stmt: Statement): Promise<void> {
+    const msg = stmt.toProtobuf()
 
     return this.sqlDB().then(db => {
       const data = pb.stmt.Statement.encode(msg)
       const {id, namespace, publisher, timestamp} = stmt
-      const refs = Array.from(statementRefs(msg))
+      const refs = Array.from(stmt.refSet)
       return db.transaction(
         // insert statement data
         tx => tx.insert({id, data}).into('Statement')
           // insert envelope
-          .then(() => tx.insert({id, namespace, publisher, source: statementSource(msg), timestamp}).into('Envelope'))
+          .then(() => tx.insert({id, namespace, publisher, source: stmt.source, timestamp}).into('Envelope'))
           // insert all refs
           .then(() => Promise.all(refs.map(
             wki => tx.insert({id, wki}).into('Refs')

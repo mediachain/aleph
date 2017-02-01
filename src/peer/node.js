@@ -23,12 +23,11 @@ const {
 const { promiseHash, isB58Multihash } = require('../common/util')
 const { pushStatementsToConn } = require('./push')
 const { mergeFromStreams } = require('./merge')
-const { makeSimpleStatement } = require('../metadata/statement')
 const { Statement } = require('../model/statement')
 const { unpackQueryResultProtobuf } = require('../model/query_result')
 
 import type { QueryResult, QueryResultValue } from '../model/query_result'
-import type { DataResultMsg, DataObjectMsg, NodeInfoMsg, StatementMsg, PushEndMsg } from '../protobuf/types'
+import type { DataResultMsg, DataObjectMsg, NodeInfoMsg, PushEndMsg } from '../protobuf/types'
 import type { Connection } from 'interface-connection'
 import type { PullStreamSource } from './util'
 import type { DatastoreOptions } from './datastore'
@@ -440,7 +439,7 @@ class MediachainNode {
     return this.putData(object)
       .then(([objectHash]) => {
         const body = {object: objectHash, refs, deps, tags}
-        return makeSimpleStatement(publisherId, namespace, body, this.statementCounter)
+        return Statement.createSimple(publisherId, namespace, body, this.statementCounter)
       })
       .then(stmt => this.db.put(stmt)
         .then(() => stmt.id))

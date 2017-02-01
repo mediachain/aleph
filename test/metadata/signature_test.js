@@ -5,8 +5,8 @@ const assert = require('assert')
 const { before, describe, it } = require('mocha')
 const path = require('path')
 
+const { Statement } = require('../../src/model/statement')
 const { PublisherId, PrivateSigningKey } = require('../../src/peer/identity')
-const { makeSimpleStatement } = require('../../src/metadata/statement')
 const { signStatement, verifyStatement } = require('../../src/metadata/signatures')
 
 const CONCAT_PUBLISHER_ID_PUB58 = '4XTTM4JKrrBeAK6qXmo8FoKmT5RkfjeXfZrnWjJNw9fKvPnEs'
@@ -41,7 +41,7 @@ describe('Signature verification', () => {
   })
 
   it('validates a statement made with makeSimpleStatement helper', () => {
-    return makeSimpleStatement(publisherId, 'scratch.sig-test', {object: 'QmF00123', refs: []})
+    return Statement.createSimple(publisherId, 'scratch.sig-test', {object: 'QmF00123', refs: []})
       .then(stmt => verifyStatement(stmt))
       .then(valid => {
         assert(valid, 'statement did not validate')
@@ -65,7 +65,7 @@ describe('Signature verification', () => {
   })
 
   it('does not validate an altered statement', () => {
-    makeSimpleStatement(publisherId, 'scratch.sig-test', {object: 'QmF00123', refs: []})
+    Statement.createSimple(publisherId, 'scratch.sig-test', {object: 'QmF00123', refs: []})
       .then(stmt => {
         stmt.namespace = 'scratch.new-namespace'
         return stmt

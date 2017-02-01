@@ -50,15 +50,16 @@ function flatMap<T, U> (array: Array<T>, f: (x: T) => Array<U>): Array<U> {
 }
 
 /**
- * Given two `Set`s, return a new `Set` that contains all elements from both.
- * @param {Set} a
- * @param {Set} b
+ * Given any number of `Set`s, return a new `Set` that contains all elements combined.
+ * @param
  * @returns {Set} - the union of `a` and `b`
  */
-function setUnion<T> (a: Set<T>, b: Set<T>): Set<T> {
-  const u = new Set(a)
-  for (const elem of b) {
-    u.add(elem)
+function setUnion<T> (...sets: Array<Set<T>>): Set<T> {
+  const u = new Set()
+  for (const s of sets) {
+    for (const elem of s) {
+      u.add(elem)
+    }
   }
   return u
 }
