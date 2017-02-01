@@ -6,6 +6,7 @@ const locks = require('locks')
 const temp = require('temp').track()
 const pb = require('../../protobuf')
 const { statementSource, statementRefs } = require('../../metadata/statement')
+const { Statement } = require('../../model/statement')
 
 import type { StatementMsg } from '../../protobuf/types'
 import type { Mutex } from 'locks'
@@ -58,16 +59,18 @@ class StatementDB {
     }))
   }
 
-  put (stmt: StatementMsg): Promise<void> {
+  put (stmt: StatementMsg | Statement): Promise<void> {
+    const msg = (stmt instanceof Statement) ? stmt.toProtobuf() : stmt
+
     return this.sqlDB().then(db => {
-      const data = pb.stmt.Statement.encode(stmt)
+      const data = pb.stmt.Statement.encode(msg)
       const {id, namespace, publisher, timestamp} = stmt
-      const refs = Array.from(statementRefs(stmt))
+      const refs = Array.from(statementRefs(msg))
       return db.transaction(
         // insert statement data
         tx => tx.insert({id, data}).into('Statement')
           // insert envelope
-          .then(() => tx.insert({id, namespace, publisher, source: statementSource(stmt), timestamp}).into('Envelope'))
+          .then(() => tx.insert({id, namespace, publisher, source: statementSource(msg), timestamp}).into('Envelope'))
           // insert all refs
           .then(() => Promise.all(refs.map(
             wki => tx.insert({id, wki}).into('Refs')
@@ -76,7 +79,7 @@ class StatementDB {
     })
   }
 
-  get (id: string): Promise<StatementMsg> {
+  get (id: string): Promise<Statement> {
     return this.sqlDB().then(db =>
       db.table('Statement')
         .first('data')
@@ -84,7 +87,7 @@ class StatementDB {
     ).then(decodeStatementRow)
   }
 
-  getByWKI (wki: string): Promise<Array<StatementMsg>> {
+  getByWKI (wki: string): Promise<Array<Statement>> {
     return this.sqlDB().then(db =>
       db.table('Statement')
         .join('Refs', 'Statement.id', 'Refs.id')
@@ -93,7 +96,7 @@ class StatementDB {
     ).then(rows => rows.map(decodeStatementRow))
   }
 
-  getByNamespace (ns: string): Promise<Array<StatementMsg>> {
+  getByNamespace (ns: string): Promise<Array<Statement>> {
     return this.sqlDB().then(db =>
       db.table('Statement')
         .join('Envelope', 'Statement.id', 'Envelope.id')
@@ -103,8 +106,8 @@ class StatementDB {
   }
 }
 
-function decodeStatementRow (row: {data: Buffer}): StatementMsg {
-  return pb.stmt.Statement.decode(row.data)
+function decodeStatementRow (row: {data: Buffer}): Statement {
+  return Statement.fromBytes(row.data)
 }
 
 function namespaceCriteria (field: string, ns: string): string {

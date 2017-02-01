@@ -55,15 +55,4 @@ describe('P2P utils', () => {
     const expectedIds = statementFixtures.objectIds.simple[0]
     expect(util.objectIdsForQueryResult(simpleStatementResult)).to.deep.eql(expectedIds)
   })
-
-  it('expandQueryResult', () => {
-    const stmt = statementFixtures.statements.simple[0]
-    const simpleStatementResult = { simple: { stmt } }
-    const dataObj = {key: 'foo', data: serialize.encode({foo: 'bar'})}
-
-    const expanded = util.expandQueryResult(simpleStatementResult, [dataObj])
-    expect(expanded).to.exist
-    expect(expanded).to.be.an('object')
-    expect(expanded.simple.stmt.body.simple.object.data).to.deep.eql({foo: 'bar'})
-  })
 })

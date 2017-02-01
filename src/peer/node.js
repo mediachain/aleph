@@ -18,13 +18,13 @@ const {
   pullToPromise,
   pullRepeatedly,
   resultStreamThrough,
-  objectIdsForQueryResult,
-  expandQueryResult
+  expandStatement
 } = require('./util')
 const { promiseHash, isB58Multihash } = require('../common/util')
 const { pushStatementsToConn } = require('./push')
 const { mergeFromStreams } = require('./merge')
 const { makeSimpleStatement } = require('../metadata/statement')
+const { Statement } = require('../model/statement')
 const { unpackQueryResultProtobuf } = require('../model/query_result')
 
 import type { QueryResult, QueryResultValue } from '../model/query_result'
@@ -374,11 +374,7 @@ class MediachainNode {
         pull(
           resultStream,
           paramap((queryResult, cb) => {
-            if (queryResult.value == null) {
-              return cb(null, queryResult)
-            }
-
-            this._expandQueryResultData(peer, queryResult.value)
+            this._expandQueryResultData(peer, queryResult)
               .then(result => cb(null, result))
               .catch(err => cb(err))
           })
@@ -400,12 +396,13 @@ class MediachainNode {
   }
 
   _expandQueryResultData (peer: PeerInfo | PeerId | string, result: QueryResultValue): Promise<Object> {
-    const objectIds = objectIdsForQueryResult(result)
-    if (objectIds.length < 1) return Promise.resolve(result)
+    if (!(result instanceof Statement)) return Promise.resolve(result)
+    const stmt: Statement = result
+    if (stmt.objectIds.length < 1) return Promise.resolve(result)
 
-    return this.remoteData(peer, objectIds)
+    return this.remoteData(peer, stmt.objectIds)
       .then((dataResults: Array<DataObjectMsg>) =>
-        expandQueryResult(result, dataResults)
+        expandStatement(stmt, dataResults)
       )
   }
 

@@ -104,7 +104,7 @@ describe('Remote Query with inline data', () => {
       )
       .then(stmtId => remote.db.get(stmtId))
       .then(stmt => {
-        remote.p2p.handle(PROTOCOLS.node.query, mockQueryHandler([{value: {simple: {stmt}}}]))
+        remote.p2p.handle(PROTOCOLS.node.query, mockQueryHandler([{value: {simple: {stmt: stmt.toProtobuf()}}}]))
       })
   )
 
@@ -114,7 +114,7 @@ describe('Remote Query with inline data', () => {
       .then(result => {
         assert(result != null)
         assert(Array.isArray(result))
-        assert.deepEqual(result[0].simple.stmt.body.simple.object.data, seedObject)
+        assert.deepEqual(result[0].body.simple.object.data, seedObject)
       })
   )
 })

@@ -6,7 +6,7 @@ import type { QueryResultMsg, QueryResultValueMsg, SimpleValueMsg, CompoundValue
 export type QueryResult = QueryResultValue | Error
 export type QueryResultValue = SimpleQueryResultValue | CompoundQueryResultValue
 export type SimpleQueryResultValue = number | string | Statement | StatementBody
-export type CompoundQueryResultValue = Array<{key: string, value: SimpleQueryResultValue}>
+
 
 function unpackQueryResultProtobuf (msg: QueryResultMsg): QueryResult {
   if (msg.error != null) {
@@ -24,11 +24,7 @@ function unpackQueryResultValueProtobuf (msg: QueryResultValueMsg): QueryResultV
     return unpackSimpleValue((msg.simple: any))
   }
   if (msg.compound != null) {
-    const compound: CompoundValueMsg = (msg.compound: any)
-    return compound.body.map(kvPair => ({
-      key: kvPair.key,
-      value: unpackSimpleValue(kvPair.value)
-    }))
+    return CompoundQueryResultValue.fromProtobuf((msg.compound: any))
   }
   throw new Error('Unexpected Query result value ' + JSON.stringify(msg))
 }
@@ -42,7 +38,40 @@ function unpackSimpleValue (val: SimpleValueMsg): SimpleQueryResultValue {
   throw new Error('Unexpected query result value: ' + JSON.stringify(val))
 }
 
+type KVPair = {key: string, value: SimpleQueryResultValue}
+class CompoundQueryResultValue {
+  body: Array<KVPair>
+
+  constructor (body: Array<KVPair>) {
+    this.body = body
+  }
+
+  static fromProtobuf (msg: CompoundValueMsg): CompoundQueryResultValue {
+    return new CompoundQueryResultValue(
+      msg.body.map(kv => ({
+        key: kv.key,
+        value: unpackSimpleValue(kv.value)
+      }))
+    )
+  }
+
+  keys (): Array<string> {
+    return this.body.map(kv => kv.key)
+  }
+
+  values (): Array<SimpleQueryResultValue> {
+    return this.body.map(kv => kv.value)
+  }
+
+  statements (): Array<Statement> {
+    return this.values()
+      .filter(v => v instanceof Statement)
+      .map(v => (v: any)) // dammit flow
+  }
+}
+
 module.exports = {
   unpackQueryResultProtobuf,
-  unpackQueryResultValueProtobuf
+  unpackQueryResultValueProtobuf,
+  CompoundQueryResultValue
 }

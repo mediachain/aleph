@@ -9,6 +9,7 @@ const {decode} = require('../metadata/serialize')
 const _ = require('lodash')
 const { flatMap } = require('../common/util')
 
+import type { Statement } from '../model/statement'
 import type { PeerInfoMsg, LookupPeerResponseMsg, ProtoCodec, QueryResultMsg, QueryResultValueMsg, SimpleValueMsg, DataResultMsg, DataObjectMsg, StatementMsg, KeyValuePairMsg, SimpleStatementMsg, CompoundStatementMsg, EnvelopeStatementMsg } from '../protobuf/types'  // eslint-disable-line no-unused-vars
 
 // Flow signatures for pull-streams
@@ -207,7 +208,7 @@ function objectIdsForQueryResult (result: QueryResultValueMsg): Array<string> {
   return flatMap(statements, objectIdsFromStatement)
 }
 
-function expandQueryResult (result: QueryResultValueMsg, dataObjects: Array<DataObjectMsg>): Object {
+function expandStatement (stmt: Statement, dataObjects: Array<DataObjectMsg>): Object {
   const objectMap = {}
 
   // convert the array of key/value pairs into a map, attempting to
@@ -237,7 +238,7 @@ function expandQueryResult (result: QueryResultValueMsg, dataObjects: Array<Data
     }
   }
 
-  return (_.cloneDeepWith(result, replacer) : any)
+  return (_.cloneDeepWith(stmt.toProtobuf(), replacer) : any)
 }
 
 module.exports = {
@@ -252,5 +253,5 @@ module.exports = {
   statementsFromQueryResult,
   objectIdsFromStatement,
   objectIdsForQueryResult,
-  expandQueryResult
+  expandStatement
 }

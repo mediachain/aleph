@@ -3,7 +3,7 @@
 const { inspect } = require('util')
 const pb = require('../protobuf')
 
-import type { StatementMsg, SimpleStatementMsg, CompoundStatementMsg, EnvelopeStatementMsg } from '../protobuf/types'
+import type { StatementMsg, StatementBodyMsg, SimpleStatementMsg, CompoundStatementMsg, EnvelopeStatementMsg } from '../protobuf/types'
 
 class Statement {
   id: string
@@ -39,7 +39,7 @@ class Statement {
 
   toProtobuf (): StatementMsg {
     const {id, publisher, namespace, timestamp, signature, body} = this
-    let wrappedBody
+    let wrappedBody: StatementBodyMsg
     if (body instanceof SimpleStatementBody) {
       wrappedBody = {simple: body.toProtobuf()}
     } else if (body instanceof CompoundStatementBody) {
@@ -67,8 +67,12 @@ class Statement {
     return inspect(this.toJSON(), Object.assign({}, opts, {depth: 100}))
   }
 
-  objectIds (): Array<string> {
-    return this.body.objectIds()
+  get objectIds (): Array<string> {
+    return this.body.objectIds
+  }
+
+  get refs (): Array<string> {
+    return this.body.refs
   }
 }
 
@@ -85,21 +89,25 @@ class StatementBody {
     throw new Error('Unsupported statement body ' + JSON.stringify(msg))
   }
 
-  objectIds (): Array<string> {
+  get refs (): Array<string> {
+    return []
+  }
+
+  get objectIds (): Array<string> {
     return []
   }
 }
 
 class SimpleStatementBody extends StatementBody {
   object: string
-  refs: Array<string>
+  _refs: Array<string>
   deps: Array<string>
   tags: Array<string>
 
   constructor (contents: {object: string, refs?: Array<string>, deps?: Array<string>, tags?: Array<string>}) {
     super()
     this.object = contents.object
-    this.refs = contents.refs || []
+    this._refs = contents.refs || []
     this.deps = contents.deps || []
     this.tags = contents.tags || []
   }
@@ -113,8 +121,12 @@ class SimpleStatementBody extends StatementBody {
     return {object, refs, deps, tags}
   }
 
-  objectIds (): Array<string> {
+  get objectIds (): Array<string> {
     return [this.object]
+  }
+
+  get refs (): Array<string> {
+    return this._refs
   }
 
   inspect (_depth: number, opts: Object) {
@@ -146,8 +158,12 @@ class CompoundStatementBody extends StatementBody {
     return inspect(this.simpleBodies, opts)
   }
 
-  objectIds (): Array<string> {
-    return [].concat(...this.simpleBodies.map(b => b.objectIds()))
+  get objectIds (): Array<string> {
+    return [].concat(...this.simpleBodies.map(b => b.objectIds))
+  }
+
+  get refs (): Array<string> {
+    return [].concat(...this.simpleBodies.map(b => b.refs))
   }
 }
 
@@ -173,8 +189,12 @@ class EnvelopeStatementBody extends StatementBody {
     return inspect(this.statements, opts)
   }
 
-  objectIds (): Array<string> {
-    return [].concat(...this.statements.map(stmt => stmt.objectIds()))
+  get objectIds (): Array<string> {
+    return [].concat(...this.statements.map(stmt => stmt.objectIds))
+  }
+
+  get refs (): Array<string> {
+    return [].concat(...this.statements.map(stmt => stmt.refs))
   }
 }
 
