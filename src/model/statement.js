@@ -2,6 +2,8 @@
 
 const { inspect } = require('util')
 const pb = require('../protobuf')
+const serialize = require('../metadata/serialize')
+const { b58MultihashForBuffer, stringifyNestedBuffers } = require('../common/util')
 
 import type { StatementMsg, StatementBodyMsg, SimpleStatementMsg, CompoundStatementMsg, EnvelopeStatementMsg } from '../protobuf/types'
 
@@ -58,13 +60,14 @@ class Statement {
   }
 
   toJSON (): Object {
-    const obj: Object = this.toProtobuf()
-    obj.signature = obj.signature.toString('base64')
-    return obj
+    return stringifyNestedBuffers(this.toProtobuf())
   }
 
   inspect (_depth: number, opts: Object) {
-    return inspect(this.toJSON(), Object.assign({}, opts, {depth: 100}))
+    opts.depth = null
+    const {id, publisher, namespace, timestamp, signature, body} = this
+    const output = stringifyNestedBuffers({id, publisher, namespace, timestamp, signature, body})
+    return inspect(output, opts)
   }
 
   get objectIds (): Array<string> {
@@ -73,6 +76,12 @@ class Statement {
 
   get refs (): Array<string> {
     return this.body.refs
+  }
+
+  expandObjects (source: Map<string, Object>): Statement {
+    const body = this.body.expandObjects(source)
+    const {id, publisher, namespace, timestamp, signature} = this
+    return new Statement({id, publisher, namespace, timestamp, body, signature})
   }
 }
 
@@ -89,6 +98,10 @@ class StatementBody {
     throw new Error('Unsupported statement body ' + JSON.stringify(msg))
   }
 
+  expandObjects (source: Map<string, Object>): StatementBody {
+    return this
+  }
+
   get refs (): Array<string> {
     return []
   }
@@ -99,14 +112,14 @@ class StatementBody {
 }
 
 class SimpleStatementBody extends StatementBody {
-  object: string
+  objectRef: string
   _refs: Array<string>
   deps: Array<string>
   tags: Array<string>
 
   constructor (contents: {object: string, refs?: Array<string>, deps?: Array<string>, tags?: Array<string>}) {
     super()
-    this.object = contents.object
+    this.objectRef = contents.object
     this._refs = contents.refs || []
     this.deps = contents.deps || []
     this.tags = contents.tags || []
@@ -117,20 +130,30 @@ class SimpleStatementBody extends StatementBody {
   }
 
   toProtobuf (): SimpleStatementMsg {
-    const {object, refs, deps, tags} = this
-    return {object, refs, deps, tags}
+    const {objectRef, refs, deps, tags} = this
+    return {object: objectRef, refs, deps, tags}
+  }
+
+  expandObjects (source: Map<string, Object>): StatementBody {
+    const object = source.get(this.objectRef)
+    if (object == null) {
+      // FIXME: should we just return the un-expanded body instead?
+      throw new Error(`No object matching ref ${this.objectRef} available, cannot expand`)
+    }
+
+    return new ExpandedSimpleStatementBody({object, refs: this.refs, deps: this.deps, tags: this.tags})
   }
 
   get objectIds (): Array<string> {
-    return [this.object]
+    return [this.objectRef]
   }
 
   get refs (): Array<string> {
     return this._refs
   }
 
-  inspect (_depth: number, opts: Object) {
-    return inspect(this.toProtobuf(), opts)
+  inspect (_depth: number, _opts: Object) {
+    return this.toProtobuf()
   }
 }
 
@@ -154,8 +177,13 @@ class CompoundStatementBody extends StatementBody {
     }
   }
 
-  inspect (_depth: number, opts: Object) {
-    return inspect(this.simpleBodies, opts)
+  expandObjects (source: Map<string, Object>): StatementBody {
+    const expanded = this.simpleBodies.map(b => (b.expandObjects(source): any))
+    return new CompoundStatementBody(expanded)
+  }
+
+  inspect (_depth: number, _opts: Object) {
+    return this.simpleBodies
   }
 
   get objectIds (): Array<string> {
@@ -185,8 +213,13 @@ class EnvelopeStatementBody extends StatementBody {
     }
   }
 
-  inspect (_depth: number, opts: Object) {
-    return inspect(this.statements, opts)
+  expandObjects (source: Map<string, Object>): StatementBody {
+    const expanded = this.statements.map(stmt => stmt.expandObjects(source))
+    return new EnvelopeStatementBody(expanded)
+  }
+
+  inspect () {
+    return this.statements
   }
 
   get objectIds (): Array<string> {
@@ -198,6 +231,28 @@ class EnvelopeStatementBody extends StatementBody {
   }
 }
 
+
+// Expanded statement bodies include the data that a SimpleStatementBody's `object` hash links to
+class ExpandedSimpleStatementBody extends SimpleStatementBody {
+  object: Object
+
+  constructor (contents: {object: Object, refs?: Array<string>, deps?: Array<string>, tags?: Array<string>}) {
+    const object = contents.object
+    const bytes = serialize.encode(object)
+    const ref = b58MultihashForBuffer(bytes)
+    super({object: ref, refs: contents.refs, deps: contents.deps, tags: contents.tags})
+    this.object = object
+  }
+
+  toJSON (): Object {
+    return Object.assign({}, this.toProtobuf(), {object: this.object})
+  }
+
+  inspect (_depth: number, opts: Object) {
+    opts.depth = null
+    return inspect(this.toJSON(), opts)
+  }
+}
 
 module.exports = {
   Statement,

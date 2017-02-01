@@ -208,8 +208,8 @@ function objectIdsForQueryResult (result: QueryResultValueMsg): Array<string> {
   return flatMap(statements, objectIdsFromStatement)
 }
 
-function expandStatement (stmt: Statement, dataObjects: Array<DataObjectMsg>): Object {
-  const objectMap = {}
+function expandStatement (stmt: Statement, dataObjects: Array<DataObjectMsg>): Statement {
+  const objectMap = new Map()
 
   // convert the array of key/value pairs into a map, attempting to
   // deserialize the raw data Buffer for each object as CBOR along the way
@@ -220,25 +220,10 @@ function expandStatement (stmt: Statement, dataObjects: Array<DataObjectMsg>): O
       val = decode(obj.data)
     } catch (err) {
     }
-    objectMap[obj.key] = val
+    objectMap.set(obj.key,  val)
   }
 
-  // for any nested object in `result`, look for keys named "object" whose values
-  // are object ids contained in our `objectMap`.  Replace the object id
-  // with a new object of this shape:
-  // {
-  //   key: originalObjectId,
-  //   data: decodedObjectOrBuffer
-  // }
-  function replacer (value: any) {
-    const key = _.get(value, 'object')
-    const data = objectMap[key]
-    if (data != null) {
-      return _.set(value, 'object', {key, data})
-    }
-  }
-
-  return (_.cloneDeepWith(stmt.toProtobuf(), replacer) : any)
+  return stmt.expandObjects(objectMap)
 }
 
 module.exports = {

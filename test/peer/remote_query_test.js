@@ -114,7 +114,7 @@ describe('Remote Query with inline data', () => {
       .then(result => {
         assert(result != null)
         assert(Array.isArray(result))
-        assert.deepEqual(result[0].body.simple.object.data, seedObject)
+        assert.deepEqual(result[0].body.object, seedObject)
       })
   )
 })

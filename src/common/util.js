@@ -1,5 +1,6 @@
 // @flow
 
+const _ = require('lodash')
 const Multihashing = require('multihashing')
 import type { Writable, Readable } from 'stream'
 import type { WriteStream } from 'tty'
@@ -132,6 +133,19 @@ function consumeStream (stream: Readable): Promise<string> {
   })
 }
 
+/**
+ * Returns a clone of `obj` with all `Buffer` objects replaced with their base64-encoded string equivalents
+ */
+function stringifyNestedBuffers (obj: Object): Object {
+  const replacer = obj => {
+    if (obj instanceof Buffer) {
+      return obj.toString('base64')
+    }
+  }
+
+  return (_.cloneDeepWith(obj, replacer): any)
+}
+
 module.exports = {
   promiseHash,
   promiseTimeout,
@@ -142,5 +156,6 @@ module.exports = {
   writeln,
   println,
   printlnErr,
-  consumeStream
+  consumeStream,
+  stringifyNestedBuffers
 }
