@@ -5,7 +5,7 @@ const pullThroughPromise = require('pull-promise/through')
 const pushable = require('pull-pushable')
 const window = require('pull-window')
 const pb = require('../protobuf')
-const { statementsFromQueryResult, objectIdsFromStatement, protoStreamEncode, protoStreamDecode } = require('./util')
+const { protoStreamEncode, protoStreamDecode } = require('./util')
 const { flatMap, promiseHash, b58MultihashForBuffer } = require('../common/util')
 const { verifyStatementWithKeyCache } = require('../metadata/signatures')
 
@@ -16,7 +16,7 @@ import type { MediachainNode } from './node'
 import type { Datastore } from './datastore'
 import type { P2PSigningPublicKey } from './identity'
 import type { PullStreamSource, PullStreamThrough } from './util'
-import type { QueryResultMsg, QueryResultValueMsg, StreamErrorMsg, StatementMsg, DataRequestMsg, DataObjectMsg } from '../protobuf/types'
+import type { StreamErrorMsg, DataRequestMsg, DataObjectMsg } from '../protobuf/types'
 import type { Connection } from 'interface-connection'
 import type { QueryResult } from '../model/query_result'
 

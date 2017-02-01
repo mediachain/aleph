@@ -298,7 +298,6 @@ class EnvelopeStatementBody extends StatementBody {
   }
 }
 
-
 // Expanded statement bodies include the data that a SimpleStatementBody's `object` hash links to
 class ExpandedSimpleStatementBody extends SimpleStatementBody {
   object: Object

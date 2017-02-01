@@ -220,7 +220,7 @@ function expandStatement (stmt: Statement, dataObjects: Array<DataObjectMsg>): S
       val = decode(obj.data)
     } catch (err) {
     }
-    objectMap.set(obj.key,  val)
+    objectMap.set(obj.key, val)
   }
 
   return stmt.expandObjects(objectMap)

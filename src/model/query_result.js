@@ -7,7 +7,6 @@ export type QueryResult = QueryResultValue | Error
 export type QueryResultValue = SimpleQueryResultValue | CompoundQueryResultValue
 export type SimpleQueryResultValue = number | string | Statement | StatementBody
 
-
 function unpackQueryResultProtobuf (msg: QueryResultMsg): QueryResult {
   if (msg.error != null) {
     const errorMsg = msg.error.error || 'Unknown error'

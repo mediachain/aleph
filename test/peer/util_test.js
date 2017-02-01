@@ -3,7 +3,6 @@ const { describe, it } = require('mocha')
 
 const PeerInfo = require('peer-info')
 const util = require('../../src/peer/util')
-const serialize = require('../../src/metadata/serialize')
 
 const statementFixtures = require('../resources/fixtures/test-statements')
 

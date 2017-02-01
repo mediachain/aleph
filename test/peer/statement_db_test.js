@@ -6,7 +6,6 @@ const path = require('path')
 const { StatementDB } = require('../../src/peer/db/statement-db')
 const { Statement } = require('../../src/model/statement')
 
-
 const MIGRATIONS_DIR = path.join(__dirname, '..', '..', 'src', 'peer', 'db', 'migrations')
 
 const SEED_STATEMENTS: Array<Statement> = [
@@ -58,7 +57,7 @@ describe('Statement DB', () => {
   it('can get statements by WKI', () =>
     db.getByWKI('foo:bar123')
       .then(results => {
-        const expected = SEED_STATEMENTS.filter((stmt: Statement) => stmt.body.refs.includes('foo:bar123'))
+        const expected = SEED_STATEMENTS.filter((stmt: Statement) => stmt.refSet.has('foo:bar123'))
         assert.deepEqual(results, expected)
       }))
 

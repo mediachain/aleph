@@ -12,7 +12,7 @@ const { Statement } = require('../../src/model/statement')
 const serialize = require('../../src/metadata/serialize')
 const { PublisherId } = require('../../src/peer/identity')
 
-import type { QueryResultMsg, StatementMsg } from '../../src/protobuf/types'
+import type { QueryResultMsg } from '../../src/protobuf/types'
 
 const TEST_NAMESPACE = 'scratch.merge-test'
 

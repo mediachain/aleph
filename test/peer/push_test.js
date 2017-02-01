@@ -15,10 +15,7 @@ const { Statement } = require('../../src/model/statement')
 const serialize = require('../../src/metadata/serialize')
 const { PublisherId } = require('../../src/peer/identity')
 
-import type { StatementMsg } from '../../src/protobuf/types'
-
 const TEST_NAMESPACE = 'scratch.push-test'
-
 const SEED_OBJECT_BUFFERS = [
   {id: uuid.v4(), foo: 'bar'},
   {id: uuid.v4(), test: 'yep'}
