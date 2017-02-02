@@ -72,10 +72,16 @@ module.exports = {
     envelopeEmpty: [ ENVELOPE_EMPTY ]
   },
   expectedRefs: {
-    simple: [ ['simple-1'], ['simple-2'] ],
-    compound: [ ['compound-1', 'compound-2'] ],
-    envelope: [ ['simple-1', 'simple-2'] ],
-    envelopeEmpty: [ [] ]
+    simple: [ new Set(['simple-1']), new Set(['simple-2']) ],
+    compound: [ new Set(['compound-1', 'compound-2']) ],
+    envelope: [ new Set(['simple-1', 'simple-2']) ],
+    envelopeEmpty: [ new Set() ]
+  },
+  expectedSources: {
+    simple: [ SIMPLE_STMT_1.publisher, SIMPLE_STMT_2.publisher ],
+    compound: [ COMPOUND_STMT.publisher ],
+    envelope: [ SIMPLE_STMT_1.publisher ],
+    envelopeEmpty: [ ENVELOPE_STMT.publisher ]
   },
   objectIds: {
     simple: [ ['foo'], ['foo'] ],

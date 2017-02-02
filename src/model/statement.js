@@ -102,7 +102,7 @@ class Statement {
   }
 
   inspect (_depth: number, opts: Object) {
-    opts.depth = null
+    opts = Object.assign({}, opts, {depth: null})
     const {id, publisher, namespace, timestamp, signature, body} = this
     const output = stringifyNestedBuffers({id, publisher, namespace, timestamp, signature, body})
     return inspect(output, opts)
@@ -314,9 +314,8 @@ class ExpandedSimpleStatementBody extends SimpleStatementBody {
     return Object.assign({}, this.toProtobuf(), {object: this.object})
   }
 
-  inspect (_depth: number, opts: Object) {
-    opts.depth = null
-    return inspect(this.toJSON(), opts)
+  inspect (_depth: number, _opts: Object) {
+    return this.toJSON()
   }
 }
 
@@ -325,5 +324,6 @@ module.exports = {
   StatementBody,
   SimpleStatementBody,
   CompoundStatementBody,
-  EnvelopeStatementBody
+  EnvelopeStatementBody,
+  ExpandedSimpleStatementBody
 }

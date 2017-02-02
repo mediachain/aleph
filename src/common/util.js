@@ -65,6 +65,17 @@ function setUnion<T> (...sets: Array<Set<T>>): Set<T> {
 }
 
 /**
+ * Returns true if Set `a` and Set `b` contain the same members, using strict (shallow) equality (the `===` operator)
+ */
+function setEquals<T> (a: Set<T>, b: Set<T>): boolean {
+  if (a.size !== b.size) return false
+  for (const elem of a.values()) {
+    if (!b.has(elem)) return false
+  }
+  return true
+}
+
+/**
  * Returns base58-encoded sha256 multihash for the given Buffer
  * @param buf - a `Buffer` you want to hash
  * @returns {string} a base58-encoded multihash string
@@ -152,6 +163,7 @@ module.exports = {
   promiseTimeout,
   flatMap,
   setUnion,
+  setEquals,
   b58MultihashForBuffer,
   isB58Multihash,
   writeln,

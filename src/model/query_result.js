@@ -25,7 +25,7 @@ function unpackQueryResultValueProtobuf (msg: QueryResultValueMsg): QueryResultV
   if (msg.compound != null) {
     return CompoundQueryResultValue.fromProtobuf((msg.compound: any))
   }
-  throw new Error('Unexpected Query result value ' + JSON.stringify(msg))
+  throw new Error('Unexpected query result value ' + JSON.stringify(msg))
 }
 
 function unpackSimpleValue (val: SimpleValueMsg): SimpleQueryResultValue {
