@@ -1,4 +1,4 @@
-const assert = require('assert')
+const {assert, expect} = require('chai')
 const { before, after, describe, it } = require('mocha')
 const util = require('../../src/common/util')
 const stdMocks = require('std-mocks')
@@ -53,5 +53,35 @@ describe('Stream functions', () => {
     util.writeln('Hello', stream)
     stream.emit('error', new Error('Something went wrong'))
     return promise
+  })
+})
+
+describe('Misc utils', () => {
+  it('setEquals', () => {
+    const {setEquals} = util
+    expect(setEquals(new Set(['a', 'b', 'c']), new Set(['b', 'c', 'a'])))
+      .to.be.true
+
+    expect(setEquals(new Set(['a', 'b', 'c']), new Set(['a', 'b'])))
+      .to.be.false
+
+    expect(setEquals(new Set(['a', 'b', 'c']), new Set(['a', 'b', 'z'])))
+      .to.be.false
+  })
+
+  it('stringifyNestedBuffers', () => {
+    const obj = {
+      foo: {
+        bar: Buffer.from('Hello World')
+      }
+    }
+
+    const expected = {
+      foo: {
+        bar: Buffer.from('Hello World').toString('base64')
+      }
+    }
+
+    expect(util.stringifyNestedBuffers(obj)).to.deep.eql(expected)
   })
 })
