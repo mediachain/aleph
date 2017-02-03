@@ -29,7 +29,7 @@ const COMPOUND_STMT = {
       ]
     }
   },
-  signature: Buffer.from('VP6DTYwD6XaX4RmcncCXJOb7WssNQDfxvmsx+5K+qIoCoggWuhsCtqCXGCfwwmTxigxtMieK5CY1DXeL/rQLAw==', 'base64')
+  signature: Buffer.from('eJlR+rsTdiZQ7Lt8oI7M+tvtQPshjOb50OyKtrNQBfZ2KDyTpBIZnTWlZ2CAIq15oYjHetzrfZBxj81Nfu1QCw==', 'base64')
 }
 
 const ENVELOPE_EMPTY = {

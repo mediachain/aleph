@@ -57,7 +57,7 @@ class Statement {
     counter: number = 0,
     timestampGenerator: () => number = Date.now
   ): Promise<Statement> {
-    let body: SimpleStatementBody
+    let body
     if (typeof statementBody.object === 'object') {
       body = new ExpandedSimpleStatementBody((statementBody: any))
     } else {
@@ -79,18 +79,7 @@ class Statement {
 
   toProtobuf (): StatementMsg {
     const {id, publisher, namespace, timestamp, signature, body} = this
-    let wrappedBody: StatementBodyMsg
-    if (body instanceof SimpleStatementBody) {
-      wrappedBody = {simple: body.toProtobuf()}
-    } else if (body instanceof CompoundStatementBody) {
-      wrappedBody = {compound: body.toProtobuf()}
-    } else if (body instanceof EnvelopeStatementBody) {
-      wrappedBody = {envelope: body.toProtobuf()}
-    } else {
-      throw new Error('Unknown type for statement body: ' + body.constructor.toString())
-    }
-
-    return {id, publisher, namespace, timestamp: timestamp, signature, body: wrappedBody}
+    return {id, publisher, namespace, timestamp: timestamp, signature, body: body.toProtobuf()}
   }
 
   toBytes (): Buffer {
@@ -101,7 +90,7 @@ class Statement {
     return stringifyNestedBuffers(this.toProtobuf())
   }
 
-  inspect (_depth: number, opts: Object) {
+  inspect (_depth?: number, opts?: Object) {
     opts = Object.assign({}, opts, {depth: null})
     const {id, publisher, namespace, timestamp, signature, body} = this
     const output = stringifyNestedBuffers({id, publisher, namespace, timestamp, signature, body})
@@ -144,15 +133,21 @@ class Statement {
       msg.signature = undefined
       const bytes = pb.stmt.Statement.encode(msg)
       return publisherId.sign(bytes)
-        .then(sig => {
-          msg.signature = sig
-          return Statement.fromProtobuf(msg)
+        .then(signature => {
+          const {id, namespace, publisher, timestamp, body} = this
+          return new Statement({id, namespace, publisher, timestamp, body, signature})
         })
     })
   }
 }
 
 class StatementBody {
+  constructor () {
+    if (this.constructor === StatementBody) {
+      throw new Error("StatementBody class is abstract, don't instantiate directly")
+    }
+  }
+
   static fromProtobuf (msg: Object): StatementBody {
     if (msg.simple != null) {
       return SimpleStatementBody.fromProtobuf((msg.simple: any))
@@ -163,6 +158,10 @@ class StatementBody {
     }
 
     throw new Error('Unsupported statement body ' + JSON.stringify(msg))
+  }
+
+  toProtobuf (): StatementBodyMsg {
+    throw new Error('StatementBody.toProtobuf() is not implemented - subclasses must implement')
   }
 
   expandObjects (source: Map<string, Object>): StatementBody {
@@ -196,7 +195,11 @@ class SimpleStatementBody extends StatementBody {
     return new SimpleStatementBody(msg)
   }
 
-  toProtobuf (): SimpleStatementMsg {
+  toProtobuf (): StatementBodyMsg {
+    return {simple: this.toSimpleProtobuf()}
+  }
+
+  toSimpleProtobuf (): SimpleStatementMsg {
     const {objectRef, refs, deps, tags} = this
     return {object: objectRef, refs, deps, tags}
   }
@@ -219,8 +222,8 @@ class SimpleStatementBody extends StatementBody {
     return new Set(this.refs)
   }
 
-  inspect (_depth: number, _opts: Object) {
-    return this.toProtobuf()
+  inspect (_depth?: number, _opts?: Object) {
+    return this.toSimpleProtobuf()
   }
 }
 
@@ -238,9 +241,11 @@ class CompoundStatementBody extends StatementBody {
     )
   }
 
-  toProtobuf (): CompoundStatementMsg {
+  toProtobuf (): StatementBodyMsg {
     return {
-      body: this.simpleBodies.map(b => b.toProtobuf())
+      compound: {
+        body: this.simpleBodies.map(b => b.toSimpleProtobuf())
+      }
     }
   }
 
@@ -249,7 +254,7 @@ class CompoundStatementBody extends StatementBody {
     return new CompoundStatementBody(expanded)
   }
 
-  inspect (_depth: number, _opts: Object) {
+  inspect (_depth?: number, _opts?: Object) {
     return this.simpleBodies
   }
 
@@ -274,9 +279,11 @@ class EnvelopeStatementBody extends StatementBody {
     return new EnvelopeStatementBody(msg.body.map(stmt => Statement.fromProtobuf(stmt)))
   }
 
-  toProtobuf (): EnvelopeStatementMsg {
+  toProtobuf (): StatementBodyMsg {
     return {
-      body: this.statements.map(stmt => stmt.toProtobuf())
+      envelope: {
+        body: this.statements.map(stmt => stmt.toProtobuf())
+      }
     }
   }
 
@@ -285,7 +292,7 @@ class EnvelopeStatementBody extends StatementBody {
     return new EnvelopeStatementBody(expanded)
   }
 
-  inspect () {
+  inspect (_depth?: number, _opts?: Object) {
     return this.statements
   }
 
@@ -311,11 +318,13 @@ class ExpandedSimpleStatementBody extends SimpleStatementBody {
   }
 
   toJSON (): Object {
-    return Object.assign({}, this.toProtobuf(), {object: this.object})
+    const {object, refs, deps, tags} = this
+    return {object, refs, deps, tags}
   }
 
-  inspect (_depth: number, _opts: Object) {
-    return this.toJSON()
+  inspect (_depth?: number, opts?: Object) {
+    opts = Object.assign({}, opts, {depth: null})
+    return inspect(this.toJSON(), opts)
   }
 }
 
