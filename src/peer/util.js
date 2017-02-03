@@ -7,10 +7,9 @@ const PeerInfo = require('peer-info')
 const lp = require('pull-length-prefixed')
 const {decode} = require('../metadata/serialize')
 const _ = require('lodash')
-const { flatMap } = require('../common/util')
 
 import type { Statement } from '../model/statement'
-import type { PeerInfoMsg, LookupPeerResponseMsg, ProtoCodec, QueryResultMsg, QueryResultValueMsg, SimpleValueMsg, DataResultMsg, DataObjectMsg, StatementMsg, KeyValuePairMsg, SimpleStatementMsg, CompoundStatementMsg, EnvelopeStatementMsg } from '../protobuf/types'  // eslint-disable-line no-unused-vars
+import type { PeerInfoMsg, LookupPeerResponseMsg, ProtoCodec, QueryResultMsg, DataResultMsg, DataObjectMsg } from '../protobuf/types'
 
 // Flow signatures for pull-streams
 export type PullStreamCallback<T> = (end: ?mixed, value?: ?T) => void
@@ -167,47 +166,6 @@ const resultStreamThrough: MediachainStreamThrough<*> = (read) => {
   }
 }
 
-function valuesFromQueryResult (result: QueryResultValueMsg): Array<SimpleValueMsg> {
-  let values: Array<SimpleValueMsg> = []
-
-  const simpleResultValue: ?SimpleValueMsg = _.get(result, 'simple')
-  if (simpleResultValue != null) {
-    values = [simpleResultValue]
-  } else {
-    const compoundResultBodies: Array<KeyValuePairMsg> = _.get(result, 'compound.body') || []
-    values = compoundResultBodies.map(b => b.value)
-  }
-  return values
-}
-
-function statementsFromQueryResult (result: QueryResultValueMsg): Array<StatementMsg> {
-  return valuesFromQueryResult(result)
-    .map(v => _.get(v, 'stmt'))
-    .filter(stmt => stmt != null)
-}
-
-function objectIdsFromStatement (stmt: StatementMsg): Array<string> {
-  let simpleStatements: Array<SimpleStatementMsg> = []
-  if (stmt.body.simple !== undefined) {
-    const simpleStmt: SimpleStatementMsg = (stmt.body.simple: any)
-    simpleStatements = [simpleStmt]
-  } else if (stmt.body.compound !== undefined) {
-    const compoundStmt: CompoundStatementMsg = (stmt.body.compound: any)
-    simpleStatements = compoundStmt.body
-  } else if (stmt.body.envelope !== undefined) {
-    const envelopeStmt: EnvelopeStatementMsg = (stmt.body.envelope: any)
-    return flatMap(envelopeStmt.body, objectIdsFromStatement)
-  } else {
-    throw new Error(`Unknown statement type. Expected statement body to be simple, compound, or envelope`)
-  }
-  return simpleStatements.map(s => s.object)
-}
-
-function objectIdsForQueryResult (result: QueryResultValueMsg): Array<string> {
-  const statements = statementsFromQueryResult(result)
-  return flatMap(statements, objectIdsFromStatement)
-}
-
 function expandStatement (stmt: Statement, dataObjects: Array<DataObjectMsg>): Statement {
   const objectMap = new Map()
 
@@ -235,8 +193,5 @@ module.exports = {
   pullToPromise,
   pullRepeatedly,
   resultStreamThrough,
-  statementsFromQueryResult,
-  objectIdsFromStatement,
-  objectIdsForQueryResult,
   expandStatement
 }
