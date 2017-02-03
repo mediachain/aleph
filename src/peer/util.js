@@ -6,10 +6,9 @@ const PeerId = require('peer-id')
 const PeerInfo = require('peer-info')
 const lp = require('pull-length-prefixed')
 const {decode} = require('../metadata/serialize')
-const _ = require('lodash')
 
 import type { Statement } from '../model/statement'
-import type { PeerInfoMsg, LookupPeerResponseMsg, ProtoCodec, QueryResultMsg, DataResultMsg, DataObjectMsg } from '../protobuf/types'
+import type { PeerInfoMsg, LookupPeerResponseMsg, ProtoCodec, QueryResultMsg, DataResultMsg, DataObjectMsg } from '../protobuf/types' // eslint-disable-line no-unused-vars
 
 // Flow signatures for pull-streams
 export type PullStreamCallback<T> = (end: ?mixed, value?: ?T) => void

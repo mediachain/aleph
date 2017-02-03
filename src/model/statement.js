@@ -1,7 +1,7 @@
 // @flow
 
 const { inspect } = require('util')
-const { PublisherId } = require('../peer/identity')
+const { PublisherId, PublicSigningKey } = require('../peer/identity')
 const pb = require('../protobuf')
 const serialize = require('../metadata/serialize')
 const { b58MultihashForBuffer, stringifyNestedBuffers, setUnion } = require('../common/util')
@@ -129,15 +129,33 @@ class Statement {
         throw new Error(`Cannot sign statement, publisher id of signer does not match statement publisher`)
       }
 
-      const msg: Object = this.toProtobuf()
-      msg.signature = undefined
-      const bytes = pb.stmt.Statement.encode(msg)
-      return publisherId.sign(bytes)
+      return this.calculateSignature(publisherId)
         .then(signature => {
           const {id, namespace, publisher, timestamp, body} = this
           return new Statement({id, namespace, publisher, timestamp, body, signature})
         })
     })
+  }
+
+  calculateSignature (signer: {sign: (msg: Buffer) => Promise<Buffer>}): Promise<Buffer> {
+    const msg: Object = this.toProtobuf()
+    msg.signature = undefined
+    const bytes = pb.stmt.Statement.encode(msg)
+    return signer.sign(bytes)
+  }
+
+  verifySignature (publicKey?: ?PublicSigningKey, keyCache?: Map<string, PublicSigningKey>): Promise<boolean> {
+    return Promise.resolve()
+      .then(() => {
+        keyCache = keyCache || new Map()
+        publicKey = publicKey || keyCache.get(this.publisher) || PublicSigningKey.fromB58String(this.publisher)
+        keyCache.set(this.publisher, publicKey)
+
+        const msg: Object = this.toProtobuf()
+        msg.signature = null
+        const bytes = pb.stmt.Statement.encode(msg)
+        return publicKey.verify(bytes, this.signature)
+      })
   }
 }
 

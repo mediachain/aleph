@@ -7,7 +7,6 @@ const window = require('pull-window')
 const pb = require('../protobuf')
 const { protoStreamEncode, protoStreamDecode } = require('./util')
 const { flatMap, promiseHash, b58MultihashForBuffer } = require('../common/util')
-const { verifyStatementWithKeyCache } = require('../metadata/signatures')
 
 const { Statement } = require('../model/statement')
 const { CompoundQueryResultValue } = require('../model/query_result')
@@ -77,7 +76,7 @@ function mergeFromStreams (
       // verify all statements. verification failure causes the whole statement ingestion to fail
       // by passing an Error into endQueryStream (as opposed to a string, which will cause a partially
       // successful result
-      Promise.all(statements.map(stmt => verifyStatementWithKeyCache(stmt, publisherKeyCache)))
+      Promise.all(statements.map(stmt => stmt.verifySignature(null, publisherKeyCache)))
         .catch(err => endQueryStream(err))
         .then(results => {
           results.forEach((valid, idx) => {

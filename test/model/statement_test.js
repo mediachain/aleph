@@ -118,7 +118,7 @@ describe('Statements', () => {
       const object = {foo: 'bar'}
       const objectHash = 'QmREZU7Pqv3ezGWnXQiHXCm2uipjdHkuXWRygx5gMt4Bwq'
       return Statement.createSimple(publisherIds.simple, 'test.createSimple.expandedBody', {object})
-        .then(stmt=> {
+        .then(stmt => {
           expect(stmt).to.be.an.instanceof(Statement)
           expect(stmt.objectIds).to.contain(objectHash)
           expect(stmt.body).to.be.an.instanceof(ExpandedSimpleStatementBody)
@@ -134,16 +134,20 @@ describe('Statements', () => {
       for (const type of [ 'simple', 'compound', 'envelope' ]) {
         const statements = fixtures.statements[ type ]
         const publisherId = publisherIds[ type ]
+        const publicKey = publisherId.privateKey.publicKey
+
         for (const stmtMsg of statements) {
           const stmt = Statement.fromProtobuf(stmtMsg)
-          const originalSig = stmt.signature
-          stmt.signature = Buffer.from('foo')
-          promises.push(
-            stmt.sign(publisherId)
-              .then(signedStmt => {
-                expect(signedStmt.signature).to.deep.eql(originalSig)
-              })
-          )
+          const promise = stmt.verifySignature(publicKey)
+            .then(() => {
+              const originalSig = stmt.signature
+              stmt.signature = Buffer.from('foo')
+              return stmt.sign(publisherId)
+                .then(signedStmt => {
+                  expect(signedStmt.signature).to.deep.eql(originalSig)
+                })
+            })
+          promises.push(promise)
         }
       }
 
@@ -159,7 +163,7 @@ describe('Statements', () => {
 })
 
 describe('StatementBody base class', () => {
-  it("throws if you try to instantiate it directly", () => {
+  it('throws if you try to instantiate it directly', () => {
     expect(() => new StatementBody())
       .to.throw('abstract')
   })
