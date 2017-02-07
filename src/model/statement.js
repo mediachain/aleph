@@ -5,6 +5,7 @@ const { PublisherId, PublicSigningKey } = require('../peer/identity')
 const pb = require('../protobuf')
 const serialize = require('../metadata/serialize')
 const { b58MultihashForBuffer, stringifyNestedBuffers, setUnion } = require('../common/util')
+const { omit } = require('lodash')
 
 import type { StatementMsg, StatementBodyMsg, SimpleStatementMsg, CompoundStatementMsg, EnvelopeStatementMsg } from '../protobuf/types'
 
@@ -138,8 +139,7 @@ class Statement {
   }
 
   calculateSignature (signer: {sign: (msg: Buffer) => Promise<Buffer>}): Promise<Buffer> {
-    const msg: Object = this.toProtobuf()
-    msg.signature = undefined
+    const msg: Object = omit(this.toProtobuf(), 'signature')
     const bytes = pb.stmt.Statement.encode(msg)
     return signer.sign(bytes)
   }
