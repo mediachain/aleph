@@ -14,72 +14,29 @@ class Statement {
   namespace: string
   timestamp: number
   body: StatementBody
-  signature: Buffer
-
-  constructor (stmt: {id: string, publisher: string, namespace: string, timestamp: number, body: StatementBody, signature: Buffer | string}) {
-    this.id = stmt.id
-    this.publisher = stmt.publisher
-    this.namespace = stmt.namespace
-    this.timestamp = stmt.timestamp
-    this.body = stmt.body
-    if (Buffer.isBuffer(stmt.signature)) {
-      this.signature = (stmt.signature: any)
-    } else {
-      this.signature = Buffer.from(stmt.signature, 'base64')
-    }
-  }
-
-  static create (
-    publisherId: PublisherId,
-    namespace: string,
-    statementBody: StatementBody | StatementBodyMsg,
-    counter: number = 0,
-    timestampGenerator: () => number = Date.now)
-  : Promise<Statement> {
-    const body = (statementBody instanceof StatementBody) ? statementBody : StatementBody.fromProtobuf(statementBody)
-    const timestamp = timestampGenerator()
-    const statementId = [publisherId.id58, timestamp.toString(), counter.toString()].join(':')
-    const stmt = new Statement({
-      id: statementId,
-      publisher: publisherId.id58,
-      namespace,
-      timestamp,
-      body,
-      signature: Buffer.from('')
-    })
-    return stmt.sign(publisherId)
-  }
-
-  static createSimple (
-    publisherId: PublisherId,
-    namespace: string,
-    statementBody: {object: string | Object, refs?: Array<string>, deps?: Array<string>, tags?: Array<string>},
-    counter: number = 0,
-    timestampGenerator: () => number = Date.now
-  ): Promise<Statement> {
-    let body
-    if (typeof statementBody.object === 'object') {
-      body = new ExpandedSimpleStatementBody((statementBody: any))
-    } else {
-      body = new SimpleStatementBody((statementBody: any))
-    }
-    return Statement.create(publisherId, namespace, body, counter, timestampGenerator)
-  }
 
   static fromProtobuf (msg: StatementMsg): Statement {
     const body = StatementBody.fromProtobuf(msg.body)
 
     const {id, publisher, namespace, timestamp, signature} = msg
-    return new Statement({id, publisher, namespace, timestamp, body, signature})
+    if (signature == null) {
+      return new UnsignedStatement({id, publisher, namespace, timestamp, body})
+    }
+
+    return new SignedStatement({id, publisher, namespace, timestamp, body, signature})
   }
 
-  static fromBytes (msgBuffer: Buffer): Statement {
-    return Statement.fromProtobuf(pb.stmt.Statement.decode(msgBuffer))
+  static fromBytes (bytes: Buffer): Statement {
+    return Statement.fromProtobuf(pb.stmt.Statement.decode(bytes))
   }
 
   toProtobuf (): StatementMsg {
-    const {id, publisher, namespace, timestamp, signature, body} = this
-    return {id, publisher, namespace, timestamp: timestamp, signature, body: body.toProtobuf()}
+    const {id, publisher, namespace, timestamp, body} = this
+    const msg: StatementMsg = {id, publisher, namespace, timestamp: timestamp, body: body.toProtobuf()}
+    if (this instanceof SignedStatement) {
+      msg.signature = this.signature
+    }
+    return msg
   }
 
   toBytes (): Buffer {
@@ -92,9 +49,12 @@ class Statement {
 
   inspect (_depth?: number, opts?: Object) {
     opts = Object.assign({}, opts, {depth: null})
-    const {id, publisher, namespace, timestamp, signature, body} = this
-    const output = stringifyNestedBuffers({id, publisher, namespace, timestamp, signature, body})
-    return inspect(output, opts)
+    const {id, publisher, namespace, timestamp, body} = this
+    const output: Object = {id, publisher, namespace, timestamp, body}
+    if (this instanceof SignedStatement) {
+      output.signature = this.signature
+    }
+    return inspect(stringifyNestedBuffers(output), opts)
   }
 
   get objectIds (): Array<string> {
@@ -119,11 +79,30 @@ class Statement {
 
   expandObjects (source: Map<string, Object>): Statement {
     const body = this.body.expandObjects(source)
-    const {id, publisher, namespace, timestamp, signature} = this
-    return new Statement({id, publisher, namespace, timestamp, body, signature})
+    const {id, publisher, namespace, timestamp} = this
+    if (this instanceof SignedStatement) {
+      return new SignedStatement({ id, publisher, namespace, timestamp, body, signature: this.signature })
+    }
+    return new UnsignedStatement({ id, publisher, namespace, timestamp, body })
   }
 
-  sign (publisherId: PublisherId): Promise<Statement> {
+  asUnsignedStatement (): UnsignedStatement {
+    const {id, namespace, publisher, timestamp, body} = this
+    return new UnsignedStatement({id, namespace, publisher, timestamp, body})
+  }
+}
+
+class UnsignedStatement extends Statement {
+  constructor (stmt: {id: string, publisher: string, namespace: string, timestamp: number, body: StatementBody}) {
+    super()
+    this.id = stmt.id
+    this.publisher = stmt.publisher
+    this.namespace = stmt.namespace
+    this.timestamp = stmt.timestamp
+    this.body = stmt.body
+  }
+
+  sign (publisherId: PublisherId): Promise<SignedStatement> {
     return Promise.resolve().then(() => {
       if (publisherId.id58 !== this.publisher) {
         throw new Error(`Cannot sign statement, publisher id of signer does not match statement publisher`)
@@ -132,16 +111,80 @@ class Statement {
       return this.calculateSignature(publisherId)
         .then(signature => {
           const {id, namespace, publisher, timestamp, body} = this
-          return new Statement({id, namespace, publisher, timestamp, body, signature})
+          return new SignedStatement({id, namespace, publisher, timestamp, body, signature})
         })
     })
   }
 
   calculateSignature (signer: {sign: (msg: Buffer) => Promise<Buffer>}): Promise<Buffer> {
-    const msg: Object = this.toProtobuf()
-    msg.signature = undefined
-    const bytes = pb.stmt.Statement.encode(msg)
-    return signer.sign(bytes)
+    return signer.sign(this.toBytes())
+  }
+}
+
+class SignedStatement extends Statement {
+  signature: Buffer
+
+  constructor (stmt: {id: string, publisher: string, namespace: string, timestamp: number, body: StatementBody, signature: Buffer | string}) {
+    super()
+    this.id = stmt.id
+    this.publisher = stmt.publisher
+    this.namespace = stmt.namespace
+    this.timestamp = stmt.timestamp
+    this.body = stmt.body
+    if (Buffer.isBuffer(stmt.signature)) {
+      this.signature = (stmt.signature: any)
+    } else {
+      this.signature = Buffer.from(stmt.signature, 'base64')
+    }
+  }
+
+  static create (
+    publisherId: PublisherId,
+    namespace: string,
+    statementBody: StatementBody | StatementBodyMsg,
+    counter: number = 0,
+    timestampGenerator: () => number = Date.now)
+  : Promise<SignedStatement> {
+    const body = (statementBody instanceof StatementBody) ? statementBody : StatementBody.fromProtobuf(statementBody)
+    const timestamp = timestampGenerator()
+    const statementId = [publisherId.id58, timestamp.toString(), counter.toString()].join(':')
+    const stmt = new UnsignedStatement({
+      id: statementId,
+      publisher: publisherId.id58,
+      namespace,
+      timestamp,
+      body
+    })
+    return stmt.sign(publisherId)
+  }
+
+  static createSimple (
+    publisherId: PublisherId,
+    namespace: string,
+    statementBody: {object: string | Object, refs?: Array<string>, deps?: Array<string>, tags?: Array<string>},
+    counter: number = 0,
+    timestampGenerator: () => number = Date.now
+  ): Promise<SignedStatement> {
+    let body
+    if (typeof statementBody.object === 'object') {
+      body = new ExpandedSimpleStatementBody((statementBody: any))
+    } else {
+      body = new SimpleStatementBody((statementBody: any))
+    }
+    return SignedStatement.create(publisherId, namespace, body, counter, timestampGenerator)
+  }
+
+  static fromProtobuf (msg: StatementMsg): SignedStatement {
+    const body = StatementBody.fromProtobuf(msg.body)
+
+    const {id, publisher, namespace, timestamp, signature} = msg
+    if (signature == null) {
+      throw new Error(
+        'SignedStatement.fromProtobuf() requires a non-null signature. ' +
+        'Use Statement.fromProtobuf() or UnsignedStatement.fromProtobuf() if your message is unsigned.'
+      )
+    }
+    return new SignedStatement({id, publisher, namespace, timestamp, body, signature})
   }
 
   verifySignature (publicKey?: ?PublicSigningKey, keyCache?: Map<string, PublicSigningKey>): Promise<boolean> {
@@ -294,7 +337,7 @@ class EnvelopeStatementBody extends StatementBody {
   }
 
   static fromProtobuf (msg: EnvelopeStatementMsg): EnvelopeStatementBody {
-    return new EnvelopeStatementBody(msg.body.map(stmt => Statement.fromProtobuf(stmt)))
+    return new EnvelopeStatementBody(msg.body.map(stmt => SignedStatement.fromProtobuf(stmt)))
   }
 
   toProtobuf (): StatementBodyMsg {
@@ -348,6 +391,8 @@ class ExpandedSimpleStatementBody extends SimpleStatementBody {
 
 module.exports = {
   Statement,
+  UnsignedStatement,
+  SignedStatement,
   StatementBody,
   SimpleStatementBody,
   CompoundStatementBody,
