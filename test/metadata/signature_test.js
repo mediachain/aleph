@@ -14,23 +14,24 @@ const CONCAT_PUBLISHER_ID_PATH = path.join(__dirname, '..', 'resources', 'publis
 const CONCAT_MESSAGE_FIXTURES = require('./../resources/fixtures/concat-message-signature')
 
 describe('Signing', () => {
-  let publisherId
-  before(() =>
-    PublisherId.load(path.join(__dirname, '..', 'resources', 'publisher_ids', '4XTTM2UhNoDF1EfwonksnNN1zRGcZCMFutDRMtXYgciwiLzCf.id'))
-      .then(_pubId => { publisherId = _pubId })
+  let privateKey
+
+  before(() => PrivateSigningKey.fromB58String(
+      'K3TgV6BAik881PWHtDC2URuQHWa4xAK6vFMGduwm6jcJhSNAHxeSbYbRUos2qoipFtpsm47Kzu26k9ov1L9tzp6M3nY5o6gGvhmsGvQS22X97EbCCXjEcQAUkBs9DcgsMHnDjHJf'
+    ).then(k => { privateKey = k })
   )
 
   it('calculates a signature for arbitrary statement with a Ed25519 key', () => {
     const stmt = Statement.fromProtobuf({
       id: 'foo',
-      publisher: publisherId.id58,
+      publisher: privateKey.publicKey.toB58String(),
       namespace: 'scratch.sig-test',
       timestamp: new Date('October 13, 2014 11:13:00'),
       body: {simple: {object: 'QmF00123', refs: [], deps: [], tags: []}},
       signature: Buffer.from('')
     })
     const expected = '391129a8f48db5f5dcb39882c97a0e98b2a6ffc8ddf5fa2a9b6807d2fc4470826e056aec5d51f3362ca35995a916b3d4301e9431caa295c0a4aaae4e3f9dca0c'
-    return stmt.calculateSignature(publisherId.privateKey)
+    return stmt.calculateSignature(privateKey)
       .then(signature => assert.equal(signature.toString('hex'), expected, 'signature not as expected'))
   })
 })
