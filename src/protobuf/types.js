@@ -14,7 +14,8 @@ export type PublisherInfoMsg = {
 
 export type RegisterPeerMsg = {
   info: PeerInfoMsg,
-  publisher?: PublisherInfoMsg
+  publisher?: PublisherInfoMsg,
+  manifest?: Array<ManifestMsg>
 }
 
 export type LookupPeerRequestMsg = {
@@ -33,7 +34,21 @@ export type ListPeersResponseMsg = {
   peers: Array<string>
 }
 
+export type ListManifestRequestMsg = {
+  entity: string
+}
+
+export type ListManifestResponseMsg = {
+  manifest: Array<ManifestMsg>
+}
+
 // node.proto
+
+export type ManifestRequestMsg = {}
+
+export type ManifestResponseMsg = {
+  manifest: Array<ManifestMsg>
+}
 
 export type PingMsg = { }
 export type PongMsg = { }

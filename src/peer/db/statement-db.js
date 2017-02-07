@@ -5,8 +5,8 @@ const Knex = require('knex')
 const locks = require('locks')
 const temp = require('temp').track()
 const pb = require('../../protobuf')
+const { Statement } = require('../../model/statement')
 
-import type { StatementMsg, SimpleStatementMsg, EnvelopeStatementMsg, CompoundStatementMsg } from '../../protobuf/types'
 import type { Mutex } from 'locks'
 
 const MIGRATIONS_DIR = path.join(__dirname, 'migrations')
@@ -48,7 +48,6 @@ class StatementDB {
     if (this._migrated) return Promise.resolve(this._db)
 
     return new Promise(resolve => this._migrationLock.lock(() => {
-      if (this._migrated) return resolve(this._db)
       this._db.migrate.latest({directory: MIGRATIONS_DIR})
         .then(() => {
           this._migrated = true
@@ -58,16 +57,18 @@ class StatementDB {
     }))
   }
 
-  put (stmt: StatementMsg): Promise<void> {
+  put (stmt: Statement): Promise<void> {
+    const msg = stmt.toProtobuf()
+
     return this.sqlDB().then(db => {
-      const data = pb.stmt.Statement.encode(stmt)
+      const data = pb.stmt.Statement.encode(msg)
       const {id, namespace, publisher, timestamp} = stmt
-      const refs = Array.from(statementRefs(stmt))
+      const refs = Array.from(stmt.refSet)
       return db.transaction(
         // insert statement data
         tx => tx.insert({id, data}).into('Statement')
           // insert envelope
-          .then(() => tx.insert({id, namespace, publisher, source: statementSource(stmt), timestamp}).into('Envelope'))
+          .then(() => tx.insert({id, namespace, publisher, source: stmt.source, timestamp}).into('Envelope'))
           // insert all refs
           .then(() => Promise.all(refs.map(
             wki => tx.insert({id, wki}).into('Refs')
@@ -76,7 +77,7 @@ class StatementDB {
     })
   }
 
-  get (id: string): Promise<StatementMsg> {
+  get (id: string): Promise<Statement> {
     return this.sqlDB().then(db =>
       db.table('Statement')
         .first('data')
@@ -84,7 +85,7 @@ class StatementDB {
     ).then(decodeStatementRow)
   }
 
-  getByWKI (wki: string): Promise<Array<StatementMsg>> {
+  getByWKI (wki: string): Promise<Array<Statement>> {
     return this.sqlDB().then(db =>
       db.table('Statement')
         .join('Refs', 'Statement.id', 'Refs.id')
@@ -93,7 +94,7 @@ class StatementDB {
     ).then(rows => rows.map(decodeStatementRow))
   }
 
-  getByNamespace (ns: string): Promise<Array<StatementMsg>> {
+  getByNamespace (ns: string): Promise<Array<Statement>> {
     return this.sqlDB().then(db =>
       db.table('Statement')
         .join('Envelope', 'Statement.id', 'Envelope.id')
@@ -103,8 +104,8 @@ class StatementDB {
   }
 }
 
-function decodeStatementRow (row: {data: Buffer}): StatementMsg {
-  return pb.stmt.Statement.decode(row.data)
+function decodeStatementRow (row: {data: Buffer}): Statement {
+  return Statement.fromBytes(row.data)
 }
 
 function namespaceCriteria (field: string, ns: string): string {
@@ -117,59 +118,6 @@ function namespaceCriteria (field: string, ns: string): string {
   }
   const prefix = ns.substr(0, starIndex - 1)
   return `${field} LIKE '%${prefix}%%'`
-}
-
-// TODO: move these helpers elsewhere
-
-function statementSource (stmt: StatementMsg): string {
-  if (stmt.body.envelope !== undefined) {
-    const envelopeStatement: EnvelopeStatementMsg = (stmt.body.envelope: any)  // stupid flow typecast
-    if (envelopeStatement.body.length > 0) {
-      return statementSource(envelopeStatement.body[0])
-    }
-  }
-  return stmt.publisher
-}
-
-function statementRefs (stmt: StatementMsg): Set<string> {
-  if (stmt.body.simple !== undefined) {
-    return simpleStmtRefs((stmt.body.simple: any))
-  }
-  if (stmt.body.compound !== undefined) {
-    return compoundStmtRefs((stmt.body.compound: any))
-  }
-  if (stmt.body.envelope !== undefined) {
-    return envelopeStmtRefs((stmt.body.envelope: any))
-  }
-  throw new Error('Invalid statement type (expected simple, compound, or envelope)')
-}
-
-function simpleStmtRefs (stmt: SimpleStatementMsg): Set<string> {
-  return new Set(stmt.refs)
-}
-
-function compoundStmtRefs (stmt: CompoundStatementMsg): Set<string> {
-  let allRefs: Set<string> = new Set()
-  for (const simpleStmt of stmt.body) {
-    allRefs = union(allRefs, simpleStmtRefs(simpleStmt))
-  }
-  return allRefs
-}
-
-function envelopeStmtRefs (stmt: EnvelopeStatementMsg): Set<string> {
-  let allRefs: Set<string> = new Set()
-  for (const innerStmt of stmt.body) {
-    allRefs = union(allRefs, statementRefs(innerStmt))
-  }
-  return allRefs
-}
-
-function union<T> (a: Set<T>, b: Set<T>): Set<T> {
-  const u = new Set(a)
-  for (const elem of b) {
-    u.add(elem)
-  }
-  return u
 }
 
 module.exports = {

@@ -1,13 +1,14 @@
 // @flow
 
-const assert = require('assert')
+const { assert, expect } = require('chai')
 const { before, describe, it } = require('mocha')
+const path = require('path')
+const { StatementDB } = require('../../src/peer/db/statement-db')
+const { Statement } = require('../../src/model/statement')
 
-const { StatementDB } = require('../src/peer/db/statement-db')
+const MIGRATIONS_DIR = path.join(__dirname, '..', '..', 'src', 'peer', 'db', 'migrations')
 
-import type { StatementMsg } from '../src/protobuf/types'
-
-const SEED_STATEMENTS: Array<StatementMsg> = [
+const SEED_STATEMENTS: Array<Statement> = [
   {
     id: 'QmF001234:foo:5678',
     publisher: 'foo',
@@ -38,10 +39,10 @@ const SEED_STATEMENTS: Array<StatementMsg> = [
     timestamp: Date.now(),
     signature: Buffer.from('')
   }
-]
+].map(stmt => Statement.fromProtobuf(stmt))
 
 describe('Statement DB', () => {
-  const db = new StatementDB()
+  const db = new StatementDB(null)
 
   before(() => db.sqlDB()
     .then(() => Promise.all(SEED_STATEMENTS.map(stmt => db.put(stmt)))))
@@ -56,7 +57,7 @@ describe('Statement DB', () => {
   it('can get statements by WKI', () =>
     db.getByWKI('foo:bar123')
       .then(results => {
-        const expected = SEED_STATEMENTS.filter((stmt: Object) => stmt.body.simple.refs.includes('foo:bar123'))
+        const expected = SEED_STATEMENTS.filter((stmt: Statement) => stmt.refSet.has('foo:bar123'))
         assert.deepEqual(results, expected)
       }))
 
@@ -83,4 +84,26 @@ describe('Statement DB', () => {
           assert.deepEqual(results, expected)
         })
     ]))
+})
+
+describe('StatementDB migrations', () => {
+  it('migrates and rolls back', () => {
+    const db = new StatementDB()
+    let sqlDB
+    return db.sqlDB()
+      .then(_sqlDB => { sqlDB = _sqlDB })
+      .then(() => sqlDB.select().table('Statement'))
+      .then(result => {
+        expect(result).to.exist
+      })
+      .then(() => sqlDB.migrate.rollback({
+        directory: MIGRATIONS_DIR
+      }))
+      .then(() =>
+        sqlDB.select().table('Statement')
+          .catch(err => {
+            expect(err).to.be.an.instanceof(Error)
+          })
+      )
+  })
 })

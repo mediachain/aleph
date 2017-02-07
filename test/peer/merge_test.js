@@ -3,16 +3,16 @@
 const assert = require('assert')
 const { before, describe, it } = require('mocha')
 
-const uuid = require('node-uuid')
+const uuid = require('uuid')
 
-const { makeNode, mockQueryHandler } = require('./util')
-const { PROTOCOLS } = require('../src/peer/constants')
-const { b58MultihashForBuffer } = require('../src/common/util')
-const { makeSimpleStatement } = require('../src/metadata/statement')
-const serialize = require('../src/metadata/serialize')
-const { PublisherId } = require('../src/peer/identity')
+const { makeNode, mockQueryHandler } = require('../util')
+const { PROTOCOLS } = require('../../src/peer/constants')
+const { b58MultihashForBuffer } = require('../../src/common/util')
+const { Statement } = require('../../src/model/statement')
+const serialize = require('../../src/metadata/serialize')
+const { PublisherId } = require('../../src/peer/identity')
 
-import type { QueryResultMsg, StatementMsg } from '../src/protobuf/types'
+import type { QueryResultMsg } from '../../src/protobuf/types'
 
 const TEST_NAMESPACE = 'scratch.merge-test'
 
@@ -21,18 +21,18 @@ const SEED_OBJECT_BUFFERS = [
   {id: uuid.v4(), test: 'yep'}
 ].map(obj => serialize.encode(obj))
 
-function makeSeedStatements (publisherId: PublisherId, seedObjectBuffers: Array<Buffer>): Promise<Array<StatementMsg>> {
+function makeSeedStatements (publisherId: PublisherId, seedObjectBuffers: Array<Buffer>): Promise<Array<Statement>> {
   return Promise.all(
     seedObjectBuffers.map((buf, idx) => {
       const object = b58MultihashForBuffer(buf)
-      return makeSimpleStatement(publisherId, TEST_NAMESPACE, {object, refs: [`merge-test:${idx.toString()}`]}, idx)
+      return Statement.createSimple(publisherId, TEST_NAMESPACE, {object, refs: [`merge-test:${idx.toString()}`]}, idx)
     })
   )
 }
 
-function mockQueryResults (statements: Array<StatementMsg>): Array<QueryResultMsg> {
+function mockQueryResults (statements: Array<Statement>): Array<QueryResultMsg> {
   const results: Array<QueryResultMsg> = statements.map(stmt => {
-    return { value: { simple: { stmt } } }
+    return { value: { simple: { stmt: stmt.toProtobuf() } } }
   })
 
   return [...results, {end: {}}]

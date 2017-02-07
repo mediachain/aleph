@@ -158,10 +158,6 @@ function validateSelfDescribingSchema (schemaObject: Object): SelfDescribingSche
 
 function loadSelfDescribingSchema (filename: string): SelfDescribingSchema {
   const obj = JSON.parse(fs.readFileSync(filename, 'utf-8'))
-  if (obj == null || typeof obj !== 'object' || Array.isArray(obj)) {
-    throw new Error(`Schema file "${filename}" must contain a single json object that defines a json schema.`)
-  }
-
   return validateSelfDescribingSchema(obj)
 }
 

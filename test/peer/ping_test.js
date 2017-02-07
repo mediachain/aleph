@@ -2,9 +2,10 @@
 
 const assert = require('assert')
 const { before, describe, it } = require('mocha')
-const { getTestNodeId, makeNode } = require('./util')
+const { getTestNodeId, makeNode } = require('../util')
 const PeerInfo = require('peer-info')
 const Multiaddr = require('multiaddr')
+const Ping = require('libp2p-ping')
 
 describe('Ping', function () {
   let p1, p2, p3, invalidPeer
@@ -32,7 +33,7 @@ describe('Ping', function () {
   })
 
   it('falls back to mediachain ping if libp2p-ping fails', () => {
-    p3.p2p.ping = () => Promise.reject(new Error('I only support artisanal, hand-crafted ping protocols!'))
+    Ping.unmount(p3.p2p.swarm)
     return Promise.all([p1.start(), p3.start()])
       .then(() => p2.ping(p3.peerInfo))
       .then(result => {

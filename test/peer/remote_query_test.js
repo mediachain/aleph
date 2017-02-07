@@ -3,11 +3,13 @@
 const assert = require('assert')
 const { before, describe, it } = require('mocha')
 
-const { PROTOCOLS } = require('../src/peer/constants')
+const { PROTOCOLS } = require('../../src/peer/constants')
 const pull = require('pull-stream')
-const { makeNode, mockQueryHandler } = require('./util')
+const { PublisherId } = require('../../src/peer/identity')
+const { makeNode, mockQueryHandler } = require('../util')
+const { unpackQueryResultProtobuf } = require('../../src/model/query_result')
 
-import type Node from '../src/peer/node'
+import type Node from '../../src/peer/node'
 
 function startNodes (...nodes: Array<Node>): Promise<*> {
   return Promise.all(nodes.map(n => n.start()))
@@ -34,6 +36,7 @@ describe('Remote Query', () => {
 
     // the stream doesn't deliver the "end" response, it just ends the stream
     const expected = responses.slice(0, responses.length - 1)
+      .map(raw => unpackQueryResultProtobuf(raw))
 
     let remote
 
@@ -43,18 +46,10 @@ describe('Remote Query', () => {
         remote.p2p.handle(PROTOCOLS.node.query, mockQueryHandler(responses))
       })
       .then(() => startNodes(local, remote)) // start both peers
-      .then(() => local.remoteQueryStream(remote.p2p.peerInfo, 'SELECT * FROM foo.bar'))
-      .then(resultStream =>
-        new Promise(resolve => {
-          pull(
-            resultStream,
-            pull.collect((err, results) => {
-              assert(err == null, 'query should not return an error')
-              assert.deepEqual(results, expected, 'query should return all expected results')
-              resolve()
-            }))
-        })
-      )
+      .then(() => local.remoteQuery(remote.p2p.peerInfo, 'SELECT * FROM foo.bar'))
+      .then(results => {
+        assert.deepEqual(results, expected, 'query should return all expected results')
+      })
   })
 
   it('ends the stream with an error when it gets an error response', function () {
@@ -68,6 +63,7 @@ describe('Remote Query', () => {
     ]
 
     const expected = responses.slice(0, responses.length - 1)
+      .map(raw => unpackQueryResultProtobuf(raw))
 
     let remote
     return makeNode()
@@ -89,4 +85,36 @@ describe('Remote Query', () => {
         )
       }))
   })
+})
+
+describe('Remote Query with inline data', () => {
+  let local, remote
+
+  const seedObject = {foo: 'bar'}
+
+  before(() =>
+    makeNode().then(peer => { local = peer })
+      .then(() => PublisherId.generate())
+      .then(publisherId => makeNode({publisherId}))
+      .then(peer => {
+        remote = peer
+      })
+      .then(() =>
+        remote.ingestSimpleStatement('scratch.test.queryWithData', seedObject, {refs: ['test-1']})
+      )
+      .then(stmtId => remote.db.get(stmtId))
+      .then(stmt => {
+        remote.p2p.handle(PROTOCOLS.node.query, mockQueryHandler([{value: {simple: {stmt: stmt.toProtobuf()}}}]))
+      })
+  )
+
+  it('returns query results with data objects inline', () =>
+    Promise.all([local.start(), remote.start()])
+      .then(() => local.remoteQueryWithData(remote.peerInfo, 'SELECT * FROM scratch.test.queryWithData'))
+      .then(result => {
+        assert(result != null)
+        assert(Array.isArray(result))
+        assert.deepEqual(result[0].body.object, seedObject)
+      })
+  )
 })

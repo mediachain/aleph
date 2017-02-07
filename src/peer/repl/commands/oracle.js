@@ -1,8 +1,7 @@
 // @flow
 
-const os = require('os')
 const { bootstrap } = require('../util')
-const Web3 = require('web3');
+const Web3 = require('web3')
 
 type OracleOpts = {
   dir?: string,
@@ -74,7 +73,7 @@ module.exports = {
           writer.setProvider(web3.currentProvider)
           const we = writer.deployed().Write()
 
-          if(!web3.isConnected()){
+          if (!web3.isConnected()) {
             console.error(`Unable to connect to ethereum RPC:`, rpc)
             process.exit(-1)
           } else {
@@ -88,8 +87,8 @@ module.exports = {
   }
 }
 
-function orderPlacedHandler(err, event) {
-  if(err){
+function orderPlacedHandler (err, event) {
+  if (err) {
     console.error(err)
   } else {
     console.log(event)

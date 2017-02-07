@@ -4,9 +4,11 @@ const PeerInfo = require('peer-info')
 const PeerBook = require('peer-book')
 const Multiaddr = require('multiaddr')
 const pull = require('pull-stream')
+const { values } = require('lodash')
 const pb = require('../protobuf')
 const { protoStreamDecode, protoStreamEncode, peerInfoProtoUnmarshal } = require('./util')
 const { DEFAULT_LISTEN_ADDR, PROTOCOLS } = require('./constants')
+const { isB58Multihash } = require('../common/util')
 
 import type { Connection } from 'interface-connection'
 import type { LookupPeerRequestMsg, LookupPeerResponseMsg } from '../protobuf/types'
@@ -18,7 +20,7 @@ export type DirectoryNodeOptions = {
 
 class DirectoryNode {
   p2p: P2PNode
-  registeredPeers: PeerBook
+  peerBook: PeerBook
 
   constructor (options: DirectoryNodeOptions) {
     let { peerId, listenAddresses } = options
@@ -30,7 +32,7 @@ class DirectoryNode {
     })
 
     this.p2p = new P2PNode({peerInfo})
-    this.registeredPeers = new PeerBook()
+    this.peerBook = new PeerBook()
     this.p2p.handle(PROTOCOLS.dir.register, this.registerHandler.bind(this))
     this.p2p.handle(PROTOCOLS.dir.lookup, this.lookupHandler.bind(this))
     this.p2p.handle(PROTOCOLS.dir.list, this.listHandler.bind(this))
@@ -48,40 +50,47 @@ class DirectoryNode {
     return this.p2p.peerInfo
   }
 
-  registerHandler (protocol: string, conn: Connection) {
-    // for some reason, conn.peerInfo is always null here,
-    // so we store the peerInfo from the register message
-    let peerForConn: ?PeerInfo = null
+  get registeredPeers (): Array<PeerInfo> {
+    return values(this.peerBook.getAll())
+  }
 
-    const sink = () => (read: Function) => {
-      read(null, function next (end: ?(boolean | Error), peerInfo: ?PeerInfo) {
-        if (end === true) {
-          if (peerForConn) {
-            this.registeredPeers.removeByB58String(peerForConn.id.toB58String())
-          }
-          return
-        }
-
-        if (end) throw end
-
-        if (peerInfo) {
-          peerForConn = peerInfo
-          this.registeredPeers.put(peerInfo)
-        }
-        read(null, next)
-      })
+  getPeerInfo (peerId: PeerId | string): ?PeerInfo {
+    let peerId58
+    if (typeof peerId === 'string' && isB58Multihash(peerId)) {
+      peerId58 = peerId
+    } else if (peerId instanceof PeerId) {
+      peerId58 = peerId.toB58String()
+    } else {
+      throw new Error('getPeerInfo needs a PeerId or base58-encoded multihash')
     }
 
-    const abortable = this.p2p.newAbortable()
+    try {
+      return this.peerBook.getByB58String(peerId58)
+    } catch (err) {
+      return null
+    }
+  }
 
-    pull(
-      conn,
-      protoStreamDecode(pb.dir.RegisterPeer),
-      pull.map(req => req.info),
-      pull.map(peerInfoProtoUnmarshal),
-      abortable,
-      sink
-    )
+  registerHandler (protocol: string, conn: Connection) {
+    conn.getPeerInfo((err, pInfo) => {
+      if (err) {
+        console.error('Error getting peer info for connection:', err)
+        return
+      }
+
+      const abortable = this.p2p.newAbortable()
+      pull(
+        conn,
+        protoStreamDecode(pb.dir.RegisterPeer),
+        pull.map(req => req.info),
+        pull.map(peerInfoProtoUnmarshal),
+        pull.through(reqInfo => {
+          this.peerBook.put(reqInfo)
+        }),
+        abortable,
+        pull.drain()
+      )
+    })
   }
 
   lookupHandler (protocol: string, conn: Connection) {
@@ -103,7 +112,7 @@ class DirectoryNode {
     }
 
     try {
-      const peerInfo = this.registeredPeers.getByB58String(req.id)
+      const peerInfo = this.peerBook.getByB58String(req.id)
       const peer = {
         id: peerInfo.id.toB58String(),
         addr: peerInfo.multiaddrs.map(maddr => maddr.buffer)

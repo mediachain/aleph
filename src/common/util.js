@@ -1,5 +1,6 @@
 // @flow
 
+const _ = require('lodash')
 const Multihashing = require('multihashing')
 import type { Writable, Readable } from 'stream'
 import type { WriteStream } from 'tty'
@@ -49,6 +50,32 @@ function flatMap<T, U> (array: Array<T>, f: (x: T) => Array<U>): Array<U> {
 }
 
 /**
+ * Given any number of `Set`s, return a new `Set` that contains all elements combined.
+ * @param
+ * @returns {Set} - the union of `a` and `b`
+ */
+function setUnion<T> (...sets: Array<Set<T>>): Set<T> {
+  const u = new Set()
+  for (const s of sets) {
+    for (const elem of s) {
+      u.add(elem)
+    }
+  }
+  return u
+}
+
+/**
+ * Returns true if Set `a` and Set `b` contain the same members, using strict (shallow) equality (the `===` operator)
+ */
+function setEquals<T> (a: Set<T>, b: Set<T>): boolean {
+  if (a.size !== b.size) return false
+  for (const elem of a.values()) {
+    if (!b.has(elem)) return false
+  }
+  return true
+}
+
+/**
  * Returns base58-encoded sha256 multihash for the given Buffer
  * @param buf - a `Buffer` you want to hash
  * @returns {string} a base58-encoded multihash string
@@ -64,7 +91,8 @@ function b58MultihashForBuffer (buf: Buffer): string {
  */
 function isB58Multihash (str: string): boolean {
   try {
-    Multihashing.multihash.fromB58String(str)
+    const h = Multihashing.multihash.fromB58String(str)
+    Multihashing.multihash.validate(h)
     return true
   } catch (err) {
     return false
@@ -117,14 +145,30 @@ function consumeStream (stream: Readable): Promise<string> {
   })
 }
 
+/**
+ * Returns a clone of `obj` with all `Buffer` objects replaced with their base64-encoded string equivalents
+ */
+function stringifyNestedBuffers (obj: Object): Object {
+  const replacer = obj => {
+    if (obj instanceof Buffer) {
+      return obj.toString('base64')
+    }
+  }
+
+  return (_.cloneDeepWith(obj, replacer): any)
+}
+
 module.exports = {
   promiseHash,
   promiseTimeout,
   flatMap,
+  setUnion,
+  setEquals,
   b58MultihashForBuffer,
   isB58Multihash,
   writeln,
   println,
   printlnErr,
-  consumeStream
+  consumeStream,
+  stringifyNestedBuffers
 }

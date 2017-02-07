@@ -5,16 +5,19 @@ const pullThroughPromise = require('pull-promise/through')
 const pushable = require('pull-pushable')
 const window = require('pull-window')
 const pb = require('../protobuf')
-const { statementsFromQueryResult, objectIdsFromStatement, protoStreamEncode, protoStreamDecode } = require('./util')
+const { protoStreamEncode, protoStreamDecode } = require('./util')
 const { flatMap, promiseHash, b58MultihashForBuffer } = require('../common/util')
-const { verifyStatementWithKeyCache } = require('../metadata/signatures')
+
+const { Statement } = require('../model/statement')
+const { CompoundQueryResultValue } = require('../model/query_result')
 
 import type { MediachainNode } from './node'
 import type { Datastore } from './datastore'
 import type { P2PSigningPublicKey } from './identity'
 import type { PullStreamSource, PullStreamThrough } from './util'
-import type { QueryResultMsg, QueryResultValueMsg, StreamErrorMsg, StatementMsg, DataRequestMsg, DataObjectMsg } from '../protobuf/types'
+import type { StreamErrorMsg, DataRequestMsg, DataObjectMsg } from '../protobuf/types'
 import type { Connection } from 'interface-connection'
+import type { QueryResult } from '../model/query_result'
 
 const BATCH_SIZE = 1024
 
@@ -26,7 +29,7 @@ export type MergeResult = {
 
 function mergeFromStreams (
   localNode: MediachainNode,
-  queryResultStream: PullStreamSource<QueryResultMsg>,
+  queryResultStream: PullStreamSource<QueryResult>,
   dataConn: Connection)
 : Promise<MergeResult> {
   const publisherKeyCache: Map<string, P2PSigningPublicKey> = new Map()
@@ -34,10 +37,10 @@ function mergeFromStreams (
   const objectIngestionErrors: Array<string> = []
   const statementIngestionErrors: Array<string> = []
 
-  // A stream that accepts QueryResult messages, extracts statements from them,
+  // A stream that accepts QueryResult objects, extracts statements from them,
   // verifies the statement signatures and sends the statements downstream,
   // and pushes their object references onto the objectIdStream
-  const queryResultThrough: PullStreamThrough<QueryResultMsg, Array<StatementMsg>> = read => (end, callback) => {
+  const queryResultThrough: PullStreamThrough<QueryResult, Array<Statement>> = read => (end, callback) => {
     const endQueryStream = exitValue => {
       objectIdStream.end()
       if (exitValue instanceof Error) {
@@ -51,30 +54,29 @@ function mergeFromStreams (
     }
 
     if (end) return callback(end)
-    read(end, (end: ?mixed, queryResult: ?QueryResultMsg) => {
+    read(end, (end: ?mixed, queryResult: ?QueryResult) => {
       if (end) return endQueryStream(end)
       if (queryResult == null) return endQueryStream('Got null queryResult')
 
-      if (queryResult.end !== undefined) {
-        return endQueryStream(true)
+      if (queryResult instanceof Error) {
+        return endQueryStream(queryResult)
       }
-      if (queryResult.error !== undefined) {
-        const err: StreamErrorMsg = (queryResult.error : any)
-        return endQueryStream(err.error)
+
+      let statements = []
+      if (queryResult instanceof CompoundQueryResultValue) {
+        statements = queryResult.statements()
+      } else if (queryResult instanceof Statement) {
+        statements = [queryResult]
       }
-      if (queryResult.value == null) {
-        return endQueryStream(`Unexpected query result message: ${JSON.stringify(queryResult)}`)
-      }
-      const queryValue: QueryResultValueMsg = (queryResult.value : any)
-      const statements = statementsFromQueryResult(queryValue)
+
       if (statements.length < 1) {
-        return endQueryStream(`Query result value contained no statements: ${JSON.stringify(queryValue)}`)
+        return endQueryStream(`Query result value contained no statements: ${JSON.stringify(queryResult)}`)
       }
 
       // verify all statements. verification failure causes the whole statement ingestion to fail
       // by passing an Error into endQueryStream (as opposed to a string, which will cause a partially
       // successful result
-      Promise.all(statements.map(stmt => verifyStatementWithKeyCache(stmt, publisherKeyCache)))
+      Promise.all(statements.map(stmt => stmt.verifySignature(null, publisherKeyCache)))
         .catch(err => endQueryStream(err))
         .then(results => {
           results.forEach((valid, idx) => {
@@ -86,7 +88,7 @@ function mergeFromStreams (
 
           // if all statements verified successfully, push their object refs onto the objectIdStream
           // and pass the statements array onto the stream
-          const ids = flatMap(statements, objectIdsFromStatement)
+          const ids = flatMap(statements, stmt => stmt.objectIds)
           for (const id of ids) {
             objectIdStream.push(id)
           }

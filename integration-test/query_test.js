@@ -39,7 +39,7 @@ describe('Query', () => {
         assert(results != null && results.length > 0, 'query returned no results')
 
         // unpack query results and compare to seed statements
-        const resultStatements = results.map(r => r.value.simple.stmt.body.simple)
+        const resultStatements = results.map(r => r.body.toProtobuf().simple)
         assert.deepEqual(seedStatements, resultStatements, 'query returned unexpected results')
       })
   })

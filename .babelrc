@@ -1,3 +1,8 @@
 {
-  "plugins": ["transform-flow-strip-types"]
+  "plugins": ["transform-flow-strip-types"],
+  "env": {
+    "test": {
+      "plugins": ["transform-flow-strip-types", "istanbul"]
+    }
+  }
 }

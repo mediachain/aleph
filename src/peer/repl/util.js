@@ -45,7 +45,7 @@ function binaryToB64 (result: Object): Object {
     }
   }
 
-  return _.cloneDeepWith(result, replacer)
+  return (_.cloneDeepWith(result, replacer): any)
 }
 
 module.exports = {

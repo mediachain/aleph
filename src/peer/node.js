@@ -3,7 +3,6 @@ const P2PNode = require('./libp2p_node')
 const PeerId = require('peer-id')
 const PeerInfo = require('peer-info')
 const Multiaddr = require('multiaddr')
-const Multihash = require('multihashes')
 const pb = require('../protobuf')
 const pull = require('pull-stream')
 const paramap = require('pull-paramap')
@@ -19,15 +18,16 @@ const {
   pullToPromise,
   pullRepeatedly,
   resultStreamThrough,
-  objectIdsForQueryResult,
-  expandQueryResult
+  expandStatement
 } = require('./util')
-const { promiseHash } = require('../common/util')
+const { promiseHash, isB58Multihash } = require('../common/util')
 const { pushStatementsToConn } = require('./push')
 const { mergeFromStreams } = require('./merge')
-const { makeSimpleStatement } = require('../metadata/statement')
+const { Statement } = require('../model/statement')
+const { unpackQueryResultProtobuf } = require('../model/query_result')
 
-import type { QueryResultMsg, QueryResultValueMsg, DataResultMsg, DataObjectMsg, NodeInfoMsg, StatementMsg, PushEndMsg } from '../protobuf/types'
+import type { QueryResult, QueryResultValue } from '../model/query_result'
+import type { DataResultMsg, DataObjectMsg, NodeInfoMsg, PushEndMsg } from '../protobuf/types'
 import type { Connection } from 'interface-connection'
 import type { PullStreamSource } from './util'
 import type { DatastoreOptions } from './datastore'
@@ -127,54 +127,51 @@ class MediachainNode {
           pullRepeatedly(req, 5000 * 60),
           abortable,
           protoStreamEncode(pb.dir.RegisterPeer),
-          conn,
-          pull.onEnd(() => {
-            console.log('registration connection ended')
-          })
+          conn
         )
         return true
       })
   }
 
   lookup (peerId: string | PeerId): Promise<?PeerInfo> {
-    if (peerId instanceof PeerId) {
-      peerId = peerId.toB58String()
-    } else {
-      // validate that string arguments are legit multihashes
-      try {
-        Multihash.fromB58String(peerId)
-      } catch (err) {
-        return Promise.reject(new Error(`Peer id is not a valid multihash: ${err.message}`))
+    return Promise.resolve().then(() => {
+      if (peerId instanceof PeerId) {
+        peerId = peerId.toB58String()
+      } else if (typeof peerId !== 'string') {
+        throw new Error(`invalid input: lookup requires a PeerId or base58-encoded multihash string`)
       }
-    }
 
-    // If we've already got an entry for this PeerId in our PeerBook,
-    // because we already have a multiplex connection open to this peer,
-    // use the existing entry.
-    //
-    // Note that when we close the peer multiplex connection, then entry is
-    // automatically removed from the peer book, so we should never be returning
-    // stale results.
-    try {
-      const peerInfo = this.p2p.peerBook.getByB58String(peerId)
-      return Promise.resolve(peerInfo)
-    } catch (err) {
-    }
+      if (!isB58Multihash(peerId)) {
+        throw new Error('Peer id is not a valid multihash')
+      }
 
-    if (this.directory == null) {
-      // TODO: support DHT lookups
-      return Promise.reject(new Error('No known directory server, cannot lookup'))
-    }
+      // If we've already got an entry for this PeerId in our PeerBook,
+      // because we already have a multiplex connection open to this peer,
+      // use the existing entry.
+      //
+      // Note that when we close the peer multiplex connection, then entry is
+      // automatically removed from the peer book, so we should never be returning
+      // stale results.
+      try {
+        return this.p2p.peerBook.getByB58String(peerId)
+      } catch (err) {
+      }
 
-    return this.p2p.dialByPeerInfo(this.directory, PROTOCOLS.dir.lookup)
-      .then(conn => pullToPromise(
-        pull.values([{id: peerId}]),
-        protoStreamEncode(pb.dir.LookupPeerRequest),
-        conn,
-        protoStreamDecode(pb.dir.LookupPeerResponse),
-        pull.map(lookupResponseToPeerInfo),
+      if (this.directory == null) {
+        // TODO: support DHT lookups
+        throw new Error('No known directory server, cannot lookup')
+      }
+
+      return this.p2p.dialByPeerInfo(this.directory, PROTOCOLS.dir.lookup)
+        .then(conn => pullToPromise(
+          pull.values([ { id: peerId } ]),
+          protoStreamEncode(pb.dir.LookupPeerRequest),
+          conn,
+          protoStreamDecode(pb.dir.LookupPeerResponse),
+          pull.map(lookupResponseToPeerInfo),
+          )
         )
-      )
+    })
   }
 
   _lookupIfNeeded (peer: PeerInfo | PeerId | string): Promise<?PeerInfo> {
@@ -271,10 +268,11 @@ class MediachainNode {
           conn,
           protoStreamDecode(pb.node.QueryResult),
           resultStreamThrough,
+          pull.map(r => unpackQueryResultProtobuf(r))
         ))
   }
 
-  remoteQuery (peer: PeerInfo | PeerId | string, queryString: string): Promise<Array<QueryResultMsg>> {
+  remoteQuery (peer: PeerInfo | PeerId | string, queryString: string): Promise<Array<QueryResult>> {
     return this.remoteQueryStream(peer, queryString)
       .then(stream => new Promise((resolve, reject) => {
         pull(
@@ -313,7 +311,7 @@ class MediachainNode {
   }
 
   // local queries (MCQL parser NOT IMPLEMENTED)
-  query (queryString: string): Promise<Array<QueryResultMsg>> {
+  query (queryString: string): Promise<Array<QueryResult>> {
     throw new Error('Local MCQL queries are not implemented!')
   }
 
@@ -375,11 +373,7 @@ class MediachainNode {
         pull(
           resultStream,
           paramap((queryResult, cb) => {
-            if (queryResult.value == null) {
-              return cb(null, queryResult)
-            }
-
-            this._expandQueryResultData(peer, queryResult.value)
+            this._expandQueryResultData(peer, queryResult)
               .then(result => cb(null, result))
               .catch(err => cb(err))
           })
@@ -400,13 +394,14 @@ class MediachainNode {
       }))
   }
 
-  _expandQueryResultData (peer: PeerInfo | PeerId | string, result: QueryResultValueMsg): Promise<Object> {
-    const objectIds = objectIdsForQueryResult(result)
-    if (objectIds.length < 1) return Promise.resolve(result)
+  _expandQueryResultData (peer: PeerInfo | PeerId | string, result: QueryResultValue): Promise<Object> {
+    if (!(result instanceof Statement)) return Promise.resolve(result)
+    const stmt: Statement = result
+    if (stmt.objectIds.length < 1) return Promise.resolve(result)
 
-    return this.remoteData(peer, objectIds)
+    return this.remoteData(peer, stmt.objectIds)
       .then((dataResults: Array<DataObjectMsg>) =>
-        expandQueryResult(result, dataResults)
+        expandStatement(stmt, dataResults)
       )
   }
 
@@ -419,7 +414,7 @@ class MediachainNode {
       .then(({queryStream, dataConn}) => mergeFromStreams(this, queryStream, dataConn))
   }
 
-  pushStatements (peer: PeerInfo | PeerId | string, statements: Array<StatementMsg>): Promise<PushEndMsg> {
+  pushStatements (peer: PeerInfo | PeerId | string, statements: Array<Statement>): Promise<PushEndMsg> {
     return this.openConnection(peer, PROTOCOLS.node.push)
       .then(conn => pushStatementsToConn(statements, conn))
   }
@@ -444,7 +439,7 @@ class MediachainNode {
     return this.putData(object)
       .then(([objectHash]) => {
         const body = {object: objectHash, refs, deps, tags}
-        return makeSimpleStatement(publisherId, namespace, body, this.statementCounter)
+        return Statement.createSimple(publisherId, namespace, body, this.statementCounter)
       })
       .then(stmt => this.db.put(stmt)
         .then(() => stmt.id))
@@ -464,7 +459,7 @@ class RemoteNode {
     return this.node.ping(this.remotePeerInfo)
   }
 
-  query (queryString: string): Promise<Array<QueryResultMsg>> {
+  query (queryString: string): Promise<Array<QueryResult>> {
     return this.node.remoteQuery(this.remotePeerInfo, queryString)
   }
 
