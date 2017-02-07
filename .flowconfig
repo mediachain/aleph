@@ -8,4 +8,4 @@
 
 [options]
 suppress_comment= \\(.\\|\n\\)*\\$FlowIssue
-
+unsafe.enable_getters_and_setters=true

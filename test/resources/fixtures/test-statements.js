@@ -29,7 +29,7 @@ const COMPOUND_STMT = {
       ]
     }
   },
-  signature: Buffer.from('VP6DTYwD6XaX4RmcncCXJOb7WssNQDfxvmsx+5K+qIoCoggWuhsCtqCXGCfwwmTxigxtMieK5CY1DXeL/rQLAw==', 'base64')
+  signature: Buffer.from('eJlR+rsTdiZQ7Lt8oI7M+tvtQPshjOb50OyKtrNQBfZ2KDyTpBIZnTWlZ2CAIq15oYjHetzrfZBxj81Nfu1QCw==', 'base64')
 }
 
 const ENVELOPE_EMPTY = {
@@ -72,10 +72,16 @@ module.exports = {
     envelopeEmpty: [ ENVELOPE_EMPTY ]
   },
   expectedRefs: {
-    simple: [ ['simple-1'], ['simple-2'] ],
-    compound: [ ['compound-1', 'compound-2'] ],
-    envelope: [ ['simple-1', 'simple-2'] ],
-    envelopeEmpty: [ [] ]
+    simple: [ new Set(['simple-1']), new Set(['simple-2']) ],
+    compound: [ new Set(['compound-1', 'compound-2']) ],
+    envelope: [ new Set(['simple-1', 'simple-2']) ],
+    envelopeEmpty: [ new Set() ]
+  },
+  expectedSources: {
+    simple: [ SIMPLE_STMT_1.publisher, SIMPLE_STMT_2.publisher ],
+    compound: [ COMPOUND_STMT.publisher ],
+    envelope: [ SIMPLE_STMT_1.publisher ],
+    envelopeEmpty: [ ENVELOPE_STMT.publisher ]
   },
   objectIds: {
     simple: [ ['foo'], ['foo'] ],

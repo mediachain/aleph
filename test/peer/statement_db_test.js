@@ -4,12 +4,11 @@ const { assert, expect } = require('chai')
 const { before, describe, it } = require('mocha')
 const path = require('path')
 const { StatementDB } = require('../../src/peer/db/statement-db')
-
-import type { StatementMsg } from '../../src/protobuf/types'
+const { Statement } = require('../../src/model/statement')
 
 const MIGRATIONS_DIR = path.join(__dirname, '..', '..', 'src', 'peer', 'db', 'migrations')
 
-const SEED_STATEMENTS: Array<StatementMsg> = [
+const SEED_STATEMENTS: Array<Statement> = [
   {
     id: 'QmF001234:foo:5678',
     publisher: 'foo',
@@ -40,7 +39,7 @@ const SEED_STATEMENTS: Array<StatementMsg> = [
     timestamp: Date.now(),
     signature: Buffer.from('')
   }
-]
+].map(stmt => Statement.fromProtobuf(stmt))
 
 describe('Statement DB', () => {
   const db = new StatementDB(null)
@@ -58,7 +57,7 @@ describe('Statement DB', () => {
   it('can get statements by WKI', () =>
     db.getByWKI('foo:bar123')
       .then(results => {
-        const expected = SEED_STATEMENTS.filter((stmt: Object) => stmt.body.simple.refs.includes('foo:bar123'))
+        const expected = SEED_STATEMENTS.filter((stmt: Statement) => stmt.refSet.has('foo:bar123'))
         assert.deepEqual(results, expected)
       }))
 
