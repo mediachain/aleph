@@ -50,9 +50,9 @@
       "resolved": "https://registry.npmjs.org/any-promise/-/any-promise-1.3.0.tgz"
     },
     "aproba": {
-      "version": "1.0.4",
+      "version": "1.1.0",
       "from": "aproba@>=1.0.3 <2.0.0",
-      "resolved": "https://registry.npmjs.org/aproba/-/aproba-1.0.4.tgz"
+      "resolved": "https://registry.npmjs.org/aproba/-/aproba-1.1.0.tgz"
     },
     "archive-type": {
       "version": "3.2.0",
@@ -96,12 +96,12 @@
     },
     "asn1.js": {
       "version": "4.9.1",
-      "from": "asn1.js@>=4.8.1 <5.0.0",
+      "from": "asn1.js@>=4.9.1 <5.0.0",
       "resolved": "https://registry.npmjs.org/asn1.js/-/asn1.js-4.9.1.tgz"
     },
     "async": {
       "version": "2.1.4",
-      "from": "async@>=2.1.2 <3.0.0",
+      "from": "async@>=2.1.4 <3.0.0",
       "resolved": "https://registry.npmjs.org/async/-/async-2.1.4.tgz"
     },
     "async-each-series": {
@@ -120,9 +120,9 @@
       "resolved": "https://registry.npmjs.org/balanced-match/-/balanced-match-0.4.2.tgz"
     },
     "base-x": {
-      "version": "2.0.3",
+      "version": "2.0.4",
       "from": "base-x@>=2.0.1 <3.0.0",
-      "resolved": "https://registry.npmjs.org/base-x/-/base-x-2.0.3.tgz"
+      "resolved": "https://registry.npmjs.org/base-x/-/base-x-2.0.4.tgz"
     },
     "beeper": {
       "version": "1.1.1",
@@ -199,9 +199,9 @@
       }
     },
     "brorand": {
-      "version": "1.0.6",
+      "version": "1.0.7",
       "from": "brorand@>=1.0.1 <2.0.0",
-      "resolved": "https://registry.npmjs.org/brorand/-/brorand-1.0.6.tgz"
+      "resolved": "https://registry.npmjs.org/brorand/-/brorand-1.0.7.tgz"
     },
     "browserify-aes": {
       "version": "1.0.6",
@@ -565,9 +565,9 @@
       "resolved": "https://registry.npmjs.org/each-async/-/each-async-1.1.1.tgz"
     },
     "elliptic": {
-      "version": "6.3.2",
+      "version": "6.3.3",
       "from": "elliptic@>=6.2.3 <7.0.0",
-      "resolved": "https://registry.npmjs.org/elliptic/-/elliptic-6.3.2.tgz"
+      "resolved": "https://registry.npmjs.org/elliptic/-/elliptic-6.3.3.tgz"
     },
     "encoding": {
       "version": "0.1.12",
@@ -622,9 +622,9 @@
       "resolved": "https://registry.npmjs.org/esutils/-/esutils-1.0.0.tgz"
     },
     "ethereumjs-util": {
-      "version": "5.0.1",
-      "from": "git://github.com/ethereumjs/ethereumjs-util.git#ac5d0908536b447083ea422b435da27f26615de9",
-      "resolved": "git://github.com/ethereumjs/ethereumjs-util.git#ac5d0908536b447083ea422b435da27f26615de9"
+      "version": "5.1.0",
+      "from": "ethereumjs-util@>=5.1.0 <6.0.0",
+      "resolved": "https://registry.npmjs.org/ethereumjs-util/-/ethereumjs-util-5.1.0.tgz"
     },
     "evp_bytestokey": {
       "version": "1.0.0",
@@ -1005,9 +1005,9 @@
       "resolved": "https://registry.npmjs.org/homedir-polyfill/-/homedir-polyfill-1.0.1.tgz"
     },
     "hosted-git-info": {
-      "version": "2.1.5",
+      "version": "2.2.0",
       "from": "hosted-git-info@>=2.1.4 <3.0.0",
-      "resolved": "https://registry.npmjs.org/hosted-git-info/-/hosted-git-info-2.1.5.tgz"
+      "resolved": "https://registry.npmjs.org/hosted-git-info/-/hosted-git-info-2.2.0.tgz"
     },
     "hpack.js": {
       "version": "2.1.6",
@@ -1236,7 +1236,7 @@
     },
     "js-sha3": {
       "version": "0.5.7",
-      "from": "js-sha3@>=0.5.5 <0.6.0",
+      "from": "js-sha3@>=0.5.7 <0.6.0",
       "resolved": "https://registry.npmjs.org/js-sha3/-/js-sha3-0.5.7.tgz"
     },
     "jsbn": {
@@ -1271,7 +1271,7 @@
     },
     "keypair": {
       "version": "1.0.1",
-      "from": "keypair@>=1.0.0 <2.0.0",
+      "from": "keypair@>=1.0.1 <2.0.0",
       "resolved": "https://registry.npmjs.org/keypair/-/keypair-1.0.1.tgz"
     },
     "kind-of": {
@@ -1349,14 +1349,21 @@
       "resolved": "https://registry.npmjs.org/levelup/-/levelup-1.3.3.tgz"
     },
     "libp2p-crypto": {
-      "version": "0.7.6",
-      "from": "git://github.com/yusefnapora/js-libp2p-crypto.git#ec387c3b9eafca2ca0ad5defa7dd80dcc978950a",
-      "resolved": "git://github.com/yusefnapora/js-libp2p-crypto.git#ec387c3b9eafca2ca0ad5defa7dd80dcc978950a"
+      "version": "0.8.0",
+      "from": "libp2p-crypto@>=0.8.0 <0.9.0",
+      "resolved": "https://registry.npmjs.org/libp2p-crypto/-/libp2p-crypto-0.8.0.tgz"
     },
     "libp2p-crypto-secp256k1": {
       "version": "0.0.1",
-      "from": "git://github.com/yusefnapora/js-libp2p-crypto-secp256k1.git#fb7a7c331880bb8e8caf63d853376f043316d2e3",
-      "resolved": "git://github.com/yusefnapora/js-libp2p-crypto-secp256k1.git#fb7a7c331880bb8e8caf63d853376f043316d2e3"
+      "from": "git://github.com/yusefnapora/js-libp2p-crypto-secp256k1.git#7d3fc08979bd3a4e639ff9561f7679d04fab0475",
+      "resolved": "git://github.com/yusefnapora/js-libp2p-crypto-secp256k1.git#7d3fc08979bd3a4e639ff9561f7679d04fab0475",
+      "dependencies": {
+        "multihashing-async": {
+          "version": "0.3.0",
+          "from": "multihashing-async@>=0.3.0 <0.4.0",
+          "resolved": "https://registry.npmjs.org/multihashing-async/-/multihashing-async-0.3.0.tgz"
+        }
+      }
     },
     "libp2p-identify": {
       "version": "0.3.1",
@@ -1366,12 +1373,38 @@
     "libp2p-ping": {
       "version": "0.3.0",
       "from": "libp2p-ping@>=0.3.0 <0.4.0",
-      "resolved": "https://registry.npmjs.org/libp2p-ping/-/libp2p-ping-0.3.0.tgz"
+      "resolved": "https://registry.npmjs.org/libp2p-ping/-/libp2p-ping-0.3.0.tgz",
+      "dependencies": {
+        "libp2p-crypto": {
+          "version": "0.7.7",
+          "from": "libp2p-crypto@>=0.7.3 <0.8.0",
+          "resolved": "https://registry.npmjs.org/libp2p-crypto/-/libp2p-crypto-0.7.7.tgz"
+        }
+      }
     },
     "libp2p-secio": {
       "version": "0.6.5",
       "from": "libp2p-secio@>=0.6.4 <0.7.0",
-      "resolved": "https://registry.npmjs.org/libp2p-secio/-/libp2p-secio-0.6.5.tgz"
+      "resolved": "https://registry.npmjs.org/libp2p-secio/-/libp2p-secio-0.6.5.tgz",
+      "dependencies": {
+        "libp2p-crypto": {
+          "version": "0.7.7",
+          "from": "libp2p-crypto@>=0.7.6 <0.8.0",
+          "resolved": "https://registry.npmjs.org/libp2p-crypto/-/libp2p-crypto-0.7.7.tgz",
+          "dependencies": {
+            "multihashing-async": {
+              "version": "0.4.0",
+              "from": "multihashing-async@^0.4.0",
+              "resolved": "https://registry.npmjs.org/multihashing-async/-/multihashing-async-0.4.0.tgz"
+            }
+          }
+        },
+        "multihashing-async": {
+          "version": "0.3.0",
+          "from": "multihashing-async@>=0.3.0 <0.4.0",
+          "resolved": "https://registry.npmjs.org/multihashing-async/-/multihashing-async-0.3.0.tgz"
+        }
+      }
     },
     "libp2p-spdy": {
       "version": "0.10.3",
@@ -1817,9 +1850,9 @@
       }
     },
     "multihashing-async": {
-      "version": "0.3.0",
-      "from": "multihashing-async@>=0.3.0 <0.4.0",
-      "resolved": "https://registry.npmjs.org/multihashing-async/-/multihashing-async-0.3.0.tgz"
+      "version": "0.4.0",
+      "from": "multihashing-async@>=0.4.0 <0.5.0",
+      "resolved": "https://registry.npmjs.org/multihashing-async/-/multihashing-async-0.4.0.tgz"
     },
     "multipipe": {
       "version": "0.1.2",
@@ -1860,6 +1893,11 @@
         }
       }
     },
+    "murmurhash3js": {
+      "version": "3.0.1",
+      "from": "murmurhash3js@>=3.0.1 <4.0.0",
+      "resolved": "https://registry.npmjs.org/murmurhash3js/-/murmurhash3js-3.0.1.tgz"
+    },
     "nan": {
       "version": "2.5.1",
       "from": "nan@>=2.2.1 <3.0.0",
@@ -1878,9 +1916,9 @@
       }
     },
     "node-abi": {
-      "version": "1.1.0",
+      "version": "1.3.2",
       "from": "node-abi@>=1.0.3 <2.0.0",
-      "resolved": "https://registry.npmjs.org/node-abi/-/node-abi-1.1.0.tgz"
+      "resolved": "https://registry.npmjs.org/node-abi/-/node-abi-1.3.2.tgz"
     },
     "node-fetch": {
       "version": "1.6.3",
@@ -1893,9 +1931,9 @@
       "resolved": "https://registry.npmjs.org/node-status-codes/-/node-status-codes-1.0.0.tgz"
     },
     "node-webcrypto-ossl": {
-      "version": "1.0.16",
-      "from": "node-webcrypto-ossl@>=1.0.15 <2.0.0",
-      "resolved": "https://registry.npmjs.org/node-webcrypto-ossl/-/node-webcrypto-ossl-1.0.16.tgz",
+      "version": "1.0.17",
+      "from": "node-webcrypto-ossl@>=1.0.16 <2.0.0",
+      "resolved": "https://registry.npmjs.org/node-webcrypto-ossl/-/node-webcrypto-ossl-1.0.17.tgz",
       "optional": true
     },
     "nodeify": {
@@ -2087,7 +2125,14 @@
     "peer-id": {
       "version": "0.8.1",
       "from": "peer-id@>=0.8.0 <0.9.0",
-      "resolved": "https://registry.npmjs.org/peer-id/-/peer-id-0.8.1.tgz"
+      "resolved": "https://registry.npmjs.org/peer-id/-/peer-id-0.8.1.tgz",
+      "dependencies": {
+        "libp2p-crypto": {
+          "version": "0.7.7",
+          "from": "libp2p-crypto@>=0.7.0 <0.8.0",
+          "resolved": "https://registry.npmjs.org/libp2p-crypto/-/libp2p-crypto-0.7.7.tgz"
+        }
+      }
     },
     "peer-info": {
       "version": "0.8.2",
@@ -2412,7 +2457,7 @@
     },
     "secp256k1": {
       "version": "3.2.5",
-      "from": "https://registry.npmjs.org/secp256k1/-/secp256k1-3.2.5.tgz",
+      "from": "secp256k1@>=3.2.5 <4.0.0",
       "resolved": "https://registry.npmjs.org/secp256k1/-/secp256k1-3.2.5.tgz"
     },
     "seek-bzip": {
@@ -3595,6 +3640,12 @@
       "from": "trim-repeated@>=1.0.0 <2.0.0",
       "resolved": "https://registry.npmjs.org/trim-repeated/-/trim-repeated-1.0.0.tgz"
     },
+    "tslib": {
+      "version": "1.5.0",
+      "from": "tslib@>=1.5.0 <2.0.0",
+      "resolved": "https://registry.npmjs.org/tslib/-/tslib-1.5.0.tgz",
+      "optional": true
+    },
     "tunnel-agent": {
       "version": "0.4.3",
       "from": "tunnel-agent@>=0.4.0 <0.5.0",
@@ -3743,9 +3794,9 @@
       "resolved": "https://registry.npmjs.org/webcrypto/-/webcrypto-0.1.0.tgz"
     },
     "webcrypto-core": {
-      "version": "0.1.7",
+      "version": "0.1.10",
       "from": "webcrypto-core@>=0.0.0 <1.0.0",
-      "resolved": "https://registry.npmjs.org/webcrypto-core/-/webcrypto-core-0.1.7.tgz",
+      "resolved": "https://registry.npmjs.org/webcrypto-core/-/webcrypto-core-0.1.10.tgz",
       "optional": true
     },
     "webcrypto-shim": {
