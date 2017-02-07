@@ -7,6 +7,7 @@ const { PROTOCOLS } = require('../../src/peer/constants')
 const pull = require('pull-stream')
 const { PublisherId } = require('../../src/peer/identity')
 const { makeNode, mockQueryHandler } = require('../util')
+const { unpackQueryResultProtobuf } = require('../../src/model/query_result')
 
 import type Node from '../../src/peer/node'
 
@@ -35,6 +36,7 @@ describe('Remote Query', () => {
 
     // the stream doesn't deliver the "end" response, it just ends the stream
     const expected = responses.slice(0, responses.length - 1)
+      .map(raw => unpackQueryResultProtobuf(raw))
 
     let remote
 
@@ -61,6 +63,7 @@ describe('Remote Query', () => {
     ]
 
     const expected = responses.slice(0, responses.length - 1)
+      .map(raw => unpackQueryResultProtobuf(raw))
 
     let remote
     return makeNode()
@@ -101,7 +104,7 @@ describe('Remote Query with inline data', () => {
       )
       .then(stmtId => remote.db.get(stmtId))
       .then(stmt => {
-        remote.p2p.handle(PROTOCOLS.node.query, mockQueryHandler([{value: {simple: {stmt}}}]))
+        remote.p2p.handle(PROTOCOLS.node.query, mockQueryHandler([{value: {simple: {stmt: stmt.toProtobuf()}}}]))
       })
   )
 
@@ -111,7 +114,7 @@ describe('Remote Query with inline data', () => {
       .then(result => {
         assert(result != null)
         assert(Array.isArray(result))
-        assert.deepEqual(result[0].simple.stmt.body.simple.object.data, seedObject)
+        assert.deepEqual(result[0].body.object, seedObject)
       })
   )
 })

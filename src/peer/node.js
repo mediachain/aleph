@@ -18,15 +18,16 @@ const {
   pullToPromise,
   pullRepeatedly,
   resultStreamThrough,
-  objectIdsForQueryResult,
-  expandQueryResult
+  expandStatement
 } = require('./util')
 const { promiseHash, isB58Multihash } = require('../common/util')
 const { pushStatementsToConn } = require('./push')
 const { mergeFromStreams } = require('./merge')
-const { makeSimpleStatement } = require('../metadata/statement')
+const { Statement } = require('../model/statement')
+const { unpackQueryResultProtobuf } = require('../model/query_result')
 
-import type { QueryResultMsg, QueryResultValueMsg, DataResultMsg, DataObjectMsg, NodeInfoMsg, StatementMsg, PushEndMsg } from '../protobuf/types'
+import type { QueryResult, QueryResultValue } from '../model/query_result'
+import type { DataResultMsg, DataObjectMsg, NodeInfoMsg, PushEndMsg } from '../protobuf/types'
 import type { Connection } from 'interface-connection'
 import type { PullStreamSource } from './util'
 import type { DatastoreOptions } from './datastore'
@@ -267,10 +268,11 @@ class MediachainNode {
           conn,
           protoStreamDecode(pb.node.QueryResult),
           resultStreamThrough,
+          pull.map(r => unpackQueryResultProtobuf(r))
         ))
   }
 
-  remoteQuery (peer: PeerInfo | PeerId | string, queryString: string): Promise<Array<QueryResultMsg>> {
+  remoteQuery (peer: PeerInfo | PeerId | string, queryString: string): Promise<Array<QueryResult>> {
     return this.remoteQueryStream(peer, queryString)
       .then(stream => new Promise((resolve, reject) => {
         pull(
@@ -309,7 +311,7 @@ class MediachainNode {
   }
 
   // local queries (MCQL parser NOT IMPLEMENTED)
-  query (queryString: string): Promise<Array<QueryResultMsg>> {
+  query (queryString: string): Promise<Array<QueryResult>> {
     throw new Error('Local MCQL queries are not implemented!')
   }
 
@@ -371,11 +373,7 @@ class MediachainNode {
         pull(
           resultStream,
           paramap((queryResult, cb) => {
-            if (queryResult.value == null) {
-              return cb(null, queryResult)
-            }
-
-            this._expandQueryResultData(peer, queryResult.value)
+            this._expandQueryResultData(peer, queryResult)
               .then(result => cb(null, result))
               .catch(err => cb(err))
           })
@@ -396,13 +394,14 @@ class MediachainNode {
       }))
   }
 
-  _expandQueryResultData (peer: PeerInfo | PeerId | string, result: QueryResultValueMsg): Promise<Object> {
-    const objectIds = objectIdsForQueryResult(result)
-    if (objectIds.length < 1) return Promise.resolve(result)
+  _expandQueryResultData (peer: PeerInfo | PeerId | string, result: QueryResultValue): Promise<Object> {
+    if (!(result instanceof Statement)) return Promise.resolve(result)
+    const stmt: Statement = result
+    if (stmt.objectIds.length < 1) return Promise.resolve(result)
 
-    return this.remoteData(peer, objectIds)
+    return this.remoteData(peer, stmt.objectIds)
       .then((dataResults: Array<DataObjectMsg>) =>
-        expandQueryResult(result, dataResults)
+        expandStatement(stmt, dataResults)
       )
   }
 
@@ -415,7 +414,7 @@ class MediachainNode {
       .then(({queryStream, dataConn}) => mergeFromStreams(this, queryStream, dataConn))
   }
 
-  pushStatements (peer: PeerInfo | PeerId | string, statements: Array<StatementMsg>): Promise<PushEndMsg> {
+  pushStatements (peer: PeerInfo | PeerId | string, statements: Array<Statement>): Promise<PushEndMsg> {
     return this.openConnection(peer, PROTOCOLS.node.push)
       .then(conn => pushStatementsToConn(statements, conn))
   }
@@ -440,7 +439,7 @@ class MediachainNode {
     return this.putData(object)
       .then(([objectHash]) => {
         const body = {object: objectHash, refs, deps, tags}
-        return makeSimpleStatement(publisherId, namespace, body, this.statementCounter)
+        return Statement.createSimple(publisherId, namespace, body, this.statementCounter)
       })
       .then(stmt => this.db.put(stmt)
         .then(() => stmt.id))
@@ -460,7 +459,7 @@ class RemoteNode {
     return this.node.ping(this.remotePeerInfo)
   }
 
-  query (queryString: string): Promise<Array<QueryResultMsg>> {
+  query (queryString: string): Promise<Array<QueryResult>> {
     return this.node.remoteQuery(this.remotePeerInfo, queryString)
   }
 

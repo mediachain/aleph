@@ -5,9 +5,8 @@ const assert = require('assert')
 const { before, describe, it } = require('mocha')
 const path = require('path')
 
+const { Statement } = require('../../src/model/statement')
 const { PublisherId, PrivateSigningKey } = require('../../src/peer/identity')
-const { makeSimpleStatement } = require('../../src/metadata/statement')
-const { signStatement, verifyStatement } = require('../../src/metadata/signatures')
 
 const CONCAT_PUBLISHER_ID_PUB58 = '4XTTM4JKrrBeAK6qXmo8FoKmT5RkfjeXfZrnWjJNw9fKvPnEs'
 const CONCAT_PUBLISHER_ID_PATH = path.join(__dirname, '..', 'resources', 'publisher_ids', 'concat',
@@ -41,36 +40,36 @@ describe('Signature verification', () => {
   })
 
   it('validates a statement made with makeSimpleStatement helper', () => {
-    return makeSimpleStatement(publisherId, 'scratch.sig-test', {object: 'QmF00123', refs: []})
-      .then(stmt => verifyStatement(stmt))
+    return Statement.createSimple(publisherId, 'scratch.sig-test', {object: 'QmF00123', refs: []})
+      .then(stmt => stmt.verifySignature)
       .then(valid => {
         assert(valid, 'statement did not validate')
       })
   })
 
   it('signs and validates a manually-constructed statement', () => {
-    const stmtNoSig = {
+    const stmtNoSig = Statement.fromProtobuf({
       id: 'foo',
       publisher: publisherId.id58,
       namespace: 'scratch.sig-test',
       timestamp: Date.now(),
       body: {simple: {object: 'QmF00123', refs: [], deps: [], tags: []}},
       signature: Buffer.from('')
-    }
-    return signStatement(stmtNoSig, publisherId)
-      .then(signed => verifyStatement(signed))
+    })
+    return stmtNoSig.sign(publisherId)
+      .then(signed => signed.verifySignature())
       .then(valid => {
         assert(valid, 'statement did not validate')
       })
   })
 
   it('does not validate an altered statement', () => {
-    makeSimpleStatement(publisherId, 'scratch.sig-test', {object: 'QmF00123', refs: []})
+    Statement.createSimple(publisherId, 'scratch.sig-test', {object: 'QmF00123', refs: []})
       .then(stmt => {
         stmt.namespace = 'scratch.new-namespace'
         return stmt
       })
-      .then(altered => verifyStatement(altered))
+      .then(altered => altered.verifySignature())
       .then(valid => {
         assert(!valid, 'incorrectly validated an altered statement')
       })

@@ -1,5 +1,6 @@
 // @flow
 
+const _ = require('lodash')
 const Multihashing = require('multihashing')
 import type { Writable, Readable } from 'stream'
 import type { WriteStream } from 'tty'
@@ -49,17 +50,29 @@ function flatMap<T, U> (array: Array<T>, f: (x: T) => Array<U>): Array<U> {
 }
 
 /**
- * Given two `Set`s, return a new `Set` that contains all elements from both.
- * @param {Set} a
- * @param {Set} b
+ * Given any number of `Set`s, return a new `Set` that contains all elements combined.
+ * @param
  * @returns {Set} - the union of `a` and `b`
  */
-function setUnion<T> (a: Set<T>, b: Set<T>): Set<T> {
-  const u = new Set(a)
-  for (const elem of b) {
-    u.add(elem)
+function setUnion<T> (...sets: Array<Set<T>>): Set<T> {
+  const u = new Set()
+  for (const s of sets) {
+    for (const elem of s) {
+      u.add(elem)
+    }
   }
   return u
+}
+
+/**
+ * Returns true if Set `a` and Set `b` contain the same members, using strict (shallow) equality (the `===` operator)
+ */
+function setEquals<T> (a: Set<T>, b: Set<T>): boolean {
+  if (a.size !== b.size) return false
+  for (const elem of a.values()) {
+    if (!b.has(elem)) return false
+  }
+  return true
 }
 
 /**
@@ -132,15 +145,30 @@ function consumeStream (stream: Readable): Promise<string> {
   })
 }
 
+/**
+ * Returns a clone of `obj` with all `Buffer` objects replaced with their base64-encoded string equivalents
+ */
+function stringifyNestedBuffers (obj: Object): Object {
+  const replacer = obj => {
+    if (obj instanceof Buffer) {
+      return obj.toString('base64')
+    }
+  }
+
+  return (_.cloneDeepWith(obj, replacer): any)
+}
+
 module.exports = {
   promiseHash,
   promiseTimeout,
   flatMap,
   setUnion,
+  setEquals,
   b58MultihashForBuffer,
   isB58Multihash,
   writeln,
   println,
   printlnErr,
-  consumeStream
+  consumeStream,
+  stringifyNestedBuffers
 }
