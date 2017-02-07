@@ -26,7 +26,7 @@ describe('Signing', () => {
       id: 'foo',
       publisher: privateKey.publicKey.toB58String(),
       namespace: 'scratch.sig-test',
-      timestamp: new Date('October 13, 2014 11:13:00'),
+      timestamp: 1413213180000,
       body: {simple: {object: 'QmF00123', refs: [], deps: [], tags: []}},
       signature: Buffer.from('')
     })
