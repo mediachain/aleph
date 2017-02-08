@@ -5,7 +5,7 @@ chai.use(require('chai-as-promised'))
 const { expect } = chai
 const { describe, it, before } = require('mocha')
 const { PublisherId, PrivateSigningKey } = require('../../src/peer/identity')
-const { Statement, SignedStatement, StatementBody, SimpleStatementBody, ExpandedSimpleStatementBody, CompoundStatementBody, EnvelopeStatementBody } = require('../../src/model/statement')
+const { Statement, SignedStatement, UnsignedStatement, StatementBody, SimpleStatementBody, ExpandedSimpleStatementBody, CompoundStatementBody, EnvelopeStatementBody } = require('../../src/model/statement')
 const pb = require('../../src/protobuf')
 const { setEquals, stringifyNestedBuffers } = require('../../src/common/util')
 const { inspect } = require('util')
@@ -87,6 +87,72 @@ describe('Statements', () => {
     })
   })
 
+  describe('inspect', () => {
+    const stmt = new SignedStatement({
+      id: 'foo',
+      publisher: 'bar',
+      namespace: 'baz',
+      timestamp: 1,
+      body: new SimpleStatementBody({object: 'foo'}),
+      signature: Buffer.from('Hello World')
+    })
+
+    it('includes a base64-encoded signature for SignedStatements', () => {
+      const {id, publisher, namespace, timestamp, body, signature} = stmt
+      const expectedOutput = inspect(
+        {
+          id,
+          publisher,
+          namespace,
+          timestamp,
+          body: body.inspect(),
+          signature: signature.toString('base64')
+        },
+        {depth: null}
+      )
+
+      expect(inspect(stmt))
+        .to.eql(expectedOutput)
+    })
+
+    it('does not include a signature for UnsignedStatements', () => {
+      const unsigned = stmt.asUnsignedStatement()
+      const {id, publisher, namespace, timestamp, body} = unsigned
+      const expectedOutput = inspect(
+        {
+          id,
+          publisher,
+          namespace,
+          timestamp,
+          body: body.inspect()
+        },
+        {depth: null}
+      )
+
+      expect(inspect(unsigned))
+        .to.eql(expectedOutput)
+    })
+  })
+
+  describe('expandObjects()', () => {
+    const stmt = Statement.fromProtobuf(fixtures.statements.envelope[0])
+    if (!(stmt instanceof SignedStatement)) {
+      // throwing here makes flow happy
+      throw new Error('Fixture statement was not signed')
+    }
+    const dataObjects = new Map(
+      stmt.objectIds.map(key => [key, {foo: 'bar'}])
+    )
+
+    it('returns a statement of the same type (signed vs unsigned)', () => {
+      expect(stmt.expandObjects(dataObjects))
+        .to.be.an.instanceof(SignedStatement)
+
+      expect(stmt.asUnsignedStatement().expandObjects(dataObjects))
+        .to.be.an.instanceof(UnsignedStatement)
+    })
+  })
+
   describe('SignedStatement.create()', () => {
     it('accepts a StatementBody object or StatementBodyMsg protobuf object', () => {
       const body = new SimpleStatementBody({object: 'foo'})
@@ -124,6 +190,19 @@ describe('Statements', () => {
           expect(stmt.body).to.be.an.instanceof(ExpandedSimpleStatementBody)
           expect((stmt: any).body.object).to.deep.eql(object)
         })
+    })
+  })
+
+  describe('SignedStatement.fromProtobuf()', () => {
+    it('throws if protobuf message does not have a signature', () => {
+      expect(() => SignedStatement.fromProtobuf({
+        id: 'foo',
+        namespace: 'bar',
+        publisher: 'baz',
+        timestamp: 1234,
+        body: {simple: {object: 'foo', refs: [], deps: [], tags: []}}
+      }))
+        .to.throw('requires a non-null signature')
     })
   })
 
