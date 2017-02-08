@@ -10,7 +10,7 @@ const { getTestNodeId } = require('../test/util')
 const { MediachainNode: AlephNode } = require('../src/peer/node')
 const { concatNodeClient, concatNodePeerInfo } = require('./util')
 const { PublisherId } = require('../src/peer/identity')
-const { Statement } = require('../src/model/statement')
+const { SignedStatement } = require('../src/model/statement')
 
 const TEST_NAMESPACE = 'scratch.push-test'
 const UNAUTHORIZED_NAMESPACE = 'scratch.unauthorized-push-test'
@@ -38,14 +38,14 @@ function preparePartiallyValidStatements (alephNode: AlephNode, numValid: number
     .then(([object]) => {
       const promises = []
       for (let i = 0; i < numValid; i++) {
-        promises.push(Statement.createSimple(alephNode.publisherId, TEST_NAMESPACE, {
+        promises.push(SignedStatement.createSimple(alephNode.publisherId, TEST_NAMESPACE, {
           object,
           refs: [`test:${i.toString()}`]
         },
         alephNode.statementCounter))
       }
       // add a statement with an invalid object reference
-      promises.push(Statement.createSimple(alephNode.publisherId, TEST_NAMESPACE, {
+      promises.push(SignedStatement.createSimple(alephNode.publisherId, TEST_NAMESPACE, {
         object: 'QmNLftPEMzsadpbTsGaVP3haETYJb4GfnCgQiaFj5Red9G', refs: [], deps: [], tags: []
       }))
       return Promise.all(promises)

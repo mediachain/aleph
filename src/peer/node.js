@@ -23,7 +23,7 @@ const {
 const { promiseHash, isB58Multihash } = require('../common/util')
 const { pushStatementsToConn } = require('./push')
 const { mergeFromStreams } = require('./merge')
-const { Statement } = require('../model/statement')
+const { Statement, SignedStatement } = require('../model/statement')
 const { unpackQueryResultProtobuf } = require('../model/query_result')
 
 import type { QueryResult, QueryResultValue } from '../model/query_result'
@@ -439,7 +439,7 @@ class MediachainNode {
     return this.putData(object)
       .then(([objectHash]) => {
         const body = {object: objectHash, refs, deps, tags}
-        return Statement.createSimple(publisherId, namespace, body, this.statementCounter)
+        return SignedStatement.createSimple(publisherId, namespace, body, this.statementCounter)
       })
       .then(stmt => this.db.put(stmt)
         .then(() => stmt.id))

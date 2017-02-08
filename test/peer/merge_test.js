@@ -8,7 +8,7 @@ const uuid = require('uuid')
 const { makeNode, mockQueryHandler } = require('../util')
 const { PROTOCOLS } = require('../../src/peer/constants')
 const { b58MultihashForBuffer } = require('../../src/common/util')
-const { Statement } = require('../../src/model/statement')
+const { Statement, SignedStatement } = require('../../src/model/statement')
 const serialize = require('../../src/metadata/serialize')
 const { PublisherId } = require('../../src/peer/identity')
 
@@ -25,7 +25,7 @@ function makeSeedStatements (publisherId: PublisherId, seedObjectBuffers: Array<
   return Promise.all(
     seedObjectBuffers.map((buf, idx) => {
       const object = b58MultihashForBuffer(buf)
-      return Statement.createSimple(publisherId, TEST_NAMESPACE, {object, refs: [`merge-test:${idx.toString()}`]}, idx)
+      return SignedStatement.createSimple(publisherId, TEST_NAMESPACE, {object, refs: [`merge-test:${idx.toString()}`]}, idx)
     })
   )
 }

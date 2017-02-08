@@ -5,7 +5,7 @@ chai.use(require('chai-as-promised'))
 const { expect } = chai
 const { describe, it, before } = require('mocha')
 const { PublisherId, PrivateSigningKey } = require('../../src/peer/identity')
-const { Statement, StatementBody, SimpleStatementBody, ExpandedSimpleStatementBody, CompoundStatementBody, EnvelopeStatementBody } = require('../../src/model/statement')
+const { Statement, SignedStatement, UnsignedStatement, StatementBody, SimpleStatementBody, ExpandedSimpleStatementBody, CompoundStatementBody, EnvelopeStatementBody } = require('../../src/model/statement')
 const pb = require('../../src/protobuf')
 const { setEquals, stringifyNestedBuffers } = require('../../src/common/util')
 const { inspect } = require('util')
@@ -74,7 +74,7 @@ describe('Statements', () => {
 
   describe('constructor', () => {
     it('accepts base64-encoded signatures', () => {
-      const stmt = new Statement({
+      const stmt = new SignedStatement({
         id: 'foo',
         publisher: 'bar',
         namespace: 'baz',
@@ -87,26 +87,92 @@ describe('Statements', () => {
     })
   })
 
-  describe('Statement.create()', () => {
+  describe('inspect', () => {
+    const stmt = new SignedStatement({
+      id: 'foo',
+      publisher: 'bar',
+      namespace: 'baz',
+      timestamp: 1,
+      body: new SimpleStatementBody({object: 'foo'}),
+      signature: Buffer.from('Hello World')
+    })
+
+    it('includes a base64-encoded signature for SignedStatements', () => {
+      const {id, publisher, namespace, timestamp, body, signature} = stmt
+      const expectedOutput = inspect(
+        {
+          id,
+          publisher,
+          namespace,
+          timestamp,
+          body: body.inspect(),
+          signature: signature.toString('base64')
+        },
+        {depth: null}
+      )
+
+      expect(inspect(stmt))
+        .to.eql(expectedOutput)
+    })
+
+    it('does not include a signature for UnsignedStatements', () => {
+      const unsigned = stmt.asUnsignedStatement()
+      const {id, publisher, namespace, timestamp, body} = unsigned
+      const expectedOutput = inspect(
+        {
+          id,
+          publisher,
+          namespace,
+          timestamp,
+          body: body.inspect()
+        },
+        {depth: null}
+      )
+
+      expect(inspect(unsigned))
+        .to.eql(expectedOutput)
+    })
+  })
+
+  describe('expandObjects()', () => {
+    const stmt = Statement.fromProtobuf(fixtures.statements.envelope[0])
+    if (!(stmt instanceof SignedStatement)) {
+      // throwing here makes flow happy
+      throw new Error('Fixture statement was not signed')
+    }
+    const dataObjects = new Map(
+      stmt.objectIds.map(key => [key, {foo: 'bar'}])
+    )
+
+    it('returns a statement of the same type (signed vs unsigned)', () => {
+      expect(stmt.expandObjects(dataObjects))
+        .to.be.an.instanceof(SignedStatement)
+
+      expect(stmt.asUnsignedStatement().expandObjects(dataObjects))
+        .to.be.an.instanceof(UnsignedStatement)
+    })
+  })
+
+  describe('SignedStatement.create()', () => {
     it('accepts a StatementBody object or StatementBodyMsg protobuf object', () => {
       const body = new SimpleStatementBody({object: 'foo'})
       let stmt1, stmt2
-      return Statement.create(publisherIds.simple, 'test.foo', body)
+      return SignedStatement.create(publisherIds.simple, 'test.foo', body)
         .then(s => { stmt1 = s })
-        .then(() => Statement.create(publisherIds.simple, 'test.create', body.toProtobuf()))
+        .then(() => SignedStatement.create(publisherIds.simple, 'test.create', body.toProtobuf()))
         .then(s => { stmt2 = s })
         .then(() => {
-          expect(stmt1).to.be.an.instanceof(Statement)
-          expect(stmt2).to.be.an.instanceof(Statement)
+          expect(stmt1).to.be.an.instanceof(SignedStatement)
+          expect(stmt2).to.be.an.instanceof(SignedStatement)
           expect(stmt1.toProtobuf().body).to.deep.eql(stmt2.toProtobuf().body)
         })
     })
   })
 
-  describe('Statement.createSimple()', () => {
+  describe('SignedStatement.createSimple()', () => {
     it('accepts an object reference string', () => {
       const object = 'QmREZU7Pqv3ezGWnXQiHXCm2uipjdHkuXWRygx5gMt4Bwq'
-      return Statement.createSimple(publisherIds.simple, 'test.createSimple', {object})
+      return SignedStatement.createSimple(publisherIds.simple, 'test.createSimple', {object})
         .then(stmt => {
           expect(stmt).to.be.an.instanceof(Statement)
           expect(stmt.body).to.be.an.instanceof(SimpleStatementBody)
@@ -117,7 +183,7 @@ describe('Statements', () => {
     it('accepts a JS object to create an statement with expanded body', () => {
       const object = {foo: 'bar'}
       const objectHash = 'QmREZU7Pqv3ezGWnXQiHXCm2uipjdHkuXWRygx5gMt4Bwq'
-      return Statement.createSimple(publisherIds.simple, 'test.createSimple.expandedBody', {object})
+      return SignedStatement.createSimple(publisherIds.simple, 'test.createSimple.expandedBody', {object})
         .then(stmt => {
           expect(stmt).to.be.an.instanceof(Statement)
           expect(stmt.objectIds).to.contain(objectHash)
@@ -127,7 +193,20 @@ describe('Statements', () => {
     })
   })
 
-  describe('Statement.sign()', () => {
+  describe('SignedStatement.fromProtobuf()', () => {
+    it('throws if protobuf message does not have a signature', () => {
+      expect(() => SignedStatement.fromProtobuf({
+        id: 'foo',
+        namespace: 'bar',
+        publisher: 'baz',
+        timestamp: 1234,
+        body: {simple: {object: 'foo', refs: [], deps: [], tags: []}}
+      }))
+        .to.throw('requires a non-null signature')
+    })
+  })
+
+  describe('UnsignedStatement.sign()', () => {
     it('produces a correct signature when signed by the publishers key', () => {
       const promises = []
 
@@ -137,14 +216,14 @@ describe('Statements', () => {
         const publicKey = publisherId.privateKey.publicKey
 
         for (const stmtMsg of statements) {
-          const stmt = Statement.fromProtobuf(stmtMsg)
+          const stmt = SignedStatement.fromProtobuf(stmtMsg)
           const promise = stmt.verifySignature(publicKey)
             .then(() => {
-              const originalSig = stmt.signature
-              stmt.signature = Buffer.from('foo')
-              return stmt.sign(publisherId)
+              const unsigned = stmt.asUnsignedStatement()
+              return unsigned.sign(publisherId)
                 .then(signedStmt => {
-                  expect(signedStmt.signature).to.deep.eql(originalSig)
+                  expect(signedStmt).to.be.an.instanceof(SignedStatement)
+                  expect(signedStmt.signature).to.deep.eql(stmt.signature)
                 })
             })
           promises.push(promise)
@@ -155,7 +234,7 @@ describe('Statements', () => {
     })
 
     it('fails when signing with a PublisherId that does not match the statement', () => {
-      const stmt = Statement.fromProtobuf(fixtures.statements.simple[0])
+      const stmt = Statement.fromProtobuf(fixtures.statements.simple[0]).asUnsignedStatement()
       return expect(stmt.sign(publisherIds.compound))
         .to.eventually.be.rejectedWith('publisher id of signer does not match statement publisher')
     })
