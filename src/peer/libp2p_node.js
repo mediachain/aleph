@@ -19,17 +19,17 @@ const DEFAULT_DIAL_TIMEOUT = 10000
 
 /**
  * Options for {@link P2PNode} constructor.
- * @property peerInfo
+ * @property {PeerInfo} peerInfo
  *  A libp2p PeerInfo object that identifies a peer.
  *  Must contain at least one valid multiaddr for the node to listen on.
  *
- * @property peerBook
+ * @property {?PeerBook} peerBook
  *  An optional PeerBook object to "pre-seed" the node with mappings from PeerId to PeerInfo.
  *
- * @property disableSecureIO
+ * @property {?boolean} disableSecureIO
  *  If true, disables encryption for streams opened by the node. Use for testing only.
  *
- * @property timeout
+ * @property {?number} timeout
  *  Timeout in milliseconds to wait when dialing a peer before erroring out.
  *  Default is 10000 (10s) if this option is not present.
  */
@@ -42,8 +42,8 @@ type P2PNodeOptions = {
 
 /**
  * An object that acts as a LibP2P peer.  Provides promise-based interfaces
- * for [opening]{@link P2PNode#dialByPeerInfo} and [closing]{@link P2PNode#hangUpByPeerInfo}
- * streams to other peers, as well as [handling named protocols]{@link P2PNode#handle}.
+ * for opening and closing streams to other peers, (see {@link P2PNode#dialByPeerInfo} and {@link P2PNode#hangUpByPeerInfo})
+ * as well as handling named protocols (see {@link P2PNode#handle}).
  *
  * A newly-constructed `P2PNode` handles a single protocol, the libp2p standard Ping protocol.
  * You can ping another libp2p node (including IPFS nodes) with {@link P2PNode#ping}.

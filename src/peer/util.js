@@ -1,5 +1,9 @@
 // @flow
 
+/**
+ * @module peer/util
+ */
+
 const pull = require('pull-stream')
 const Multiaddr = require('multiaddr')
 const PeerId = require('peer-id')
@@ -16,12 +20,14 @@ export type PullStreamSource<T> = (end: ?mixed, cb: PullStreamCallback<T>) => vo
 export type PullStreamSink<T> = (source: PullStreamSource<T>) => void
 export type PullStreamThrough<T, U> = (source: PullStreamSource<T>) => PullStreamSource<U>
 
+module.exports = exports = {}
+
 /**
  * A through stream that accepts POJOs and encodes them with the given `protocol-buffers` schema
  * @param codec a `protocol-buffers` schema, containing an `encode` function
  * @returns a pull-stream through function that will output encoded protos, prefixed with thier varint-encoded size
  */
-function protoStreamEncode<T> (codec: ProtoCodec<T>): PullStreamThrough<T, Buffer> {
+exports.protoStreamEncode = function protoStreamEncode<T> (codec: ProtoCodec<T>): PullStreamThrough<T, Buffer> {
   return pull(
     pull.map(codec.encode),
     lp.encode()
@@ -29,12 +35,12 @@ function protoStreamEncode<T> (codec: ProtoCodec<T>): PullStreamThrough<T, Buffe
 }
 
 /**
- * A through-stream that accepts size-prefixed encoded protbufs, decodes with the given decoder function,
+ * A through-stream that accepts size-prefixed encoded protobufs, decodes with the given decoder function,
  * and emits the decoded POJOs.
  * @param codec a `protocol-buffers` schema, containing a `decode` function
  * @returns a through-stream function that can be wired into a pull-stream pipeline
  */
-function protoStreamDecode<T> (codec: ProtoCodec<T>): PullStreamThrough<Buffer, T> {
+exports.protoStreamDecode = function protoStreamDecode<T> (codec: ProtoCodec<T>): PullStreamThrough<Buffer, T> {
   return pull(
     lp.decode(),
     pull.map(codec.decode)
@@ -46,11 +52,11 @@ function protoStreamDecode<T> (codec: ProtoCodec<T>): PullStreamThrough<Buffer, 
  * @param resp a LookupPeerResponse protobuf, decoded into a POJO
  * @returns a libp2p PeerInfo object, or null if lookup failed
  */
-function lookupResponseToPeerInfo (resp: LookupPeerResponseMsg): ?PeerInfo {
+exports.lookupResponseToPeerInfo = function lookupResponseToPeerInfo (resp: LookupPeerResponseMsg): ?PeerInfo {
   const peer = resp.peer
   if (peer == null) return null
 
-  return peerInfoProtoUnmarshal(peer)
+  return exports.peerInfoProtoUnmarshal(peer)
 }
 
 /**
@@ -58,7 +64,7 @@ function lookupResponseToPeerInfo (resp: LookupPeerResponseMsg): ?PeerInfo {
  * @param pbPeer a PeerInfo protobuf message, decoded into a POJO
  * @returns {PeerInfo} a libp2p PeerInfo object
  */
-function peerInfoProtoUnmarshal (pbPeer: PeerInfoMsg): PeerInfo {
+exports.peerInfoProtoUnmarshal = function peerInfoProtoUnmarshal (pbPeer: PeerInfoMsg): PeerInfo {
   const peerId = PeerId.createFromB58String(pbPeer.id)
   const peerInfo = new PeerInfo(peerId)
   if (pbPeer.addr == null) {
@@ -76,7 +82,7 @@ function peerInfoProtoUnmarshal (pbPeer: PeerInfoMsg): PeerInfo {
  * @param peerInfo a libp2p PeerInfo
  * @returns a POJO that's encodable to a PeerInfo protobuf message
  */
-function peerInfoProtoMarshal (peerInfo: PeerInfo): PeerInfoMsg {
+exports.peerInfoProtoMarshal = function peerInfoProtoMarshal (peerInfo: PeerInfo): PeerInfoMsg {
   return {
     id: peerInfo.id.toB58String(),
     addr: peerInfo.multiaddrs.map(a => a.buffer)
@@ -90,7 +96,7 @@ function peerInfoProtoMarshal (peerInfo: PeerInfo): PeerInfoMsg {
  *        since we're draining to Promise.resolve
  * @returns {Promise} a promise that will resolve to the first value that reaches the end of the pipeline.
  */
-function pullToPromise<T> (...streams: Array<Function>): Promise<T> {
+exports.pullToPromise = function pullToPromise<T> (...streams: Array<Function>): Promise<T> {
   return new Promise((resolve, reject) => {
     pull(
       ...streams,
@@ -112,7 +118,7 @@ function pullToPromise<T> (...streams: Array<Function>): Promise<T> {
  * @param interval milliseconds to wait between providing value to consumers
  * @returns a pull-stream source
  */
-function pullRepeatedly<T> (value: T, interval: number = 1000): PullStreamSource<T> {
+exports.pullRepeatedly = function pullRepeatedly<T> (value: T, interval: number = 1000): PullStreamSource<T> {
   let intervalStart: ?Date = null
   let timeoutId: ?number = null
   function intervalElapsed () {
@@ -143,8 +149,7 @@ function pullRepeatedly<T> (value: T, interval: number = 1000): PullStreamSource
  * and end the stream with an Error object if it receives a StreamError message.  Without this,
  * you need to explicitly `pull.take(n)` from the result stream, or it will never terminate.
  */
-type MediachainStreamThrough<T: QueryResultMsg | DataResultMsg> = PullStreamThrough<T, T>
-const resultStreamThrough: MediachainStreamThrough<*> = (read) => {
+exports.resultStreamThrough = function resultStreamThrough<T: QueryResultMsg | DataResultMsg> (read: PullStreamSource<T>): PullStreamSource<T> {
   return (end, callback) => {
     if (end) return callback(end, null)
 
@@ -156,7 +161,7 @@ const resultStreamThrough: MediachainStreamThrough<*> = (read) => {
       }
 
       if (data.error !== undefined) {
-        const message = data.error.error || 'Unknown error'
+        const message = (data: Object).error.error || 'Unknown error'
         return callback(new Error(message), data)
       }
 
@@ -165,7 +170,15 @@ const resultStreamThrough: MediachainStreamThrough<*> = (read) => {
   }
 }
 
-function expandStatement (stmt: Statement, dataObjects: Array<DataObjectMsg>): Statement {
+/**
+ * Convert a `Statement` into it's "expanded" form, so that it contains the data objects it links to.
+ * @param {Statement} stmt - A `Statement` with object references
+ * @param {Array<DataObjectMsg>} dataObjects - an array of decoded DataObject protobuf messages, as delivered
+ *  by the `/mediachain/node/data` protocol.
+ * @returns {Statement} - The expanded `Statement`.  This will be a new object, with `ExpandedSimpleStatmentBody`
+ *  objects replacing any `SimpleStatementBody` objects in the original.
+ */
+exports.expandStatement = function expandStatement (stmt: Statement, dataObjects: Array<DataObjectMsg>): Statement {
   const objectMap = new Map()
 
   // convert the array of key/value pairs into a map, attempting to
@@ -183,14 +196,3 @@ function expandStatement (stmt: Statement, dataObjects: Array<DataObjectMsg>): S
   return stmt.expandObjects(objectMap)
 }
 
-module.exports = {
-  protoStreamEncode,
-  protoStreamDecode,
-  lookupResponseToPeerInfo,
-  peerInfoProtoUnmarshal,
-  peerInfoProtoMarshal,
-  pullToPromise,
-  pullRepeatedly,
-  resultStreamThrough,
-  expandStatement
-}

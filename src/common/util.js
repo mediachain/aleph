@@ -1,11 +1,18 @@
 // @flow
 
+/**
+ * @module common/util
+ * @description handy utility things that seem broadly useful
+ */
+
 const _ = require('lodash')
 const Multihash = require('multihashes')
 const crypto = require('crypto')
 
 import type { Writable, Readable } from 'stream'
 import type { WriteStream } from 'tty'
+
+module.exports = exports = {}
 
 /**
  * ES6+ implementation of rsvp's Promise.hash method:
@@ -15,7 +22,7 @@ import type { WriteStream } from 'tty'
  *          the resolved values of that key's promise.  If any promise fails,
  *          the whole thing will fail.
  */
-function promiseHash (hash: Object): Promise<Object> {
+exports.promiseHash = function promiseHash (hash: Object): Promise<Object> {
   // get the key value pairs in a consistent ordering for iteration
   const keys = Object.keys(hash)
   const vals = keys.map(k => hash[k])
@@ -35,7 +42,7 @@ function promiseHash (hash: Object): Promise<Object> {
  * @param promise a promise that you want to set a timeout for
  * @returns a Promise that will resolve to the value of `promise`, unless the timeout is exceeded
  */
-function promiseTimeout<T> (timeout: number, promise: Promise<T>): Promise<T> {
+exports.promiseTimeout = function promiseTimeout<T> (timeout: number, promise: Promise<T>): Promise<T> {
   return Promise.race([promise, new Promise((resolve, reject) => {
     setTimeout(() => {
       reject(new Error(`Timeout of ${timeout}ms exceeded`))
@@ -47,7 +54,7 @@ function promiseTimeout<T> (timeout: number, promise: Promise<T>): Promise<T> {
  * Given an `array` of `T`s, apply function `f` of `T => Array<U>`,
  * to each element, returning a flattened array of `U`s
  */
-function flatMap<T, U> (array: Array<T>, f: (x: T) => Array<U>): Array<U> {
+exports.flatMap = function flatMap<T, U> (array: Array<T>, f: (x: T) => Array<U>): Array<U> {
   return [].concat(...array.map(x => f(x)))
 }
 
@@ -56,7 +63,7 @@ function flatMap<T, U> (array: Array<T>, f: (x: T) => Array<U>): Array<U> {
  * @param
  * @returns {Set} - the union of `a` and `b`
  */
-function setUnion<T> (...sets: Array<Set<T>>): Set<T> {
+exports.setUnion = function setUnion<T> (...sets: Array<Set<T>>): Set<T> {
   const u = new Set()
   for (const s of sets) {
     for (const elem of s) {
@@ -69,7 +76,7 @@ function setUnion<T> (...sets: Array<Set<T>>): Set<T> {
 /**
  * Returns true if Set `a` and Set `b` contain the same members, using strict (shallow) equality (the `===` operator)
  */
-function setEquals<T> (a: Set<T>, b: Set<T>): boolean {
+exports.setEquals = function setEquals<T> (a: Set<T>, b: Set<T>): boolean {
   if (a.size !== b.size) return false
   for (const elem of a.values()) {
     if (!b.has(elem)) return false
@@ -82,7 +89,7 @@ function setEquals<T> (a: Set<T>, b: Set<T>): boolean {
  * @param buf - a `Buffer` you want to hash
  * @returns {string} a base58-encoded multihash string
  */
-function b58MultihashForBuffer (buf: Buffer): string {
+exports.b58MultihashForBuffer = function b58MultihashForBuffer (buf: Buffer): string {
   const hash = crypto.createHash('sha256')
   hash.update(buf)
 
@@ -93,7 +100,7 @@ function b58MultihashForBuffer (buf: Buffer): string {
 /**
  * Returns true if `str` is a valid base58-encoded multihash
  */
-function isB58Multihash (str: string): boolean {
+exports.isB58Multihash = function isB58Multihash (str: string): boolean {
   try {
     const h = Multihash.fromB58String(str)
     Multihash.validate(h)
@@ -108,7 +115,7 @@ function isB58Multihash (str: string): boolean {
  * @param output
  * @param destination
  */
-function writeln (output: string, destination: Writable | WriteStream) {
+exports.writeln = function writeln (output: string, destination: Writable | WriteStream) {
   destination.write(output + '\n')
 }
 
@@ -119,8 +126,8 @@ function writeln (output: string, destination: Writable | WriteStream) {
  * which can result in memory leaks for long-running processes.
  * @param output
  */
-function println (output: string) {
-  writeln(output, process.stdout)
+exports.println = function println (output: string) {
+  exports.writeln(output, process.stdout)
 }
 
 /**
@@ -129,8 +136,8 @@ function println (output: string) {
  * to whatever you pass in.
  * @param output
  */
-function printlnErr (output: string) {
-  writeln(output, process.stderr)
+exports.printlnErr = function printlnErr (output: string) {
+  exports.writeln(output, process.stderr)
 }
 
 /**
@@ -138,7 +145,7 @@ function printlnErr (output: string) {
  * @param stream
  * @returns {Promise}
  */
-function consumeStream (stream: Readable): Promise<string> {
+exports.consumeStream = function consumeStream (stream: Readable): Promise<string> {
   return new Promise((resolve, reject) => {
     const chunks = []
     stream.on('error', err => reject(err))
@@ -152,7 +159,7 @@ function consumeStream (stream: Readable): Promise<string> {
 /**
  * Returns a clone of `obj` with all `Buffer` objects replaced with their base64-encoded string equivalents
  */
-function stringifyNestedBuffers (obj: Object): Object {
+exports.stringifyNestedBuffers = function stringifyNestedBuffers (obj: Object): Object {
   const replacer = obj => {
     if (obj instanceof Buffer) {
       return obj.toString('base64')
@@ -160,19 +167,4 @@ function stringifyNestedBuffers (obj: Object): Object {
   }
 
   return (_.cloneDeepWith(obj, replacer): any)
-}
-
-module.exports = {
-  promiseHash,
-  promiseTimeout,
-  flatMap,
-  setUnion,
-  setEquals,
-  b58MultihashForBuffer,
-  isB58Multihash,
-  writeln,
-  println,
-  printlnErr,
-  consumeStream,
-  stringifyNestedBuffers
 }

@@ -35,6 +35,38 @@ import type { StatementDBOptions } from './db/statement-db'
 import type { PublisherId } from './identity'
 import type { MergeResult } from './merge'
 
+/**
+ * Options for {@link MediachainNode} constructor.
+ *
+ * @property {PeerId} peerId
+ *  A libp2p PeerId object identifying the node. A PeerId is a representation of the node's
+ *  public key.
+ *
+ * @property {?PublisherId} publisherId
+ *  A PublisherId object that allows the node to create signed Mediachain statements.
+ *  If the node does not have a PublisherId, it can still store and transmit statements
+ *  created and signed by other nodes.
+ *
+ * @property {?PeerInfo} dirInfo
+ *  The PeerInfo for a directory node, used to lookup public remote peers.
+ *  If not provided to the constructor, can be set after the fact with {@link MediachainNode#setDirectory}
+ *
+ * @property {?Array<Multiaddr | string>} listenAddresses
+ *  An array of Multiaddr objects or string-encoded multiaddrs that the node will listen on.
+ *  If not given, the node will listen on a randomly chosen available port on the localhost interface.
+ *
+ * @property {?string} infoMessage
+ *  A string that will identify the node to the human operators of other peers.
+ *  Defaults to "(aleph)"
+ *
+ * @property {?DatastoreOptions} datastoreOptions
+ *  Options to be used for creating the node's object datastore.  Defaults to an in-memory
+ *  key/value store.
+ *
+ * @property {?StatementDBOptions} statementDBOptions
+ *  Options to be used for creating the node's statement database.  Defaults to a DB backed by
+ *  a temporary file (unique to each node, not persistent across invocations)
+ */
 export type MediachainNodeOptions = {
   peerId: PeerId,
   publisherId: ?PublisherId,
@@ -47,6 +79,11 @@ export type MediachainNodeOptions = {
 
 const DEFAULT_INFO_MESSAGE = '(aleph)'
 
+/**
+ * An object that represents a Mediachain node.
+ *
+ *
+ */
 class MediachainNode {
   p2p: P2PNode
   datastore: Datastore
