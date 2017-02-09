@@ -3,7 +3,7 @@
 const { assert, expect } = require('chai')
 const { before, describe, it } = require('mocha')
 const path = require('path')
-const { StatementDB } = require('../../src/peer/db/statement-db')
+const { StatementDB } = require('../../src/peer/db/index')
 const { Statement } = require('../../src/model/statement')
 
 const MIGRATIONS_DIR = path.join(__dirname, '..', '..', 'src', 'peer', 'db', 'migrations')

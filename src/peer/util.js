@@ -1,7 +1,8 @@
 // @flow
 
 /**
- * @module peer/util
+ * @module aleph/peer/util
+ * @description Helpers for peer-to-peer communication between nodes.
  */
 
 const pull = require('pull-stream')
@@ -20,14 +21,12 @@ export type PullStreamSource<T> = (end: ?mixed, cb: PullStreamCallback<T>) => vo
 export type PullStreamSink<T> = (source: PullStreamSource<T>) => void
 export type PullStreamThrough<T, U> = (source: PullStreamSource<T>) => PullStreamSource<U>
 
-module.exports = exports = {}
-
 /**
  * A through stream that accepts POJOs and encodes them with the given `protocol-buffers` schema
  * @param codec a `protocol-buffers` schema, containing an `encode` function
  * @returns a pull-stream through function that will output encoded protos, prefixed with thier varint-encoded size
  */
-exports.protoStreamEncode = function protoStreamEncode<T> (codec: ProtoCodec<T>): PullStreamThrough<T, Buffer> {
+function protoStreamEncode<T> (codec: ProtoCodec<T>): PullStreamThrough<T, Buffer> {
   return pull(
     pull.map(codec.encode),
     lp.encode()
@@ -40,7 +39,7 @@ exports.protoStreamEncode = function protoStreamEncode<T> (codec: ProtoCodec<T>)
  * @param codec a `protocol-buffers` schema, containing a `decode` function
  * @returns a through-stream function that can be wired into a pull-stream pipeline
  */
-exports.protoStreamDecode = function protoStreamDecode<T> (codec: ProtoCodec<T>): PullStreamThrough<Buffer, T> {
+function protoStreamDecode<T> (codec: ProtoCodec<T>): PullStreamThrough<Buffer, T> {
   return pull(
     lp.decode(),
     pull.map(codec.decode)
@@ -52,11 +51,11 @@ exports.protoStreamDecode = function protoStreamDecode<T> (codec: ProtoCodec<T>)
  * @param resp a LookupPeerResponse protobuf, decoded into a POJO
  * @returns a libp2p PeerInfo object, or null if lookup failed
  */
-exports.lookupResponseToPeerInfo = function lookupResponseToPeerInfo (resp: LookupPeerResponseMsg): ?PeerInfo {
+function lookupResponseToPeerInfo (resp: LookupPeerResponseMsg): ?PeerInfo {
   const peer = resp.peer
   if (peer == null) return null
 
-  return exports.peerInfoProtoUnmarshal(peer)
+  return peerInfoProtoUnmarshal(peer)
 }
 
 /**
@@ -64,7 +63,7 @@ exports.lookupResponseToPeerInfo = function lookupResponseToPeerInfo (resp: Look
  * @param pbPeer a PeerInfo protobuf message, decoded into a POJO
  * @returns {PeerInfo} a libp2p PeerInfo object
  */
-exports.peerInfoProtoUnmarshal = function peerInfoProtoUnmarshal (pbPeer: PeerInfoMsg): PeerInfo {
+function peerInfoProtoUnmarshal (pbPeer: PeerInfoMsg): PeerInfo {
   const peerId = PeerId.createFromB58String(pbPeer.id)
   const peerInfo = new PeerInfo(peerId)
   if (pbPeer.addr == null) {
@@ -82,7 +81,7 @@ exports.peerInfoProtoUnmarshal = function peerInfoProtoUnmarshal (pbPeer: PeerIn
  * @param peerInfo a libp2p PeerInfo
  * @returns a POJO that's encodable to a PeerInfo protobuf message
  */
-exports.peerInfoProtoMarshal = function peerInfoProtoMarshal (peerInfo: PeerInfo): PeerInfoMsg {
+function peerInfoProtoMarshal (peerInfo: PeerInfo): PeerInfoMsg {
   return {
     id: peerInfo.id.toB58String(),
     addr: peerInfo.multiaddrs.map(a => a.buffer)
@@ -96,7 +95,7 @@ exports.peerInfoProtoMarshal = function peerInfoProtoMarshal (peerInfo: PeerInfo
  *        since we're draining to Promise.resolve
  * @returns {Promise} a promise that will resolve to the first value that reaches the end of the pipeline.
  */
-exports.pullToPromise = function pullToPromise<T> (...streams: Array<Function>): Promise<T> {
+function pullToPromise<T> (...streams: Array<Function>): Promise<T> {
   return new Promise((resolve, reject) => {
     pull(
       ...streams,
@@ -118,7 +117,7 @@ exports.pullToPromise = function pullToPromise<T> (...streams: Array<Function>):
  * @param interval milliseconds to wait between providing value to consumers
  * @returns a pull-stream source
  */
-exports.pullRepeatedly = function pullRepeatedly<T> (value: T, interval: number = 1000): PullStreamSource<T> {
+function pullRepeatedly<T> (value: T, interval: number = 1000): PullStreamSource<T> {
   let intervalStart: ?Date = null
   let timeoutId: ?number = null
   function intervalElapsed () {
@@ -149,7 +148,7 @@ exports.pullRepeatedly = function pullRepeatedly<T> (value: T, interval: number 
  * and end the stream with an Error object if it receives a StreamError message.  Without this,
  * you need to explicitly `pull.take(n)` from the result stream, or it will never terminate.
  */
-exports.resultStreamThrough = function resultStreamThrough<T: QueryResultMsg | DataResultMsg> (read: PullStreamSource<T>): PullStreamSource<T> {
+function resultStreamThrough<T: QueryResultMsg | DataResultMsg> (read: PullStreamSource<T>): PullStreamSource<T> {
   return (end, callback) => {
     if (end) return callback(end, null)
 
@@ -178,7 +177,7 @@ exports.resultStreamThrough = function resultStreamThrough<T: QueryResultMsg | D
  * @returns {Statement} - The expanded `Statement`.  This will be a new object, with `ExpandedSimpleStatmentBody`
  *  objects replacing any `SimpleStatementBody` objects in the original.
  */
-exports.expandStatement = function expandStatement (stmt: Statement, dataObjects: Array<DataObjectMsg>): Statement {
+function expandStatement (stmt: Statement, dataObjects: Array<DataObjectMsg>): Statement {
   const objectMap = new Map()
 
   // convert the array of key/value pairs into a map, attempting to
@@ -196,3 +195,14 @@ exports.expandStatement = function expandStatement (stmt: Statement, dataObjects
   return stmt.expandObjects(objectMap)
 }
 
+module.exports = {
+  protoStreamEncode,
+  protoStreamDecode,
+  lookupResponseToPeerInfo,
+  peerInfoProtoUnmarshal,
+  peerInfoProtoMarshal,
+  pullToPromise,
+  pullRepeatedly,
+  resultStreamThrough,
+  expandStatement
+}

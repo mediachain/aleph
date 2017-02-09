@@ -1,5 +1,9 @@
 // @flow
 
+/**
+ * @module aleph/peer/db
+ */
+
 const path = require('path')
 const Knex = require('knex')
 const locks = require('locks')
@@ -19,6 +23,13 @@ const DefaultOptions: StatementDBOptions = {
   filename: null
 }
 
+/**
+ * A database for mediachain `Statement`s.
+ * Used by {@link MediachainNode} for locally storing statements, either created locally or
+ * merged from a remote node.
+ *
+ * Currently defaults to transient (temporary file-backed) storage.
+ */
 class StatementDB {
   _db: Object
   _migrated: boolean
@@ -57,6 +68,12 @@ class StatementDB {
     }))
   }
 
+  /**
+   * Add a {@link Statement} object to the DB.
+   * @param stmt
+   * @returns {Promise<void>}
+   *  Resolves with no value on success, or rejects with an Error if something fails.
+   */
   put (stmt: Statement): Promise<void> {
     const msg = stmt.toProtobuf()
 
@@ -77,6 +94,14 @@ class StatementDB {
     })
   }
 
+  /**
+   * Get a statement from the DB using its `id` field.
+   * @param id
+   *  The `id` string field for a Statement
+   * @returns {Promise<Statement>}
+   *  Resolves to the `Statement` object on success, or rejects with an `Error` if the statement can't be found, or
+   *  an error occurs while fetching it.
+   */
   get (id: string): Promise<Statement> {
     return this.sqlDB().then(db =>
       db.table('Statement')
@@ -85,6 +110,13 @@ class StatementDB {
     ).then(decodeStatementRow)
   }
 
+  /**
+   * Get all statements that refer to the given "wki" (Well-Known-Identifier) in the `refs` field of the statement body.
+   * @param wki
+   * @returns {Promise<Array<Statement>>}
+   *  Resolves to an array of Statement objects (may be empty).
+   *  Rejects with an Error if there's a DB failure while fetching.
+   */
   getByWKI (wki: string): Promise<Array<Statement>> {
     return this.sqlDB().then(db =>
       db.table('Statement')
@@ -94,6 +126,26 @@ class StatementDB {
     ).then(rows => rows.map(decodeStatementRow))
   }
 
+  /**
+   * Get all the statements that are in the given namespace.
+   * The `'*'` wildcard can be used to fetch all statements,
+   * or those matching a given prefix.
+   *
+   * @example
+   *  db.getByNamespace('*')
+   *    .then(statements => {
+   *      // statements contains all statements in the db
+   *    })
+   *
+   *  db.getByNamespace('museums.*')
+   *    .then(statements => {
+   *      // statements will have all `museums.` namespaces,
+   *      // e.g. `'museums.moma.*'`, `'museums.tate.*'`, etc.
+   *    })
+   *
+   * @param ns
+   * @returns {Promise<Array<Statement>>}
+   */
   getByNamespace (ns: string): Promise<Array<Statement>> {
     return this.sqlDB().then(db =>
       db.table('Statement')

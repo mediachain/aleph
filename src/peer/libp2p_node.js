@@ -1,5 +1,9 @@
 // @flow
 
+/**
+ * @module aleph/peer/libp2p_node
+ */
+
 const Swarm = require('libp2p-swarm')
 const TCP = require('libp2p-tcp')
 // const UTP = require('libp2p-utp')
@@ -17,22 +21,6 @@ import type { Connection } from 'interface-connection'
 const OFFLINE_ERROR_MESSAGE = 'The libp2p node is not started yet'
 const DEFAULT_DIAL_TIMEOUT = 10000
 
-/**
- * Options for {@link P2PNode} constructor.
- * @property {PeerInfo} peerInfo
- *  A libp2p PeerInfo object that identifies a peer.
- *  Must contain at least one valid multiaddr for the node to listen on.
- *
- * @property {?PeerBook} peerBook
- *  An optional PeerBook object to "pre-seed" the node with mappings from PeerId to PeerInfo.
- *
- * @property {?boolean} disableSecureIO
- *  If true, disables encryption for streams opened by the node. Use for testing only.
- *
- * @property {?number} timeout
- *  Timeout in milliseconds to wait when dialing a peer before erroring out.
- *  Default is 10000 (10s) if this option is not present.
- */
 type P2PNodeOptions = {
   peerInfo: PeerInfo,
   peerBook?: PeerBook,
@@ -68,6 +56,20 @@ class P2PNode {
   /**
    * Create a P2PNode.
    * @param {P2PNodeOptions} options
+   *
+   * @param {PeerInfo} options.peerInfo
+   *  A libp2p PeerInfo object that identifies a peer.
+   *  Must contain at least one valid multiaddr for the node to listen on.
+   *
+   * @param {PeerBook=} options.peerBook
+   *  An optional PeerBook object to "pre-seed" the node with mappings from PeerId to PeerInfo.
+   *
+   * @param {boolean} [options.disableSecureIO=false]
+   *  If true, disables encryption for streams opened by the node. Use for testing only.
+   *
+   * @param {number} [options.timeout=10000]
+   *  Timeout in milliseconds to wait when dialing a peer before erroring out.
+   *  Default is 10000 (10s) if this option is not present.
    */
   constructor (options: P2PNodeOptions) {
     let {peerInfo, peerBook, disableSecureIO, dialTimeout} = options
@@ -118,7 +120,7 @@ class P2PNode {
    * // later...
    * abortable.abort() // -> closes the stream
    *
-   * @returns {Object} a pull-stream abortable.  Call `.abort()` to cancel
+   * @returns {Abortable} a pull-stream abortable.  Call `.abort()` to cancel
    * a stream that passes through the abortable.
    */
   newAbortable (): Abortable {
@@ -193,6 +195,7 @@ class P2PNode {
    *
    * Note that a node with secure IO disabled cannot communicate with a node that
    * requires secure IO.
+   * @param {boolean} [use=true] true to enable encryption, false to disable
    */
   setSecureIOEnabled (use: boolean = true) {
     if (use) {
@@ -204,8 +207,8 @@ class P2PNode {
 
   /**
    * Connect to a `peer`, opening a stream named by the `protocol` string.
-   * @param peer - a `PeerInfo` object with at least one valid multiaddr for the node you want to dial.
-   * @param protocol - a string identifying a P2P protocol, e.g. `"/mediachain/node/query"`
+   * @param {PeerInfo} peer - a `PeerInfo` object with at least one valid multiaddr for the node you want to dial.
+   * @param {string} protocol - a string identifying a P2P protocol, e.g. `"/mediachain/node/query"`
    * @returns {Promise<Connection>} resolves to a libp2p Connection, which can be used in a pull-stream.
    */
   dialByPeerInfo (peer: PeerInfo, protocol: string): Promise<Connection> {
@@ -228,7 +231,7 @@ class P2PNode {
 
   /**
    * Close all open streams to the given peer.
-   * @param peer a `PeerInfo` object identifying a peer with open streams.
+   * @param {PeerInfo} peer a `PeerInfo` object identifying a peer with open streams.
    * @returns {Promise} resolves with no value on success, or rejects with an
    * `Error` if one occurs during the hang up operation.
    */
@@ -245,8 +248,8 @@ class P2PNode {
 
   /**
    * Register a `handler` for the named `protocol`.
-   * @param protocol - a string identifying a libp2p protocol, e.g. `"/mediachain/node/query"`
-   * @param handler - a function that will be called with the name of the protocol and a libp2p Connection
+   * @param {string} protocol - a string identifying a libp2p protocol, e.g. `"/mediachain/node/query"`
+   * @param {Function} handler - a function that will be called with the name of the protocol and a libp2p Connection
    * for incoming streams.
    */
   handle (protocol: string, handler: (protocol: string, connection: Connection) => void): any {
@@ -255,7 +258,7 @@ class P2PNode {
 
   /**
    * Remove any handlers registered for the named `protocol`
-   * @param protocol - a string identifying a previously handled protocol.
+   * @param {string} protocol - a string identifying a previously handled protocol.
    */
   unhandle (protocol: string): any {
     return this.swarm.unhandle(protocol)
@@ -263,7 +266,7 @@ class P2PNode {
 
   /**
    * Send a libp2p Ping message to the given `peer` and wait for a response.
-   * @param peer - a `PeerInfo` for a peer, with at least one valid multiaddr.
+   * @param {PeerInfo} peer - a `PeerInfo` for a peer, with at least one valid multiaddr.
    * @returns {Promise<number>} - resolves to the latency (in msec), or rejects
    * with an `Error` if the ping fails.
    */

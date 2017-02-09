@@ -12,7 +12,8 @@
     "build": "mkdirp ./lib && babel --copy-files src -d lib",
     "check": "standard && flow",
     "cli": "npm run build >/dev/null && node ./lib/client/cli/index.js",
-    "prepublish": "npm run build"
+    "prepublish": "npm run build",
+    "build:docs": "jsdoc -c jsdoc-conf.json -r src -d docs -t node_modules/ink-docstrap/template -r README.md"
   },
   "bin": {
     "aleph": "./bin/aleph.js",
@@ -83,7 +84,10 @@
     "coveralls": "^2.11.15",
     "eslint-plugin-flowtype": "^2.30.0",
     "flow-bin": "^0.38.0",
+    "ink-docstrap": "^1.3.0",
     "interface-connection": "^0.3.0",
+    "jsdoc": "^3.4.3",
+    "jsdoc-babel": "^0.3.0",
     "mocha": "^3.2.0",
     "mocha-eventually": "^1.1.0",
     "mocha-lcov-reporter": "^1.2.0",
@@ -97,7 +101,8 @@
       "flowtype"
     ],
     "ignore": [
-      "/flow-typed/**"
+      "/flow-typed/**",
+      "/docs/**"
     ]
   },
   "nyc": {
