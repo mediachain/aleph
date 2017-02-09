@@ -5,7 +5,7 @@ const { subcommand, println } = require('../../util')
 
 module.exports = {
   command: 'findPeers',
-  description: `find all public peers registerd in the DHT.\n`,
+  description: `Find all public peers registerd in the DHT.\n`,
   handler: subcommand((opts: {client: RestClient}) => {
     const {client} = opts
 
