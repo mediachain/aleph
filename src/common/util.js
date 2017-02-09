@@ -1,7 +1,9 @@
 // @flow
 
 const _ = require('lodash')
-const Multihashing = require('multihashing')
+const Multihash = require('multihashes')
+const crypto = require('crypto')
+
 import type { Writable, Readable } from 'stream'
 import type { WriteStream } from 'tty'
 
@@ -81,9 +83,11 @@ function setEquals<T> (a: Set<T>, b: Set<T>): boolean {
  * @returns {string} a base58-encoded multihash string
  */
 function b58MultihashForBuffer (buf: Buffer): string {
-  return Multihashing.multihash.toB58String(
-    Multihashing(buf, 'sha2-256')
-  )
+  const hash = crypto.createHash('sha256')
+  hash.update(buf)
+
+  const mh = Multihash.encode(hash.digest(), 'sha2-256')
+  return Multihash.toB58String(mh)
 }
 
 /**
@@ -91,8 +95,8 @@ function b58MultihashForBuffer (buf: Buffer): string {
  */
 function isB58Multihash (str: string): boolean {
   try {
-    const h = Multihashing.multihash.fromB58String(str)
-    Multihashing.multihash.validate(h)
+    const h = Multihash.fromB58String(str)
+    Multihash.validate(h)
     return true
   } catch (err) {
     return false
