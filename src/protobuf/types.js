@@ -155,7 +155,7 @@ export type StatementMsg = {
   namespace: string,
   body: StatementBodyMsg,
   timestamp: number,
-  signature: Buffer,
+  signature?: Buffer,
 };
 
 // manifest.proto

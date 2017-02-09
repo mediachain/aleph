@@ -5,7 +5,7 @@ const assert = require('assert')
 const { before, describe, it } = require('mocha')
 const path = require('path')
 
-const { Statement } = require('../../src/model/statement')
+const { Statement, SignedStatement } = require('../../src/model/statement')
 const { PublisherId, PrivateSigningKey } = require('../../src/peer/identity')
 
 const CONCAT_PUBLISHER_ID_PUB58 = '4XTTM4JKrrBeAK6qXmo8FoKmT5RkfjeXfZrnWjJNw9fKvPnEs'
@@ -40,7 +40,7 @@ describe('Signature verification', () => {
   })
 
   it('validates a statement made with makeSimpleStatement helper', () => {
-    return Statement.createSimple(publisherId, 'scratch.sig-test', {object: 'QmF00123', refs: []})
+    return SignedStatement.createSimple(publisherId, 'scratch.sig-test', {object: 'QmF00123', refs: []})
       .then(stmt => stmt.verifySignature)
       .then(valid => {
         assert(valid, 'statement did not validate')
@@ -48,15 +48,14 @@ describe('Signature verification', () => {
   })
 
   it('signs and validates a manually-constructed statement', () => {
-    const stmtNoSig = Statement.fromProtobuf({
+    const unsigned = Statement.fromProtobuf({
       id: 'foo',
       publisher: publisherId.id58,
       namespace: 'scratch.sig-test',
       timestamp: Date.now(),
-      body: {simple: {object: 'QmF00123', refs: [], deps: [], tags: []}},
-      signature: Buffer.from('')
-    })
-    return stmtNoSig.sign(publisherId)
+      body: {simple: {object: 'QmF00123', refs: [], deps: [], tags: []}}
+    }).asUnsignedStatement()
+    return unsigned.sign(publisherId)
       .then(signed => signed.verifySignature())
       .then(valid => {
         assert(valid, 'statement did not validate')
@@ -64,7 +63,7 @@ describe('Signature verification', () => {
   })
 
   it('does not validate an altered statement', () => {
-    Statement.createSimple(publisherId, 'scratch.sig-test', {object: 'QmF00123', refs: []})
+    SignedStatement.createSimple(publisherId, 'scratch.sig-test', {object: 'QmF00123', refs: []})
       .then(stmt => {
         stmt.namespace = 'scratch.new-namespace'
         return stmt
