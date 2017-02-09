@@ -336,6 +336,11 @@ class RestClient {
       .then(r => r.json())
   }
 
+  netFindPeers (): Promise<Array<string>> {
+    return this.getRequest('net/find')
+      .then(parseStringArrayResponse)
+  }
+
   getSelfManifest (): Promise<string> {
     return this.getRequest('manifest/self')
       .then(trimTextResponse)
