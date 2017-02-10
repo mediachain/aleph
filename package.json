@@ -10,7 +10,9 @@
     "coverage": "nyc report --reporter=text-lcov | coveralls",
     "coverage:lcov": "npm run test && nyc report --reporter=lcov",
     "build": "mkdirp ./lib && babel --copy-files src -d lib",
-    "check": "standard && flow",
+    "check": "npm run check:style && npm run check:types",
+    "check:style": "standard",
+    "check:types": "flow",
     "cli": "npm run build >/dev/null && node ./lib/client/cli/index.js",
     "prepublish": "npm run build",
     "build:docs": "jsdoc -c jsdoc-conf.json -r src -d docs -t node_modules/ink-docstrap/template -r README.md"
