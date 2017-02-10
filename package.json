@@ -15,7 +15,10 @@
     "check:types": "flow",
     "cli": "npm run build >/dev/null && node ./lib/client/cli/index.js",
     "prepublish": "npm run build",
-    "build:docs": "jsdoc -c jsdoc-conf.json -r src -d docs -t node_modules/ink-docstrap/template -r README.md"
+    "docs": "npm run docs:build && npm run docs:publish && npm run docs:clean",
+    "docs:build": "./docs/build.sh",
+    "docs:publish": "node ./docs/publish.js",
+    "docs:clean": "./docs/clean.sh"
   },
   "bin": {
     "aleph": "./bin/aleph.js",
@@ -86,6 +89,7 @@
     "coveralls": "^2.11.15",
     "eslint-plugin-flowtype": "^2.30.0",
     "flow-bin": "^0.38.0",
+    "gh-pages": "^0.12.0",
     "ink-docstrap": "^1.3.0",
     "interface-connection": "^0.3.0",
     "jsdoc": "^3.4.3",
