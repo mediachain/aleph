@@ -4,8 +4,7 @@ const { clone } = require('lodash')
 const Levelup = require('levelup')
 const uuid = require('uuid')
 const serialize = require('../metadata/serialize')
-const Multihashing = require('multihashing')
-const Multihash = require('multihashes')
+const { b58MultihashForBuffer } = require('../common/util')
 
 export type DatastoreOptions = {
   backend: 'memory', // just in-memory for now, expand to e.g. rocksdb
@@ -49,8 +48,7 @@ class Datastore {
       value = serialize.encode(value)
     }
 
-    const mh = Multihashing(value, 'sha2-256')
-    const key = Multihash.toB58String(mh)
+    const key = b58MultihashForBuffer(value)
 
     return new Promise((resolve, reject) => {
       this.db.put(key, value, {sync: true}, (err) => {
