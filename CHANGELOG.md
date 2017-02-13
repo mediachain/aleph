@@ -1,3 +1,20 @@
+## 2016-02-13: aleph-v1.6.0
+aleph-v1.6.0
+
+mcclient:
+- Added `manifest lookup` command to list signed manifests for a given entity id [PR #175](https://github.com/mediachain/aleph/pull/175)
+- Added `net find` command to discover peers via DHT rendezvous [PR #180](https://github.com/mediachain/aleph/pull/180)
+- Added `mcclient --version` command to print current version [PR #170](https://github.com/mediachain/aleph/pull/170)
+
+aleph:
+- Friendlier REPL interactions thanks to internal refactor of Statement and QueryResult types [PR #177](https://github.com/mediachain/aleph/pull/177)
+- Added `aleph --version` command to print current version [PR #170](https://github.com/mediachain/aleph/pull/170)
+- Internal refactor of classes used for signature calculation / verification [PR #168](https://github.com/mediachain/aleph/pull/168)
+- Refactored Statement API to have clear distinction between signed and unsigned Statements [PR #179](https://github.com/mediachain/aleph/pull/179)
+- Added JSDoc comments to most public classes and methods in `src/peer`, with generated HTML API docs [PR #182]
+- Greatly improved test coverage [PR #173](https://github.com/mediachain/aleph/pull/173)
+- Removed outdated dependencies [PR #172](https://github.com/mediachain/aleph/pull/172), [PR #181](https://github.com/mediachain/aleph/pull/181)
+
 ## 2016-01-18: aleph-v1.5.1
 
 aleph:
