@@ -1,0 +1,8 @@
+{
+  "plugins": ["plugins/markdown", "node_modules/jsdoc-babel"],
+  "templates": {
+    "systemName": "Mediachain (aleph)",
+    "includeDate": false,
+    "theme": "lumen"
+  }
+}

@@ -10,9 +10,15 @@
     "coverage": "nyc report --reporter=text-lcov | coveralls",
     "coverage:lcov": "npm run test && nyc report --reporter=lcov",
     "build": "mkdirp ./lib && babel --copy-files src -d lib",
-    "check": "standard && flow",
+    "check": "npm run check:style && npm run check:types",
+    "check:style": "standard",
+    "check:types": "flow",
     "cli": "npm run build >/dev/null && node ./lib/client/cli/index.js",
-    "prepublish": "npm run build"
+    "prepublish": "npm run build",
+    "docs": "npm run docs:build && npm run docs:publish && npm run docs:clean",
+    "docs:build": "./docs/build.sh",
+    "docs:publish": "node ./docs/publish.js",
+    "docs:clean": "./docs/clean.sh"
   },
   "bin": {
     "aleph": "./bin/aleph.js",
@@ -83,7 +89,11 @@
     "coveralls": "^2.11.15",
     "eslint-plugin-flowtype": "^2.30.0",
     "flow-bin": "^0.38.0",
+    "gh-pages": "^0.12.0",
+    "ink-docstrap": "^1.3.0",
     "interface-connection": "^0.3.0",
+    "jsdoc": "^3.4.3",
+    "jsdoc-babel": "^0.3.0",
     "mocha": "^3.2.0",
     "mocha-eventually": "^1.1.0",
     "mocha-lcov-reporter": "^1.2.0",
@@ -97,7 +107,8 @@
       "flowtype"
     ],
     "ignore": [
-      "/flow-typed/**"
+      "/flow-typed/**",
+      "/docs/**"
     ]
   },
   "nyc": {

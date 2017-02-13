@@ -46,3 +46,6 @@ lib/
 *.sublime-workspace
 
 bin/jq
+
+# generated documentation
+docs/dist/

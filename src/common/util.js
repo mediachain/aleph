@@ -1,5 +1,10 @@
 // @flow
 
+/**
+ * @module aleph/common/util
+ * @description handy utility things that seem broadly useful
+ */
+
 const _ = require('lodash')
 const Multihash = require('multihashes')
 const crypto = require('crypto')
@@ -9,11 +14,24 @@ import type { WriteStream } from 'tty'
 
 /**
  * ES6+ implementation of rsvp's Promise.hash method:
- * https://github.com/tildeio/rsvp.js/#hash-of-promises
- * @param hash a JS object whose values may be `Promise`s
+ * {@link https://github.com/tildeio/rsvp.js/#hash-of-promises}
+ * @param {object} hash a JS object whose values may be `Promise`s
  * @returns {object} a JS object with the same keys as `hash`, whose values are
  *          the resolved values of that key's promise.  If any promise fails,
  *          the whole thing will fail.
+ *
+ * @example
+ * promiseHash({
+ *   posts: API.fetchPosts(userId), // returns Promise<Array<Post>>
+ *   user: API.fetchUser(userId)    // returns Promise<User>
+ * })
+ *  .then(results => {
+ *    const {
+ *      posts, // resolved Array<Post>
+ *      user   // resolved User
+ *    } = results
+ *    console.log(`User ${user.name} has ${posts.length} posts`)
+ *  })
  */
 function promiseHash (hash: Object): Promise<Object> {
   // get the key value pairs in a consistent ordering for iteration
@@ -31,8 +49,8 @@ function promiseHash (hash: Object): Promise<Object> {
 
 /**
  * Reject `promise` if it doesn't complete within `timeout` milliseconds
- * @param timeout milliseconds to wait before rejecting
- * @param promise a promise that you want to set a timeout for
+ * @param {number} timeout milliseconds to wait before rejecting
+ * @param {Promise.<*>} promise a promise that you want to set a timeout for
  * @returns a Promise that will resolve to the value of `promise`, unless the timeout is exceeded
  */
 function promiseTimeout<T> (timeout: number, promise: Promise<T>): Promise<T> {
@@ -46,6 +64,9 @@ function promiseTimeout<T> (timeout: number, promise: Promise<T>): Promise<T> {
 /**
  * Given an `array` of `T`s, apply function `f` of `T => Array<U>`,
  * to each element, returning a flattened array of `U`s
+ * @param {Array.<*>} array
+ * @param {Function} f
+ * @returns {Array.<*>}
  */
 function flatMap<T, U> (array: Array<T>, f: (x: T) => Array<U>): Array<U> {
   return [].concat(...array.map(x => f(x)))
@@ -53,7 +74,7 @@ function flatMap<T, U> (array: Array<T>, f: (x: T) => Array<U>): Array<U> {
 
 /**
  * Given any number of `Set`s, return a new `Set` that contains all elements combined.
- * @param
+ * @param {...Set} sets
  * @returns {Set} - the union of `a` and `b`
  */
 function setUnion<T> (...sets: Array<Set<T>>): Set<T> {
@@ -68,6 +89,9 @@ function setUnion<T> (...sets: Array<Set<T>>): Set<T> {
 
 /**
  * Returns true if Set `a` and Set `b` contain the same members, using strict (shallow) equality (the `===` operator)
+ * @param {Set} a
+ * @param {Set} b
+ * @returns {boolean}
  */
 function setEquals<T> (a: Set<T>, b: Set<T>): boolean {
   if (a.size !== b.size) return false
@@ -79,7 +103,7 @@ function setEquals<T> (a: Set<T>, b: Set<T>): boolean {
 
 /**
  * Returns base58-encoded sha256 multihash for the given Buffer
- * @param buf - a `Buffer` you want to hash
+ * @param {Buffer} buf - a `Buffer` you want to hash
  * @returns {string} a base58-encoded multihash string
  */
 function b58MultihashForBuffer (buf: Buffer): string {
@@ -92,6 +116,8 @@ function b58MultihashForBuffer (buf: Buffer): string {
 
 /**
  * Returns true if `str` is a valid base58-encoded multihash
+ * @param {string} str
+ * @returns {boolean}
  */
 function isB58Multihash (str: string): boolean {
   try {
@@ -105,8 +131,8 @@ function isB58Multihash (str: string): boolean {
 
 /**
  * Print `output` to the `destination` stream and append a newline.
- * @param output
- * @param destination
+ * @param {string} output
+ * @param {stream.Writable | tty.WriteStream} destination
  */
 function writeln (output: string, destination: Writable | WriteStream) {
   destination.write(output + '\n')
@@ -117,7 +143,7 @@ function writeln (output: string, destination: Writable | WriteStream) {
  * Always use this instead of console.log for non-debug output!
  * console.log keeps a strong reference to whatever you pass in,
  * which can result in memory leaks for long-running processes.
- * @param output
+ * @param {string} output
  */
 function println (output: string) {
   writeln(output, process.stdout)
@@ -127,7 +153,7 @@ function println (output: string) {
  * Print `output` to stderr and append a newline.
  * Use if you don't want console.error to keep a strong reference
  * to whatever you pass in.
- * @param output
+ * @param {string} output
  */
 function printlnErr (output: string) {
   writeln(output, process.stderr)
@@ -135,7 +161,7 @@ function printlnErr (output: string) {
 
 /**
  * Read a stream until it ends, returning its contents as a string.
- * @param stream
+ * @param {stream.Readable} stream
  * @returns {Promise}
  */
 function consumeStream (stream: Readable): Promise<string> {
@@ -151,6 +177,8 @@ function consumeStream (stream: Readable): Promise<string> {
 
 /**
  * Returns a clone of `obj` with all `Buffer` objects replaced with their base64-encoded string equivalents
+ * @param {object} obj
+ * @returns {object}
  */
 function stringifyNestedBuffers (obj: Object): Object {
   const replacer = obj => {

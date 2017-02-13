@@ -116,7 +116,7 @@ class UnsignedStatement extends Statement {
     })
   }
 
-  calculateSignature (signer: {sign: (msg: Buffer) => Promise<Buffer>}): Promise<Buffer> {
+  calculateSignature (signer: {+sign: (msg: Buffer) => Promise<Buffer>}): Promise<Buffer> {
     return signer.sign(this.toBytes())
   }
 }

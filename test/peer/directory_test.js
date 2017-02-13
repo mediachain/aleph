@@ -39,6 +39,17 @@ describe('Directory Node', function () {
       }))
   })
 
+  it('node can set directory with string multiaddr', () => {
+    const dirInfo = dir.p2p.peerInfo
+    const dirId = dirInfo.id
+    const addrString = dirInfo.multiaddrs[0].toString() + '/p2p/' + dirId.toB58String()
+    expect(() =>
+      node.setDirectory(addrString)
+    ).to.not.throw()
+
+    node.setDirectory(dirInfo)
+  })
+
   it('responds to lookup requests for known peers', function () {
     // just stuff the node's id into the directory manually
     dir.peerBook.put(node.peerInfo)

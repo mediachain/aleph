@@ -1,5 +1,10 @@
 // @flow
 
+/**
+ * @module aleph/peer/util
+ * @description Helpers for peer-to-peer communication between nodes.
+ */
+
 const pull = require('pull-stream')
 const Multiaddr = require('multiaddr')
 const PeerId = require('peer-id')
@@ -29,7 +34,7 @@ function protoStreamEncode<T> (codec: ProtoCodec<T>): PullStreamThrough<T, Buffe
 }
 
 /**
- * A through-stream that accepts size-prefixed encoded protbufs, decodes with the given decoder function,
+ * A through-stream that accepts size-prefixed encoded protobufs, decodes with the given decoder function,
  * and emits the decoded POJOs.
  * @param codec a `protocol-buffers` schema, containing a `decode` function
  * @returns a through-stream function that can be wired into a pull-stream pipeline
@@ -143,8 +148,7 @@ function pullRepeatedly<T> (value: T, interval: number = 1000): PullStreamSource
  * and end the stream with an Error object if it receives a StreamError message.  Without this,
  * you need to explicitly `pull.take(n)` from the result stream, or it will never terminate.
  */
-type MediachainStreamThrough<T: QueryResultMsg | DataResultMsg> = PullStreamThrough<T, T>
-const resultStreamThrough: MediachainStreamThrough<*> = (read) => {
+function resultStreamThrough<T: QueryResultMsg | DataResultMsg> (read: PullStreamSource<T>): PullStreamSource<T> {
   return (end, callback) => {
     if (end) return callback(end, null)
 
@@ -156,7 +160,7 @@ const resultStreamThrough: MediachainStreamThrough<*> = (read) => {
       }
 
       if (data.error !== undefined) {
-        const message = data.error.error || 'Unknown error'
+        const message = (data: Object).error.error || 'Unknown error'
         return callback(new Error(message), data)
       }
 
@@ -165,6 +169,14 @@ const resultStreamThrough: MediachainStreamThrough<*> = (read) => {
   }
 }
 
+/**
+ * Convert a `Statement` into it's "expanded" form, so that it contains the data objects it links to.
+ * @param {Statement} stmt - A `Statement` with object references
+ * @param {Array<DataObjectMsg>} dataObjects - an array of decoded DataObject protobuf messages, as delivered
+ *  by the `/mediachain/node/data` protocol.
+ * @returns {Statement} - The expanded `Statement`.  This will be a new object, with `ExpandedSimpleStatmentBody`
+ *  objects replacing any `SimpleStatementBody` objects in the original.
+ */
 function expandStatement (stmt: Statement, dataObjects: Array<DataObjectMsg>): Statement {
   const objectMap = new Map()
 

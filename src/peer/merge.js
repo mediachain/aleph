@@ -1,5 +1,10 @@
 // @flow
 
+/**
+ * @module aleph/peer/merge
+ * @description Implementation for merging statements + data from a remote peer.
+ */
+
 const pull = require('pull-stream')
 const pullThroughPromise = require('pull-promise/through')
 const pushable = require('pull-pushable')
@@ -13,7 +18,7 @@ const { CompoundQueryResultValue } = require('../model/query_result')
 
 import type { MediachainNode } from './node'
 import type { Datastore } from './datastore'
-import type { P2PSigningPublicKey } from './identity'
+import type { PublicSigningKey } from './identity'
 import type { PullStreamSource, PullStreamThrough } from './util'
 import type { StreamErrorMsg, DataRequestMsg, DataObjectMsg } from '../protobuf/types'
 import type { Connection } from 'interface-connection'
@@ -21,18 +26,43 @@ import type { QueryResult } from '../model/query_result'
 
 const BATCH_SIZE = 1024
 
+/**
+ * Result of a mediachain "merge" operation.
+ *
+ * @property {number} statementCount
+ *  Number of statements merged.  Does not include statements already contained on the receiving node.
+ *
+ * @property {number} objectCount
+ *  Number of data objects merged.  Does not include objects already contained on the receiving node.
+ *
+ * @property {?string} error
+ *  An error message, present for partially-successful merges.  A fully failed merge operation will instead
+ *  fail with an `Error`, but if some statements and/or objects were merged before a failure, this string
+ *  will contain the error message sent by the remote peer.
+ */
 export type MergeResult = {
   statementCount: number,
   objectCount: number,
   error?: string
 }
 
+/**
+ * "Driver" function for merging statements and data from a remote peer.
+ * Used by {@link MediachainNode#merge}
+ * @param localNode
+ * @param queryResultStream
+ * @param dataConn
+ * @returns {Promise<MergeResult>}
+ *  Resolves to a {@link MergeResult} object on success or partial success (where failure occurs after some statements
+ *  have been successfully merged).
+ *  Rejects with an error if merge fails completely.
+ */
 function mergeFromStreams (
   localNode: MediachainNode,
   queryResultStream: PullStreamSource<QueryResult>,
   dataConn: Connection)
 : Promise<MergeResult> {
-  const publisherKeyCache: Map<string, P2PSigningPublicKey> = new Map()
+  const publisherKeyCache: Map<string, PublicSigningKey> = new Map()
   const objectIdStream = pushable()
   const objectIngestionErrors: Array<string> = []
   const statementIngestionErrors: Array<string> = []

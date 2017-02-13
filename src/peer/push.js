@@ -1,5 +1,10 @@
 // @flow
 
+/**
+ * @module aleph/peer/push
+ * @description Implementation for pushing statements + data to remote peers.
+ */
+
 const lp = require('pull-length-prefixed')
 const locks = require('locks')
 const pb = require('../protobuf')

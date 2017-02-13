@@ -28,7 +28,7 @@ describe('Peer Identity tools', () => {
 
   it('throws when saving a PeerId without a private key', () => {
     const id = PeerId.createFromB58String('QmZvvcVA8t5qrM5DeQ8xM6PK18qzCYxseYNtaqauhSc4Nw')
-    expect(() => Id.saveIdentity(id), temp.path())
+    expect(() => Id.saveIdentity(id, temp.path()))
       .to.throw(Error)
   })
 
