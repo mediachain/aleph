@@ -192,9 +192,15 @@ class RestClient {
       })
   }
 
-  batchGetDataStream (objectIds: Array<string>): Promise<TransformStream> {
-    return this.postRequest('data/get', objectIds.join('\n'), false)
+  batchGetDataStream (objectIds: Array<string>, decode: boolean = true): Promise<ReadableStream> {
+    const resultStream = this.postRequest('data/get', objectIds.join('\n'), false)
       .then(r => new NDJsonResponse(r).stream())
+
+    if (!decode) {
+      return resultStream
+    }
+
+    return resultStream
       .then((stream: DuplexStream) => {
         const outputStream = mapStream((obj: Object, callback: Function) => {
           try {
