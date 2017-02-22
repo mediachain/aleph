@@ -3,8 +3,8 @@ const SIMPLE_STMT_1 = {
   publisher: '4XTTM81cjwraTF9FW33DyCz2PbdQ9peqCXWTz9rBhU3bwm4TE',
   namespace: 'scratch.test',
   timestamp: 1485446977027,
-  body: { simple: { object: 'foo', refs: [ 'simple-1' ], deps: [], tags: [] } },
-  signature: Buffer.from('rYo/HI3zfEO7JtlFzIF9r7bJbqV7p3SjLDoedYQgI3X8zutAUNwayhXJURHVB0Yz/CShfLn+7Mc94iLCCBtJDw==', 'base64')
+  body: { simple: { object: 'foo', refs: [ 'simple-1' ], deps: [ 'dep1', 'dep2' ], tags: [] } },
+  signature: Buffer.from('4Xl7an0GdvCZtNR8Hw50RBOhfthNydlyMHBZeIoFnuk0fAtZE8BfQqltrVMXxWp9dabE8g5rR/F+3Fdzl5yyAQ==', 'base64')
 }
 
 const SIMPLE_STMT_2 = {
@@ -12,8 +12,8 @@ const SIMPLE_STMT_2 = {
   publisher: '4XTTM81cjwraTF9FW33DyCz2PbdQ9peqCXWTz9rBhU3bwm4TE',
   namespace: 'scratch.test',
   timestamp: 1485447081587,
-  body: { simple: { object: 'foo', refs: [ 'simple-2' ], deps: [], tags: [] } },
-  signature: Buffer.from('6uuCL0zQSuSBuN2a7FeJGp75P5FBJUAwuBzIjC7nZrgVmHFqkiaVPUhO2lGikMh+DaU/Okgrf+thjfFDEFyxCQ==', 'base64')
+  body: { simple: { object: 'foo', refs: [ 'simple-2' ], deps: [ 'dep1', 'dep3' ], tags: [] } },
+  signature: Buffer.from('u+u8ICJbRHiAsGFeLFVBODX29DXYf4Wj6J2am2J7TbQqhIdhbMjBhQ1kXFWeAMxmXpdxfRt3CocDoxo3z3t7CQ==', 'base64')
 }
 
 const COMPOUND_STMT = {
@@ -47,7 +47,7 @@ const ENVELOPE_STMT = {
   namespace: 'scratch.test.envelope-stmt',
   timestamp: 1485448141505,
   body: { envelope: { body: [ SIMPLE_STMT_1, SIMPLE_STMT_2 ] } },
-  signature: Buffer.from('/94sZ6ETWTNCaHO78h+ifrqrViN4v95//Qx/+j3OmvLqJ3eLrK5damMqbQw06kstVC5II58udNR7zCJFqsYbDw==', 'base64')
+  signature: Buffer.from('dEhboo/dqqHK/hB/Jur/DBQSKDpnr3bLM1sJgmCaRSlEtJpZdBHKlLjvy2CPyy9gqRCtczOAiMwkwgkiYvYaAg==', 'base64')
 }
 
 module.exports = {
@@ -82,6 +82,12 @@ module.exports = {
     compound: [ COMPOUND_STMT.publisher ],
     envelope: [ SIMPLE_STMT_1.publisher ],
     envelopeEmpty: [ ENVELOPE_STMT.publisher ]
+  },
+  expectedDeps: {
+    simple: [ new Set(['dep1', 'dep2']), new Set(['dep1', 'dep3']) ],
+    compound: [ new Set() ],
+    envelope: [ new Set(['dep1', 'dep2', 'dep3']) ],
+    envelopeEmpty: [ new Set() ]
   },
   objectIds: {
     simple: [ ['foo'], ['foo'] ],

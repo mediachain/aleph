@@ -62,6 +62,16 @@ describe('Statements', () => {
     }
   })
 
+  it('returns the correct deps', () => {
+    for (const type of STMT_TYPES) {
+      for (let i = 0; i < fixtures.statements[type].length; i++) {
+        const stmt = Statement.fromProtobuf(fixtures.statements[type][i])
+        const expectedDeps = fixtures.expectedDeps[type][i]
+        expect(setEquals(stmt.depsSet, expectedDeps)).to.be.true
+      }
+    }
+  })
+
   it('returns the correct object ids', () => {
     for (const type of STMT_TYPES) {
       for (let i = 0; i < fixtures.statements[type].length; i++) {
@@ -256,6 +266,7 @@ describe('StatementBody base class', () => {
   it('returns empty values for refSet, etc.', () => {
     const stmt = Object.create(StatementBody.prototype)
     expect(stmt.refSet.size).to.be.eql(0)
+    expect(stmt.depsSet.size).to.be.eql(0)
     expect(stmt.objectIds.length).to.be.eql(0)
     expect(stmt.expandObjects(new Map())).to.be.eql(stmt)
   })
