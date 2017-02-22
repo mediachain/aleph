@@ -7,12 +7,17 @@ const {subcommand} = require('../util')
 const {Statement} = require('../../../model/statement')
 import type {RestClient} from '../../api'
 
+const STMT_BATCH_SIZE = 1024
 const OBJECT_BATCH_SIZE = 1024
 const TAR_ENTRY_OPTS = {
   uid: 500,
   gid: 500,
   uname: 'mediachain',
   gname: 'staff'
+}
+
+function leftpad (str, length, char = '0') {
+  return char.repeat(Math.max(0, length - str.length)) + str
 }
 
 module.exports = {
@@ -29,9 +34,10 @@ module.exports = {
   },
   handler: subcommand((opts: {client: RestClient, queryString: string, output?: ?string}) => {
     const {client, queryString} = opts
-    let dataFetchPromises = []
     let outputStream
-    let tarball
+    const tarball = tar.pack()
+    const gzip = zlib.createGzip()
+    const objectIds: Set<string> = new Set()
 
     return client.queryStream(queryString)
       .then(response => new Promise((resolve, reject) => {
@@ -39,17 +45,17 @@ module.exports = {
         const queryStream = response.stream()
         const outStreamName = output || 'standard output'
         outputStream = (output == null) ? process.stdout : fs.createWriteStream(output)
-
-        tarball = tar.pack()
-        const gzip = zlib.createGzip()
         tarball.pipe(gzip).pipe(outputStream)
 
-        let objectIds = []
-        function fetchBatch (force: boolean = false) {
-          if (force || objectIds.length >= OBJECT_BATCH_SIZE) {
-            const ids = objectIds
-            objectIds = []
-            dataFetchPromises.push(writeDataObjectsToTarball(client, tarball, ids))
+        let stmtBatch: Array<string> = []
+        let stmtBatchNumber = 0
+        function writeStatementBatch (force: boolean = false) {
+          if (force || stmtBatch.length >= STMT_BATCH_SIZE) {
+            const content = Buffer.from(stmtBatch.join('\n'), 'utf-8')
+            const filename = `stmt/${leftpad(stmtBatchNumber.toString(), 8)}.ndjson`
+            writeToTarball(tarball, filename, content)
+            stmtBatchNumber += 1
+            stmtBatch = []
           }
         }
 
@@ -70,22 +76,23 @@ module.exports = {
             return
           }
 
-          const name = `stmt/${stmt.id}`
-          const content = Buffer.from(JSON.stringify(obj), 'utf-8')
-          writeToTarball(tarball, name, content)
+          stmtBatch.push(JSON.stringify(obj))
+          writeStatementBatch()
 
           for (const id of stmt.objectIds) {
-            objectIds.push(id)
+            objectIds.add(id)
           }
-          fetchBatch()
+          for (const id of stmt.depsSet) {
+            objectIds.add(id)
+          }
         })
 
         queryStream.on('end', () => {
-          fetchBatch(true)
+          writeStatementBatch(true)
           resolve()
         })
       }))
-      .then(() => Promise.all(dataFetchPromises))
+      .then(() => writeDataObjectsToTarball(client, tarball, objectIds))
       .then(() => new Promise(resolve => {
         outputStream.on('end', () => resolve())
         tarball.finalize()
@@ -98,7 +105,25 @@ function writeToTarball (tarball: Object, filename: string, content: Buffer) {
   tarball.entry(header, content)
 }
 
-function writeDataObjectsToTarball (client: RestClient, tarball: Object, objectIds: Array<string>): Promise<*> {
+function writeDataObjectsToTarball (client: RestClient, tarball: Object, objectIds: Set<string>): Promise<*> {
+  if (objectIds.size < 1) return Promise.resolve()
+
+  const batchPromises = []
+  let batch = []
+  for (const id of objectIds) {
+    batch.push(id)
+    if (batch.length >= OBJECT_BATCH_SIZE) {
+      const ids = batch
+      batch = []
+      batchPromises.push(fetchObjectBatch(client, tarball, ids))
+    }
+  }
+
+  batchPromises.push(fetchObjectBatch(client, tarball, batch))
+  return Promise.all(batchPromises)
+}
+
+function fetchObjectBatch (client: RestClient, tarball: Object, objectIds: Array<string>): Promise<*> {
   if (objectIds.length < 1) return Promise.resolve()
 
   return client.batchGetDataStream(objectIds, false)
