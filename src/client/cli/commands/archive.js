@@ -3,7 +3,7 @@
 const fs = require('fs')
 const zlib = require('zlib')
 const tar = require('tar-stream')
-const {subcommand} = require('../util')
+const {subcommand, printlnErr} = require('../util')
 const {Statement} = require('../../../model/statement')
 import type {RestClient} from '../../api'
 
@@ -22,18 +22,24 @@ function leftpad (str, length, char = '0') {
 
 module.exports = {
   command: 'archive <queryString>',
-  description: 'Create a gzipped tar archive of the statements and data objects returned for the given `queryString`',
+  description: 'Create a gzipped tar archive of the statements and data objects returned for the given `queryString`\n',
   builder: {
     output: {
       alias: 'o',
       type: 'string',
-      description: 'Filename to output archive tarball to.  If not given archive will be written to stdout.',
+      description: 'Filename to output archive tarball to.  If not given archive will be written to stdout.\n',
       required: false,
       default: null
+    },
+    allowErrors: {
+      alias: ['warn', 'w'],
+      description: 'Warn if an error occurs when fetching data instead of aborting the archive generation.\n',
+      type: 'boolean',
+      default: false
     }
   },
-  handler: subcommand((opts: {client: RestClient, queryString: string, output?: ?string}) => {
-    const {client, queryString} = opts
+  handler: subcommand((opts: {client: RestClient, queryString: string, output?: ?string, allowErrors: boolean}) => {
+    const {client, queryString, allowErrors, output} = opts
     let outputStream
     const tarball = tar.pack()
     const gzip = zlib.createGzip()
@@ -41,7 +47,6 @@ module.exports = {
 
     return client.queryStream(queryString)
       .then(response => new Promise((resolve, reject) => {
-        const {output} = opts
         const queryStream = response.stream()
         const outStreamName = output || 'standard output'
         outputStream = (output == null) ? process.stdout : fs.createWriteStream(output)
@@ -92,11 +97,22 @@ module.exports = {
           resolve()
         })
       }))
-      .then(() => writeDataObjectsToTarball(client, tarball, objectIds))
+      .then(() => writeDataObjectsToTarball(client, tarball, objectIds, allowErrors))
       .then(() => new Promise(resolve => {
         outputStream.on('end', () => resolve())
         tarball.finalize()
       }))
+      .catch(err => {
+        // if we're not allowing errors, and are writing to a file, try to delete it on failure
+        if (!allowErrors && output != null) {
+          try {
+            fs.unlinkSync(output)
+          } catch (err) {
+            // ignore deletion failures
+          }
+        }
+        throw err
+      })
   })
 }
 
@@ -105,7 +121,7 @@ function writeToTarball (tarball: Object, filename: string, content: Buffer) {
   tarball.entry(header, content)
 }
 
-function writeDataObjectsToTarball (client: RestClient, tarball: Object, objectIds: Set<string>): Promise<*> {
+function writeDataObjectsToTarball (client: RestClient, tarball: Object, objectIds: Set<string>, allowErrors: boolean): Promise<*> {
   if (objectIds.size < 1) return Promise.resolve()
 
   const batchPromises = []
@@ -115,22 +131,30 @@ function writeDataObjectsToTarball (client: RestClient, tarball: Object, objectI
     if (batch.length >= OBJECT_BATCH_SIZE) {
       const ids = batch
       batch = []
-      batchPromises.push(fetchObjectBatch(client, tarball, ids))
+      batchPromises.push(fetchObjectBatch(client, tarball, ids, allowErrors))
     }
   }
 
-  batchPromises.push(fetchObjectBatch(client, tarball, batch))
+  batchPromises.push(fetchObjectBatch(client, tarball, batch, allowErrors))
   return Promise.all(batchPromises)
 }
 
-function fetchObjectBatch (client: RestClient, tarball: Object, objectIds: Array<string>): Promise<*> {
+function fetchObjectBatch (client: RestClient, tarball: Object, objectIds: Array<string>, allowErrors: boolean): Promise<*> {
   if (objectIds.length < 1) return Promise.resolve()
 
   return client.batchGetDataStream(objectIds, false)
     .then(stream => new Promise((resolve, reject) => {
       stream.on('data', dataResult => {
         const key = objectIds.shift()
-        if (dataResult == null || typeof dataResult !== 'object' || dataResult.data == null) return
+        if (dataResult == null || typeof dataResult !== 'object' || dataResult.data == null) {
+          const msg = (dataResult && dataResult.error) ? dataResult.error : 'Unknown error'
+          if (allowErrors) {
+            printlnErr(`Error fetching object for ${key}: ${msg}`)
+            return
+          } else {
+            return reject(new Error(`Error fetching object for ${key}: ${msg}`))
+          }
+        }
 
         const bytes = Buffer.from(dataResult.data, 'base64')
         writeToTarball(tarball, `data/${key}`, bytes)
