@@ -5,6 +5,7 @@ const ndjson = require('ndjson')
 const byline = require('byline')
 const mapStream = require('map-stream')
 const serialize = require('../../metadata/serialize')
+const {stringifyNestedBuffers} = require('../../common/util')
 
 import type { Transform as TransformStream, Duplex as DuplexStream, Readable as ReadableStream } from 'stream'
 import type { StatementMsg, SimpleStatementMsg } from '../../protobuf/types'
@@ -144,6 +145,19 @@ class RestClient {
   merge (queryString: string, remotePeer: string): Promise<{statementCount: number, objectCount: number}> {
     return this.postRequest(`merge/${remotePeer}`, queryString, false)
       .then(parseMergeResponse)
+  }
+
+  importStatements (statements: Array<StatementMsg>): Promise<number> {
+    const statementNDJSON = statements
+      .map(s => stringifyNestedBuffers(s))
+      .map(s => JSON.stringify(s))
+      .join('\n')
+    return this.importRaw(statementNDJSON)
+  }
+
+  importRaw (statementNDJSON: string): Promise<number> {
+    return this.postRequest(`import`, statementNDJSON, false)
+      .then(parseIntResponse)
   }
 
   push (queryString: string, remotePeer: string): Promise<{statementCount: number, objectCount: number}> {
