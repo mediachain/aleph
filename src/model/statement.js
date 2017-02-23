@@ -65,6 +65,10 @@ class Statement {
     return this.body.refSet
   }
 
+  get depsSet (): Set<string> {
+    return this.body.depsSet
+  }
+
   get source (): string {
     if (!(this.body instanceof EnvelopeStatementBody)) {
       return this.publisher
@@ -233,6 +237,10 @@ class StatementBody {
     return new Set()
   }
 
+  get depsSet (): Set<string> {
+    return new Set()
+  }
+
   get objectIds (): Array<string> {
     return []
   }
@@ -283,6 +291,10 @@ class SimpleStatementBody extends StatementBody {
     return new Set(this.refs)
   }
 
+  get depsSet (): Set<string> {
+    return new Set(this.deps)
+  }
+
   inspect (_depth?: number, _opts?: Object) {
     return this.toSimpleProtobuf()
   }
@@ -326,6 +338,10 @@ class CompoundStatementBody extends StatementBody {
   get refSet (): Set<string> {
     return setUnion(...this.simpleBodies.map(b => b.refSet))
   }
+
+  get depsSet (): Set<string> {
+    return setUnion(...this.simpleBodies.map(b => b.depsSet))
+  }
 }
 
 class EnvelopeStatementBody extends StatementBody {
@@ -363,6 +379,10 @@ class EnvelopeStatementBody extends StatementBody {
 
   get refSet (): Set<string> {
     return setUnion(...this.statements.map(stmt => stmt.refSet))
+  }
+
+  get depsSet (): Set<string> {
+    return setUnion(...this.statements.map(stmt => stmt.depsSet))
   }
 }
 
