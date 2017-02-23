@@ -32,6 +32,22 @@ const COMPOUND_STMT = {
   signature: Buffer.from('eJlR+rsTdiZQ7Lt8oI7M+tvtQPshjOb50OyKtrNQBfZ2KDyTpBIZnTWlZ2CAIq15oYjHetzrfZBxj81Nfu1QCw==', 'base64')
 }
 
+const COMPOUND_STMT_2 = {
+  id: '4XTTMDah7ai6vqk6yzAhDtW9ATaEmTDJPNK3kcPT4bLKRuotG:1485447651564:1',
+  publisher: '4XTTMDah7ai6vqk6yzAhDtW9ATaEmTDJPNK3kcPT4bLKRuotG',
+  namespace: 'scratch.test.compound-stmt',
+  timestamp: 1485447651564,
+  body: {
+    compound: {
+      body: [
+        { object: 'foo', refs: [ 'compound-3' ], deps: [ 'dep1', 'dep2' ], tags: [] },
+        { object: 'foo', refs: [ 'compound-4' ], deps: [ 'dep1', 'dep3', 'dep4' ], tags: [] }
+      ]
+    }
+  },
+  signature: Buffer.from('8nBP5iUEJu0TeMSWr4+HTg6Gp9I3yzu7Q590+HvVG7zbcbjJvI3qPN9yrnmh2txuVXua7lPHF9ORpOWdByeyDA==', 'base64')
+}
+
 const ENVELOPE_EMPTY = {
   id: '4XTTM2hkDuu73NXYakvw2uD6QfNAxB5emTd1P11uYt7YkmcXv:1485448028036:0',
   publisher: '4XTTM2hkDuu73NXYakvw2uD6QfNAxB5emTd1P11uYt7YkmcXv',
@@ -67,31 +83,31 @@ module.exports = {
   },
   statements: {
     simple: [ SIMPLE_STMT_1, SIMPLE_STMT_2 ],
-    compound: [ COMPOUND_STMT ],
+    compound: [ COMPOUND_STMT, COMPOUND_STMT_2 ],
     envelope: [ ENVELOPE_STMT ],
     envelopeEmpty: [ ENVELOPE_EMPTY ]
   },
   expectedRefs: {
     simple: [ new Set(['simple-1']), new Set(['simple-2']) ],
-    compound: [ new Set(['compound-1', 'compound-2']) ],
+    compound: [ new Set(['compound-1', 'compound-2']), new Set(['compound-3', 'compound-4']) ],
     envelope: [ new Set(['simple-1', 'simple-2']) ],
     envelopeEmpty: [ new Set() ]
   },
   expectedSources: {
     simple: [ SIMPLE_STMT_1.publisher, SIMPLE_STMT_2.publisher ],
-    compound: [ COMPOUND_STMT.publisher ],
+    compound: [ COMPOUND_STMT.publisher, COMPOUND_STMT_2.publisher ],
     envelope: [ SIMPLE_STMT_1.publisher ],
     envelopeEmpty: [ ENVELOPE_STMT.publisher ]
   },
   expectedDeps: {
     simple: [ new Set(['dep1', 'dep2']), new Set(['dep1', 'dep3']) ],
-    compound: [ new Set() ],
+    compound: [ new Set(), new Set(['dep1', 'dep2', 'dep3', 'dep4']) ],
     envelope: [ new Set(['dep1', 'dep2', 'dep3']) ],
     envelopeEmpty: [ new Set() ]
   },
   objectIds: {
     simple: [ ['foo'], ['foo'] ],
-    compound: [ ['foo', 'foo'] ],
+    compound: [ ['foo', 'foo'], ['foo', 'foo'] ],
     envelope: [ ['foo', 'foo'] ],
     envelopeEmpty: [ [] ]
   }
