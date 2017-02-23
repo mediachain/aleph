@@ -144,16 +144,24 @@ function fetchObjectBatch (client: RestClient, tarball: Object, objectIds: Array
 
   return client.batchGetDataStream(objectIds, false)
     .then(stream => new Promise((resolve, reject) => {
+      function handleError (message: string) {
+        if (allowErrors) {
+          printlnErr(message)
+        } else {
+          reject(new Error(message))
+        }
+      }
+
       stream.on('data', dataResult => {
         const key = objectIds.shift()
-        if (dataResult == null || typeof dataResult !== 'object' || dataResult.data == null) {
-          const msg = (dataResult && dataResult.error) ? dataResult.error : 'Unknown error'
-          if (allowErrors) {
-            printlnErr(`Error fetching object for ${key}: ${msg}`)
-            return
-          } else {
-            return reject(new Error(`Error fetching object for ${key}: ${msg}`))
-          }
+        if (dataResult == null || typeof dataResult !== 'object') {
+          return handleError(`Unexpected response from node when requesting ${key}: ${dataResult}`)
+        }
+        if (dataResult.error != null) {
+          return handleError(`Error fetching object for ${key}: ${dataResult.error}`)
+        }
+        if (dataResult.data == null) {
+          return handleError(`Object not found for key ${key}`)
         }
 
         const bytes = Buffer.from(dataResult.data, 'base64')
