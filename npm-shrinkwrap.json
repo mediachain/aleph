@@ -183,6 +183,18 @@
       "from": "browserify-aes@>=1.0.6 <2.0.0",
       "resolved": "https://registry.npmjs.org/browserify-aes/-/browserify-aes-1.0.6.tgz"
     },
+    "browserify-zlib": {
+      "version": "0.1.4",
+      "from": "browserify-zlib@>=0.1.4 <0.2.0",
+      "resolved": "https://registry.npmjs.org/browserify-zlib/-/browserify-zlib-0.1.4.tgz",
+      "dependencies": {
+        "pako": {
+          "version": "0.2.9",
+          "from": "pako@>=0.2.0 <0.3.0",
+          "resolved": "https://registry.npmjs.org/pako/-/pako-0.2.9.tgz"
+        }
+      }
+    },
     "browserify-zlib-next": {
       "version": "1.0.1",
       "from": "browserify-zlib-next@>=1.0.1 <2.0.0",
@@ -852,6 +864,38 @@
       "from": "gulplog@>=1.0.0 <2.0.0",
       "resolved": "https://registry.npmjs.org/gulplog/-/gulplog-1.0.0.tgz"
     },
+    "gunzip-maybe": {
+      "version": "1.3.1",
+      "from": "gunzip-maybe@latest",
+      "resolved": "https://registry.npmjs.org/gunzip-maybe/-/gunzip-maybe-1.3.1.tgz",
+      "dependencies": {
+        "isarray": {
+          "version": "0.0.1",
+          "from": "isarray@0.0.1",
+          "resolved": "https://registry.npmjs.org/isarray/-/isarray-0.0.1.tgz"
+        },
+        "object-keys": {
+          "version": "0.4.0",
+          "from": "object-keys@>=0.4.0 <0.5.0",
+          "resolved": "https://registry.npmjs.org/object-keys/-/object-keys-0.4.0.tgz"
+        },
+        "readable-stream": {
+          "version": "1.0.34",
+          "from": "readable-stream@~1.0.17",
+          "resolved": "https://registry.npmjs.org/readable-stream/-/readable-stream-1.0.34.tgz"
+        },
+        "through2": {
+          "version": "0.4.2",
+          "from": "through2@>=0.4.1 <0.5.0",
+          "resolved": "https://registry.npmjs.org/through2/-/through2-0.4.2.tgz"
+        },
+        "xtend": {
+          "version": "2.1.2",
+          "from": "xtend@>=2.1.1 <2.2.0",
+          "resolved": "https://registry.npmjs.org/xtend/-/xtend-2.1.2.tgz"
+        }
+      }
+    },
     "has": {
       "version": "1.0.1",
       "from": "has@>=1.0.0 <2.0.0",
@@ -966,6 +1010,11 @@
       "version": "1.0.0",
       "from": "is-bzip2@>=1.0.0 <2.0.0",
       "resolved": "https://registry.npmjs.org/is-bzip2/-/is-bzip2-1.0.0.tgz"
+    },
+    "is-deflate": {
+      "version": "1.0.0",
+      "from": "is-deflate@>=1.0.0 <2.0.0",
+      "resolved": "https://registry.npmjs.org/is-deflate/-/is-deflate-1.0.0.tgz"
     },
     "is-dotfile": {
       "version": "1.0.2",
@@ -1754,6 +1803,33 @@
       "from": "path-type@>=1.0.0 <2.0.0",
       "resolved": "https://registry.npmjs.org/path-type/-/path-type-1.1.0.tgz"
     },
+    "peek-stream": {
+      "version": "1.1.1",
+      "from": "peek-stream@>=1.1.0 <2.0.0",
+      "resolved": "https://registry.npmjs.org/peek-stream/-/peek-stream-1.1.1.tgz",
+      "dependencies": {
+        "isarray": {
+          "version": "0.0.1",
+          "from": "isarray@0.0.1",
+          "resolved": "http://registry.npmjs.org/isarray/-/isarray-0.0.1.tgz"
+        },
+        "readable-stream": {
+          "version": "1.0.34",
+          "from": "readable-stream@>=1.0.17 <1.1.0",
+          "resolved": "https://registry.npmjs.org/readable-stream/-/readable-stream-1.0.34.tgz"
+        },
+        "through2": {
+          "version": "0.5.1",
+          "from": "through2@>=0.5.1 <0.6.0",
+          "resolved": "https://registry.npmjs.org/through2/-/through2-0.5.1.tgz"
+        },
+        "xtend": {
+          "version": "3.0.0",
+          "from": "xtend@>=3.0.0 <3.1.0",
+          "resolved": "https://registry.npmjs.org/xtend/-/xtend-3.0.0.tgz"
+        }
+      }
+    },
     "peer-book": {
       "version": "0.3.1",
       "from": "peer-book@>=0.3.0 <0.4.0",
@@ -1930,6 +2006,16 @@
       "version": "3.2.8",
       "from": "pull-ws@>=3.2.8 <4.0.0",
       "resolved": "https://registry.npmjs.org/pull-ws/-/pull-ws-3.2.8.tgz"
+    },
+    "pump": {
+      "version": "1.0.2",
+      "from": "pump@>=1.0.0 <2.0.0",
+      "resolved": "https://registry.npmjs.org/pump/-/pump-1.0.2.tgz"
+    },
+    "pumpify": {
+      "version": "1.3.5",
+      "from": "pumpify@>=1.3.3 <2.0.0",
+      "resolved": "https://registry.npmjs.org/pumpify/-/pumpify-1.3.5.tgz"
     },
     "quote-stream": {
       "version": "1.0.2",
