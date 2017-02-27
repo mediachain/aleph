@@ -263,6 +263,7 @@ describe('StatementBody base class', () => {
     expect(stmt.depsSet.size).to.be.eql(0)
     expect(stmt.objectIds.length).to.be.eql(0)
     expect(stmt.expandObjects(new Map())).to.be.eql(stmt)
+    expect(stmt.inspect()).to.deep.eql({})
   })
 
   it('fromProtobuf throws on unrecognized body type', () => {
