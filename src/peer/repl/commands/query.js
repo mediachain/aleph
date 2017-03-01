@@ -3,6 +3,7 @@
 const pull = require('pull-stream')
 const { bootstrap, binaryToB64 } = require('../util')
 const { printJSON } = require('../../../client/cli/util')
+const { Statement, StatementBody } = require('../../../model/statement')
 
 module.exports = {
   command: 'query <queryString>',
@@ -69,7 +70,11 @@ function printResultStream (queryStream: Function, color: ?boolean, pretty: bool
     pull(
       queryStream,
       pull.through(result => {
-        printJSON(binaryToB64(result), {color, pretty})
+        if (result instanceof Statement || result instanceof StatementBody) {
+          printJSON(result.inspect(), {color, pretty})
+        } else {
+          printJSON(binaryToB64(result), {color, pretty})
+        }
       }),
       pull.onEnd((err) => {
         if (err) return reject(err)

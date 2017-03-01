@@ -1,6 +1,5 @@
 // @flow
 
-const { inspect } = require('util')
 const { PublisherId, PublicSigningKey } = require('../peer/identity')
 const pb = require('../protobuf')
 const serialize = require('../metadata/serialize')
@@ -47,14 +46,13 @@ class Statement {
     return stringifyNestedBuffers(this.toProtobuf())
   }
 
-  inspect (_depth?: number, opts?: Object) {
-    opts = Object.assign({}, opts, {depth: null})
+  inspect () {
     const {id, publisher, namespace, timestamp, body} = this
-    const output: Object = {id, publisher, namespace, timestamp, body}
+    const output: Object = {id, publisher, namespace, timestamp, body: body.inspect()}
     if (this instanceof SignedStatement) {
       output.signature = this.signature
     }
-    return inspect(stringifyNestedBuffers(output), opts)
+    return stringifyNestedBuffers(output)
   }
 
   get objectIds (): Array<string> {
@@ -233,6 +231,10 @@ class StatementBody {
     return this
   }
 
+  inspect (): Object | Array<Object> {
+    return {}
+  }
+
   get refSet (): Set<string> {
     return new Set()
   }
@@ -295,7 +297,7 @@ class SimpleStatementBody extends StatementBody {
     return new Set(this.deps)
   }
 
-  inspect (_depth?: number, _opts?: Object) {
+  inspect (): Object {
     return this.toSimpleProtobuf()
   }
 }
@@ -327,8 +329,8 @@ class CompoundStatementBody extends StatementBody {
     return new CompoundStatementBody(expanded)
   }
 
-  inspect (_depth?: number, _opts?: Object) {
-    return this.simpleBodies
+  inspect (): Array<Object> {
+    return this.simpleBodies.map(b => b.inspect())
   }
 
   get objectIds (): Array<string> {
@@ -369,8 +371,8 @@ class EnvelopeStatementBody extends StatementBody {
     return new EnvelopeStatementBody(expanded)
   }
 
-  inspect (_depth?: number, _opts?: Object) {
-    return this.statements
+  inspect (): Array<Object> {
+    return this.statements.map(s => s.inspect())
   }
 
   get objectIds (): Array<string> {
@@ -403,9 +405,8 @@ class ExpandedSimpleStatementBody extends SimpleStatementBody {
     return {object, refs, deps, tags}
   }
 
-  inspect (_depth?: number, opts?: Object) {
-    opts = Object.assign({}, opts, {depth: null})
-    return inspect(this.toJSON(), opts)
+  inspect (): Object {
+    return this.toJSON()
   }
 }
 

@@ -109,38 +109,32 @@ describe('Statements', () => {
 
     it('includes a base64-encoded signature for SignedStatements', () => {
       const {id, publisher, namespace, timestamp, body, signature} = stmt
-      const expectedOutput = inspect(
-        {
-          id,
-          publisher,
-          namespace,
-          timestamp,
-          body: body.inspect(),
-          signature: signature.toString('base64')
-        },
-        {depth: null}
-      )
+      const expectedOutput = {
+        id,
+        publisher,
+        namespace,
+        timestamp,
+        body: body.inspect(),
+        signature: signature.toString('base64')
+      }
 
-      expect(inspect(stmt))
-        .to.eql(expectedOutput)
+      expect(stmt.inspect())
+        .to.deep.eql(expectedOutput)
     })
 
     it('does not include a signature for UnsignedStatements', () => {
       const unsigned = stmt.asUnsignedStatement()
       const {id, publisher, namespace, timestamp, body} = unsigned
-      const expectedOutput = inspect(
-        {
-          id,
-          publisher,
-          namespace,
-          timestamp,
-          body: body.inspect()
-        },
-        {depth: null}
-      )
+      const expectedOutput = {
+        id,
+        publisher,
+        namespace,
+        timestamp,
+        body: body.inspect()
+      }
 
-      expect(inspect(unsigned))
-        .to.eql(expectedOutput)
+      expect(unsigned.inspect())
+        .to.deep.eql(expectedOutput)
     })
   })
 
@@ -269,6 +263,7 @@ describe('StatementBody base class', () => {
     expect(stmt.depsSet.size).to.be.eql(0)
     expect(stmt.objectIds.length).to.be.eql(0)
     expect(stmt.expandObjects(new Map())).to.be.eql(stmt)
+    expect(stmt.inspect()).to.deep.eql({})
   })
 
   it('fromProtobuf throws on unrecognized body type', () => {

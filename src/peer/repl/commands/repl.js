@@ -3,6 +3,7 @@
 const os = require('os')
 // $FlowIssue flow doesn't find repl builtin?
 const Repl = require('repl')
+const { inspect } = require('util')
 const { bootstrap } = require('../util')
 
 module.exports = {
@@ -20,6 +21,8 @@ module.exports = {
   },
   handler: (opts: {dir?: string, remotePeer?: string, identityPath: string}) => {
     const {remotePeer} = opts
+
+    inspect.defaultOptions = { colors: true, depth: null }
 
     bootstrap(opts)
       .catch(err => {
