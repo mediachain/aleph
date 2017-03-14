@@ -1,3 +1,11 @@
+## 2016-03-14: aleph-v1.7.0
+mcclient:
+
+- Added `archive dump` and `archive load` commands to generate and load gzipped tar archives of MCQL query output [PR #185 (generate archive)](https://github.com/mediachain/aleph/pull/185) and [PR #186 (load archive)](https://github.com/mediachain/aleph/pull/186)
+
+aleph:
+- Fixed output of `aleph query --includeData` command, which was incorrectly ommitting object metadata. [PR #189]
+
 ## 2016-02-13: aleph-v1.6.0
 aleph-v1.6.0
 
