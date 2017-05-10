@@ -70,7 +70,7 @@
     "pull-paramap": "^1.2.1",
     "pull-promise": "^2.0.0",
     "pull-pushable": "^2.0.1",
-    "pull-stream": "^3.5.0",
+    "pull-stream": "^3.5.1",
     "pull-window": "^2.1.4",
     "sqlite3": "^3.1.8",
     "tar-stream": "https://registry.npmjs.org/tar-stream/-/tar-stream-1.5.2.tgz",
