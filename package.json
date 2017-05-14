@@ -96,7 +96,7 @@
     "interface-connection": "^0.3.0",
     "jsdoc": "^3.4.3",
     "jsdoc-babel": "^0.3.0",
-    "mocha": "^3.2.0",
+    "mocha": "^3.4.0",
     "mocha-eventually": "^1.1.0",
     "mocha-lcov-reporter": "^1.2.0",
     "nyc": "^10.0.0",
