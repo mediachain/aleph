@@ -100,7 +100,7 @@
     "mocha-eventually": "^1.1.0",
     "mocha-lcov-reporter": "^1.2.0",
     "nyc": "^10.0.0",
-    "standard": "^8.6.0",
+    "standard": "^10.0.3",
     "std-mocks": "^1.0.1"
   },
   "standard": {
