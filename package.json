@@ -62,7 +62,7 @@
     "ndjson": "^1.4.3",
     "node-fetch": "^1.6.3",
     "peer-book": "^0.3.0",
-    "peer-id": "^0.8.0",
+    "peer-id": "^0.10.0",
     "peer-info": "^0.8.0",
     "protocol-buffers": "^3.2.0",
     "pull-abortable": "^4.1.0",
