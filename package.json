@@ -35,7 +35,7 @@
   },
   "homepage": "https://github.com/mediachain/aleph#readme",
   "dependencies": {
-    "ajv": "^4.9.2",
+    "ajv": "^6.5.4",
     "bin-build": "^2.2.0",
     "borc": "^2.0.1",
     "byline": "^5.0.0",
