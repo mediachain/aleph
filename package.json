@@ -53,7 +53,7 @@
     "libp2p-websockets": "^0.9.1",
     "locks": "^0.2.2",
     "lodash": "^4.17.1",
-    "mafmt": "^2.1.5",
+    "mafmt": "^6.0.5",
     "map-stream": "^0.0.6",
     "memdown": "^1.2.4",
     "mkdirp": "^0.5.1",
