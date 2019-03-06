@@ -78,7 +78,7 @@
     "thenify-all": "^1.6.0",
     "tunnel-ssh": "^4.1.1",
     "uuid": "^3.0.1",
-    "yargs": "^6.3.0"
+    "yargs": "^13.2.2"
   },
   "devDependencies": {
     "babel-cli": "^6.22.0",
