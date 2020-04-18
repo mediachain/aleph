@@ -42,7 +42,7 @@
     "digest-stream": "^2.0.0",
     "duplex-child-process": "0.0.5",
     "gunzip-maybe": "^1.3.1",
-    "knex": "^0.12.6",
+    "knex": "^0.21.0",
     "levelup": "^1.3.3",
     "libp2p-crypto": "^0.8.0",
     "libp2p-ping": "^0.3.0",
